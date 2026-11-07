@@ -48,7 +48,7 @@
     <h2 style="margin-top:0">2. Informar as chaves</h2>
     <p class="suave">Os segredos são guardados criptografados e nunca aparecem de novo na tela (só os 4 últimos caracteres). Campo em branco mantém o valor atual.</p>
     <div class="form-grade">
-        @foreach (['client_id' => ['MP_CLIENT_ID', 'Client ID', 'text'], 'client_secret' => ['MP_CLIENT_SECRET', 'Client Secret', 'password'], 'webhook_secret' => ['MP_WEBHOOK_SECRET', 'Assinatura secreta dos webhooks', 'password']] as $campo => [$env, $rotulo, $tipo])
+        @foreach (['client_id' => ['MP_CLIENT_ID', 'Client ID', 'text'], 'client_secret' => ['MP_CLIENT_SECRET', 'Client Secret', 'password'], 'webhook_secret' => ['MP_WEBHOOK_SECRET', 'Assinatura secreta dos webhooks', 'password'], 'teste_access_token' => ['Credenciais > Teste > Access Token', 'Access Token de TESTE (só para o pagamento de teste)', 'password']] as $campo => [$env, $rotulo, $tipo])
             <div class="campo col-12">
                 <label for="adm-{{ $campo }}">{{ $rotulo }} <small class="suave">({{ $env }})</small></label>
                 <input id="adm-{{ $campo }}" name="{{ $campo }}" type="{{ $tipo }}" autocomplete="off" spellcheck="false"
@@ -73,15 +73,20 @@
 
 <section class="cartao" style="padding:20px;margin-top:18px">
     <h2 style="margin-top:0">4. Pagamento de teste</h2>
-    <p class="suave">Cria uma cobrança <b>real</b> pelo Checkout Pro, na conta da própria aplicação (BH Software). Use para validar a integração e
-        obter o ID do pagamento e do pedido (order) pedidos na "Qualidade da integração" do Mercado Pago. O valor cai na conta da BH Software
-        e pode ser devolvido pelo próprio Mercado Pago.</p>
+    <p class="suave">Cria uma cobrança pelo Checkout Pro na conta da própria aplicação (BH Software) e devolve o ID do pagamento e do pedido (order).
+        <b>Teste</b> usa o Access Token de teste: pague entrando com a <b>conta de teste compradora</b> (Contas de teste, no painel) ou com os cartões de teste —
+        é o que a "Qualidade da integração" pede. <b>Produção</b> cobra de verdade.</p>
     <form method="post" action="{{ route('admin.mercadopago.teste') }}" class="teste-pagamento">
         @csrf
+        <div class="campo"><label>Ambiente</label>
+            <div class="segmentado">
+                <label><input type="radio" name="ambiente" value="teste" @checked(old('ambiente', 'teste') === 'teste')><span>Teste</span></label>
+                <label><input type="radio" name="ambiente" value="producao" @checked(old('ambiente') === 'producao')><span>Produção</span></label>
+            </div></div>
         <div class="campo"><label for="adm-valor">Valor (R$)</label>
             <input id="adm-valor" name="valor" type="number" step="0.01" min="1" max="100" value="{{ old('valor', '5.00') }}" required>
             @error('valor')<small class="erro">{{ $message }}</small>@enderror</div>
-        <button class="botao botao--primario" @disabled(! $configurado)>Pagar teste no Mercado Pago ↗</button>
+        <button class="botao botao--primario">Pagar teste no Mercado Pago ↗</button>
     </form>
 </section>
 
