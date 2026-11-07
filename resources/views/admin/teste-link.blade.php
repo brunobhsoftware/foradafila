@@ -3,7 +3,7 @@
 
 @section('conteudo')
 <div class="cabecalho"><div><h1>Pagamento de teste criado</h1>
-    <p>{{ moeda($valor) }} · {{ $teste ? 'Credenciais de teste' : 'Produção (cobrança real)' }} · referência {{ $referencia }}</p></div></div>
+    <p>{{ moeda($valor) }} · {{ $teste ? 'Credenciais de teste' : 'Produção (cobrança real)' }} · order <b>{{ $orderId }}</b></p></div></div>
 
 <section class="cartao link-teste" style="padding:20px">
     <div class="link-teste__qr" data-qr="{{ $link }}" aria-label="QR Code do pagamento"></div>

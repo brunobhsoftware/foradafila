@@ -180,6 +180,27 @@ class MercadoPago
         return $r->json();
     }
 
+    /** API de Orders (Checkout Pro com Orders): cria a order e devolve a resposta (id, checkout_url...). */
+    public static function criarOrder(string $accessToken, array $dados): array
+    {
+        $r = Http::withToken($accessToken)->acceptJson()->asJson()->timeout(20)
+            ->withHeaders(['X-Idempotency-Key' => (string) \Illuminate\Support\Str::uuid()])
+            ->post(config('pagamentos.mercadopago.api_url').'/v1/orders', $dados);
+        if (! $r->successful() || ! $r->json('id')) {
+            $msg = $r->json('message') ?? collect((array) $r->json('errors'))->pluck('message')->filter()->implode('; ');
+            throw new RuntimeException('O Mercado Pago recusou a criação da order (HTTP '.$r->status().($msg ? ': '.mb_substr((string) $msg, 0, 300) : '').').');
+        }
+
+        return $r->json();
+    }
+
+    public static function order(string $accessToken, string $id): array
+    {
+        $r = Http::withToken($accessToken)->acceptJson()->timeout(15)->get(config('pagamentos.mercadopago.api_url').'/v1/orders/'.rawurlencode($id));
+
+        return $r->successful() ? $r->json() : [];
+    }
+
     public static function pagamento(string $accessToken, string $id): array
     {
         $r = Http::withToken($accessToken)->acceptJson()->timeout(15)->get(config('pagamentos.mercadopago.api_url').'/v1/payments/'.rawurlencode($id));
