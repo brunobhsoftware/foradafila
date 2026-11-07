@@ -190,6 +190,12 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::post('/convidados/{evento}/listas/{lista}/emitir', [\App\Http\Controllers\Painel\ConvidadosController::class, 'emitir'])->name('convidados.emitir')->whereNumber('lista')->middleware('throttle:30,10,convidados-emitir');
     Route::post('/convidados/{evento}/listas/{lista}/convidados/{convidado}/remover', [\App\Http\Controllers\Painel\ConvidadosController::class, 'remover'])->name('convidados.remover')->whereNumber(['lista', 'convidado']);
 
+    Route::get('/mensagens', [\App\Http\Controllers\Painel\MensagensController::class, 'index'])->name('mensagens.index');
+    Route::post('/mensagens/modelo', [\App\Http\Controllers\Painel\MensagensController::class, 'salvarModelo'])->name('mensagens.modelo');
+    Route::post('/mensagens/modelo/restaurar', [\App\Http\Controllers\Painel\MensagensController::class, 'restaurarModelo'])->name('mensagens.restaurar');
+    Route::post('/mensagens/previa', [\App\Http\Controllers\Painel\MensagensController::class, 'previa'])->name('mensagens.previa');
+    Route::post('/mensagens/comunicado', [\App\Http\Controllers\Painel\MensagensController::class, 'comunicado'])->name('mensagens.comunicado')->middleware('throttle:5,60,comunicado');
+
     // Módulos das próximas fases: a tela explica o que vem e o menu já fica no lugar certo.
     Route::get('/{modulo}', EmBreveController::class)->name('em-breve')
         ->whereIn('modulo', array_keys(EmBreveController::MODULOS));

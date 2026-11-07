@@ -500,6 +500,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'App\\Http\\Controllers\\Painel\\EventoController' => __DIR__ . '/../..' . '/app/Http/Controllers/Painel/EventoController.php',
         'App\\Http\\Controllers\\Painel\\FinanceiroController' => __DIR__ . '/../..' . '/app/Http/Controllers/Painel/FinanceiroController.php',
         'App\\Http\\Controllers\\Painel\\LoteController' => __DIR__ . '/../..' . '/app/Http/Controllers/Painel/LoteController.php',
+        'App\\Http\\Controllers\\Painel\\MensagensController' => __DIR__ . '/../..' . '/app/Http/Controllers/Painel/MensagensController.php',
         'App\\Http\\Controllers\\Painel\\MinhaContaController' => __DIR__ . '/../..' . '/app/Http/Controllers/Painel/MinhaContaController.php',
         'App\\Http\\Controllers\\Painel\\OrganizacaoController' => __DIR__ . '/../..' . '/app/Http/Controllers/Painel/OrganizacaoController.php',
         'App\\Http\\Controllers\\Painel\\ParticipantesController' => __DIR__ . '/../..' . '/app/Http/Controllers/Painel/ParticipantesController.php',

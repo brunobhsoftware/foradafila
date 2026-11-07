@@ -25,6 +25,7 @@ return array(
     'App\\Http\\Controllers\\Painel\\EventoController' => $baseDir . '/app/Http/Controllers/Painel/EventoController.php',
     'App\\Http\\Controllers\\Painel\\FinanceiroController' => $baseDir . '/app/Http/Controllers/Painel/FinanceiroController.php',
     'App\\Http\\Controllers\\Painel\\LoteController' => $baseDir . '/app/Http/Controllers/Painel/LoteController.php',
+    'App\\Http\\Controllers\\Painel\\MensagensController' => $baseDir . '/app/Http/Controllers/Painel/MensagensController.php',
     'App\\Http\\Controllers\\Painel\\MinhaContaController' => $baseDir . '/app/Http/Controllers/Painel/MinhaContaController.php',
     'App\\Http\\Controllers\\Painel\\OrganizacaoController' => $baseDir . '/app/Http/Controllers/Painel/OrganizacaoController.php',
     'App\\Http\\Controllers\\Painel\\ParticipantesController' => $baseDir . '/app/Http/Controllers/Painel/ParticipantesController.php',
