@@ -14,13 +14,14 @@ const ok = (c, m) => { console.log((c ? 'PASSOU ' : 'FALHOU ') + m); if (!c) pro
 const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
 
 // ---- Mercado Pago falso ----
-let ultimoToken = null; let recusar = false;
+let ultimoToken = null; let recusar = false; let ultimaAutorizacao = null;
 const falso = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
   if (u.pathname === '/authorization') {
+    ultimaAutorizacao = u.searchParams;
     const volta = new URL(u.searchParams.get('redirect_uri'));
     volta.searchParams.set('state', u.searchParams.get('state'));
-    if (u.searchParams.get('code_challenge_method') === 'S256' && u.searchParams.get('client_id') === 'app-teste') volta.searchParams.set('code', 'TG-codigo-123');
+    if (u.searchParams.get('client_id') === 'app-teste') volta.searchParams.set('code', 'TG-codigo-123');
     else volta.searchParams.set('error', 'invalid_request');
     res.writeHead(302, { Location: volta.toString() }); return res.end();
   }
@@ -41,6 +42,7 @@ const falso = http.createServer((req, res) => {
 }).listen(8099);
 
 (async () => {
+  sql("REPLACE INTO parametro_sistema (chave, valor) VALUES ('mp_pkce', '1')"); // PKCE ligado na primeira parte
   const b = await chromium.launch(); const P = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage();
   const erros = []; P.on('pageerror', (e) => erros.push(e.message));
   await P.goto(BASE + '/cadastro');
@@ -79,6 +81,14 @@ const falso = http.createServer((req, res) => {
   P.once('dialog', (d) => d.accept());
   await nav(P, P.click('button:has-text("Desconectar")'));
   ok(sql("SELECT CONCAT(status, '|', access_token_cript IS NULL) FROM conta_pagamento") === 'revogada|1' && (await P.content()).includes('Não conectada'), 'desconectar apaga os tokens');
+
+  // PKCE desligado (padrão): não envia code_challenge nem code_verifier
+  sql("UPDATE parametro_sistema SET valor='0' WHERE chave='mp_pkce'");
+  await nav(P, P.click('button:has-text("Conectar Mercado Pago")'));
+  ok(!ultimaAutorizacao.has('code_challenge') && !ultimaAutorizacao.has('code_challenge_method') && ultimoToken.code && !('code_verifier' in ultimoToken),
+    'PKCE desligado: autorização e troca sem os campos do PKCE');
+  ok((await P.content()).includes('Conta do Mercado Pago conectada'), 'conecta também sem PKCE');
+  sql("DELETE FROM parametro_sistema WHERE chave='mp_pkce'");
 
   // ---- webhooks ----
   const enviar = async (corpo, assinar, rid = 'req-' + Math.random()) => {

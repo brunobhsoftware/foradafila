@@ -59,4 +59,15 @@
     </div>
     <div class="acoes-form"><button class="botao botao--primario">Salvar chaves</button></div>
 </form>
+
+<form method="post" action="{{ route('admin.mercadopago.salvar') }}" class="cartao" style="padding:20px;margin-top:18px">
+    @csrf @method('PUT')
+    <input type="hidden" name="so_pkce" value="1">
+    <h2 style="margin-top:0">3. Segurança da conexão (PKCE)</h2>
+    <p class="suave">O PKCE é opcional no Mercado Pago. Ele precisa estar <b>igual nos dois lados</b>: se você ativar aqui, ative também na aplicação
+        (Suas integrações → aplicação → Detalhes da aplicação → Editar → "fluxo de código de autorização com o PKCE"). Se estiver diferente,
+        o Mercado Pago pode recusar a conexão.</p>
+    <label class="interruptor"><input type="hidden" name="pkce" value="0"><input type="checkbox" name="pkce" value="1" @checked($pkce)><span></span> Usar PKCE</label>
+    <div class="acoes-form"><button class="botao botao--escuro botao--pequeno">Salvar opção</button></div>
+</form>
 @endsection

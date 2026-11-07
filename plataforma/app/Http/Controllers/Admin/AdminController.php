@@ -25,7 +25,7 @@ class AdminController extends Controller
 
     public function mercadoPago()
     {
-        return view('admin.mercadopago', ['credenciais' => MercadoPago::situacaoCredenciais(), 'configurado' => MercadoPago::configurado()]);
+        return view('admin.mercadopago', ['credenciais' => MercadoPago::situacaoCredenciais(), 'configurado' => MercadoPago::configurado(), 'pkce' => MercadoPago::usaPkce()]);
     }
 
     public function salvarMercadoPago(Request $request)
@@ -40,7 +40,15 @@ class AdminController extends Controller
             'webhook_secret.regex' => 'A assinatura secreta não pode ter espaços.',
         ], ['client_id' => 'Client ID', 'client_secret' => 'Client Secret', 'webhook_secret' => 'assinatura secreta']);
 
+        $pkce = $request->boolean('pkce');
+        if ($pkce !== MercadoPago::usaPkce()) {
+            MercadoPago::definirPkce($pkce);
+            Auditoria::registrar('plataforma.mercadopago_pkce', $request->user(), null, ['pkce' => $pkce]);
+        }
         $alteradas = array_keys(array_filter($dados, 'filled'));
+        if (! $alteradas && $request->has('so_pkce')) {
+            return redirect()->route('admin.mercadopago')->with('ok', 'PKCE '.($pkce ? 'ativado' : 'desativado').'.');
+        }
         if (! $alteradas) {
             return back()->withErrors(['client_id' => 'Preencha pelo menos um campo. Campos em branco mantêm o valor atual.']);
         }

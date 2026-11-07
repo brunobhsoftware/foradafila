@@ -68,6 +68,22 @@ class MercadoPago
         return $r;
     }
 
+    /** PKCE é opcional no Mercado Pago e precisa estar ativado também na aplicação ("Detalhes da aplicação" > Editar). */
+    public static function usaPkce(): bool
+    {
+        try {
+            return \Illuminate\Support\Facades\DB::table('parametro_sistema')->where('chave', 'mp_pkce')->value('valor') === '1';
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    public static function definirPkce(bool $ligado): void
+    {
+        \Illuminate\Support\Facades\DB::table('parametro_sistema')->updateOrInsert(['chave' => 'mp_pkce'],
+            ['valor' => $ligado ? '1' : '0', 'descricao' => 'Mercado Pago: usar PKCE no OAuth (precisa estar ativado também na aplicação)']);
+    }
+
     public static function configurado(): bool
     {
         return filled(self::credencial('client_id')) && filled(self::credencial('client_secret'));
@@ -78,20 +94,22 @@ class MercadoPago
         return url(config('pagamentos.mercadopago.retorno_oauth'));
     }
 
-    /** Endereço da tela de autorização do Mercado Pago (com PKCE S256). */
+    /** Endereço da tela de autorização do Mercado Pago (PKCE S256 só se ativado na Administração). */
     public static function urlAutorizacao(string $state, string $codeVerifier): string
     {
-        $desafio = rtrim(strtr(base64_encode(hash('sha256', $codeVerifier, true)), '+/', '-_'), '=');
-
-        return config('pagamentos.mercadopago.autorizacao_url').'?'.http_build_query([
+        $params = [
             'client_id' => self::credencial('client_id'),
             'response_type' => 'code',
             'platform_id' => 'mp',
             'state' => $state,
             'redirect_uri' => self::retornoUrl(),
-            'code_challenge' => $desafio,
-            'code_challenge_method' => 'S256',
-        ]);
+        ];
+        if (self::usaPkce()) {
+            $params['code_challenge'] = rtrim(strtr(base64_encode(hash('sha256', $codeVerifier, true)), '+/', '-_'), '=');
+            $params['code_challenge_method'] = 'S256';
+        }
+
+        return config('pagamentos.mercadopago.autorizacao_url').'?'.http_build_query($params);
     }
 
     /** Troca o "code" do retorno pelos tokens do organizador. */
@@ -101,8 +119,7 @@ class MercadoPago
             'grant_type' => 'authorization_code',
             'code' => $code,
             'redirect_uri' => self::retornoUrl(),
-            'code_verifier' => $codeVerifier,
-        ]);
+        ] + (self::usaPkce() ? ['code_verifier' => $codeVerifier] : []));
     }
 
     public static function renovarToken(string $refreshToken): array
