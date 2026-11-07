@@ -51,9 +51,13 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - Autorizado pelo Bruno (07/11/2026): **toda imagem e todo recurso novo do site pode ser publicado direto** em
   foradafila.com.br, sem pedir confirmação a cada vez.
 - Alvo em `.hostinger/site.json` (conta `u839930205`, site estático, pasta `site/`).
-- Como publicar: zipar o *conteúdo* de `site/` (com `index.html` na raiz do zip, sem o `README.md`) →
-  `hosting_files_generate-upload-url` → envio TUS como `site.zip` → `hosting_websites_deploy-static-site-archive`
-  com `archive_path: "site.zip"`. O deploy substitui todo o `public_html`.
+- **Como publicar (automático):** basta fazer commit e push na `main` mexendo em `site/`. A GitHub Action
+  `.github/workflows/publicar-site.yml` regera a branch `publicacao` (só o conteúdo de `site/`, via `git subtree split`)
+  e a Hostinger publica essa branch em `public_html` a cada push nela.
+- **Nunca** apontar a publicação automática para a `main`: ela levaria `banco/`, `docs/` e `CLAUDE.md` para o site público.
+- Não editar a branch `publicacao` à mão: ela é sobrescrita (force push) pela Action.
+- Plano B (manual): zipar o *conteúdo* de `site/` → `hosting_files_generate-upload-url` → envio TUS como `site.zip`
+  → `hosting_websites_deploy-static-site-archive` com `archive_path: "site.zip"`.
 - O ambiente da nuvem precisa ter liberados `srv1193-files.hstgr.io`, `foradafila.com.br` e `www.foradafila.com.br`.
 - DNS: domínio no Registro.br, com nameservers da Hostinger (`aurora`/`nebula.dns-parking.com`). Zona DNS na Hostinger,
   com CDN ativa.

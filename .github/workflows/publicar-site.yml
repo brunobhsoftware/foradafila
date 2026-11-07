@@ -1,0 +1,31 @@
+# Atualiza a branch `publicacao` com o conteúdo da pasta site/ a cada push na main.
+# A Hostinger publica automaticamente a branch `publicacao` em foradafila.com.br.
+# Assim, banco/, docs/ e CLAUDE.md nunca vão para o servidor web.
+name: Publicar site
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", ".github/workflows/publicar-site.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publicar-site
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gerar branch publicacao a partir de site/
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git subtree split --prefix site -b publicacao
+          git push --force origin publicacao
