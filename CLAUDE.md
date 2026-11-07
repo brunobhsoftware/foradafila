@@ -131,7 +131,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   07/11/2026:** pagamento de R$ 5 por Pix aprovado (payment_id 187277190645, merchant_order_id 45909646019). O pagamento de teste
   tem ambiente **Teste** (padrão; usa o Access Token de teste `mp_teste_access_token` ou, sem ele, client_credentials com
   `mp_teste_client_id`/`mp_teste_client_secret` — `MercadoPago::tokenTeste()`; segredos criptografados — exigido pela Qualidade da
-  integração; pagar com a conta de teste compradora) ou **Produção** (token client_credentials). Webhook: mesma URL; aceita a
+  integração; pagar com a conta de teste compradora) ou **Produção** (token client_credentials). As chaves ficam em dois cartões
+  separados: "2. Chaves de PRODUÇÃO" e "3. Chaves de TESTE", cada um com seu botão salvar. Webhook: mesma URL; aceita a
   assinatura de produção ou a de teste (`mp_teste_webhook_secret`, opcional) — a lista mostra "Válida (teste)". O botão do pagamento
   de teste não redireciona: mostra o link (copiar + QR Code) para abrir em janela anônima/celular, sem a conta da BH Software logada
   (o MP recusa misturar conta real e de teste). Botão "Verificar de quem são os tokens" (`/users/me` com cada token: conta, apelido,

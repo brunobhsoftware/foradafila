@@ -65,10 +65,10 @@ const falso = http.createServer((req, res) => {
     'prompt de IA pede os três valores e traz os endereços');
   ok(await P.getAttribute('a:has-text("painel de desenvolvedores")', 'href') === 'https://www.mercadopago.com.br/developers/panel/app', 'botão do painel de desenvolvedores');
 
-  await nav(P, P.click('button:has-text("Salvar chaves")'));
+  await nav(P, P.click('button:has-text("Salvar chaves de produção")'));
   ok((await P.content()).includes('Preencha pelo menos um campo'), 'tudo em branco é recusado');
   await P.fill('[name=client_id]', '1234567890123456'); await P.fill('[name=client_secret]', 'SegredoDaBH-abcdWXYZ'); await P.fill('[name=webhook_secret]', 'assinatura-wh-9876');
-  await nav(P, P.click('button:has-text("Salvar chaves")'));
+  await nav(P, P.click('button:has-text("Salvar chaves de produção")'));
   const tela = await P.content();
   ok(tela.includes('Chaves do Mercado Pago salvas') && tela.includes('Configurada'), 'chaves salvas');
   ok(sql("SELECT valor FROM parametro_sistema WHERE chave='mp_client_id'") === '1234567890123456', 'Client ID gravado');
@@ -78,7 +78,7 @@ const falso = http.createServer((req, res) => {
 
   // em branco mantém
   await P.fill('[name=client_id]', '9999999999999999');
-  await nav(P, P.click('button:has-text("Salvar chaves")'));
+  await nav(P, P.click('button:has-text("Salvar chaves de produção")'));
   ok(sql("SELECT COUNT(*) FROM parametro_sistema WHERE chave='mp_client_secret' AND valor<>''") === '1' && sql("SELECT valor FROM parametro_sistema WHERE chave='mp_client_id'") === '9999999999999999', 'campo em branco mantém o valor atual');
 
   // o Conectar do produtor usa as chaves do banco (no lugar do .env)
@@ -92,17 +92,17 @@ const falso = http.createServer((req, res) => {
   await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
   ok((await P.content()).includes('Cadastre primeiro as credenciais de teste'), 'sem credenciais de teste, avisa');
   await P.fill('[name=teste_client_id]', 'teste-id'); await P.fill('[name=teste_client_secret]', 'teste-segredo');
-  await nav(P, P.click('button:has-text("Salvar chaves")'));
+  await nav(P, P.click('button:has-text("Salvar chaves de teste")'));
   ok(sql("SELECT COUNT(*) FROM parametro_sistema WHERE chave='mp_teste_client_secret' AND valor NOT LIKE '%teste-segredo%'") === '1', 'Client Secret de teste gravado criptografado');
   await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
   await P.goto(await P.inputValue('#link-teste'));
   ok(autorizacaoPref === 'Bearer APP_USR-teste-cc', 'Teste com Client ID/Secret de teste: gera o token de teste e cria a preferência com ele');
   await P.goto(BASE + '/admin/mercadopago');
   await P.fill('[name=teste_access_token]', 'token-errado');
-  await nav(P, P.click('button:has-text("Salvar chaves")'));
+  await nav(P, P.click('button:has-text("Salvar chaves de teste")'));
   ok((await P.content()).includes('começa com APP_USR-'), 'Access Token de teste em formato errado é recusado');
   await P.fill('[name=teste_access_token]', 'APP_USR-teste-123');
-  await nav(P, P.click('button:has-text("Salvar chaves")'));
+  await nav(P, P.click('button:has-text("Salvar chaves de teste")'));
   ok(sql("SELECT valor NOT LIKE '%APP_USR%' FROM parametro_sistema WHERE chave='mp_teste_access_token'") === '1', 'Access Token de teste gravado criptografado');
   await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
   ok(await P.locator('.link-teste__qr svg').count() === 1 && (await P.inputValue('#link-teste')).includes('/admin/mercadopago/teste/retorno'), 'mostra o link para copiar e o QR Code');
@@ -136,7 +136,7 @@ const falso = http.createServer((req, res) => {
   // assinatura secreta de teste dos webhooks (mesma URL)
   await P.goto(BASE + '/admin/mercadopago');
   await P.fill('[name=teste_webhook_secret]', 'wh-segredo-de-teste');
-  await nav(P, P.click('button:has-text("Salvar chaves")'));
+  await nav(P, P.click('button:has-text("Salvar chaves de teste")'));
   const assinar = (segredo, id, rid) => { const ts = String(Date.now()); return `ts=${ts},v1=${crypto.createHmac('sha256', segredo).update(`id:${id};request-id:${rid};ts:${ts};`).digest('hex')}`; };
   for (const [idEv, segredo] of [['ev-teste', 'wh-segredo-de-teste'], ['ev-prod', 'assinatura-wh-9876'], ['ev-falso', 'outro']]) {
     await P.request.post(BASE + '/webhooks/mercadopago?data.id=77&type=payment', { data: { id: idEv, type: 'payment', data: { id: '77' } }, headers: { 'x-request-id': 'r-' + idEv, 'x-signature': assinar(segredo, '77', 'r-' + idEv) } });
