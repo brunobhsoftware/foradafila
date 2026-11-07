@@ -16,7 +16,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V002__termos_iniciais.sql` | Termos provisórios 0.1 (uso, responsabilidade, compra, privacidade). Idempotente |
 | `banco/V003__ajuste_modelo_confirmacao.sql` | Só dados: tira "em anexo" do modelo padrão de confirmação. Idempotente |
 | `banco/V005__evento_capacidade_opcional.sql` | `evento.capacidade` aceita NULL (capacidade máxima opcional). Idempotente |
-| `banco/V006__integracao_pagamentos.sql` | Campos para Mercado Pago e outras operadoras (OAuth, checkout, idempotência, webhooks). Idempotente. **Ainda não importado** |
+| `banco/V006__integracao_pagamentos.sql` | Campos para Mercado Pago e outras operadoras (OAuth, checkout, idempotência, webhooks). Idempotente. Importado em produção em 07/11/2026 ("V006 ok") |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
@@ -224,7 +224,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 
 ## Próximos passos
 
-1. Importar o V006; criar a aplicação no Mercado Pago (`MP_*` no `.env`, ver `docs/integracao-pagamentos.md`).
+1. Criar a aplicação no Mercado Pago (`MP_*` no `.env`, ver `docs/integracao-pagamentos.md`).
    Financeiro: conectar e homologar a conta do Mercado Pago (OAuth), checkout pago e pedido de reembolso.
 2. Check-in (PWA) lendo o QR `FF1.<codigo>.<hmac>` e participantes no painel.
 3. Confirmação de e-mail no cadastro e lembretes do evento.
