@@ -181,6 +181,13 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   e por CPF, pedido mínimo, validade; situação (ativo, agendado, esgotado, expirado, desativado); editar (limite não fica abaixo
   dos usos), ativar/desativar, filtro por evento. `Cupom::desconto($valor, $loteId, $subtotal)` calcula o desconto — **ainda não
   é usado no checkout** (entra com a venda paga, gravando em `cupom_uso`).
+- **Divulgação → Convidados** (`/painel/convidados`, `ConvidadosController`): listas por evento (`lista_convidados`: nome, lote
+  usado para emitir, limite de convidados, máximo de acompanhantes); convidados (`convidado`) um a um ou colados em lote
+  ("Nome; e-mail; acompanhantes", com erros por linha); "Emitir e enviar" (um ou todos os pendentes com e-mail; exige
+  `pedido.emitir_manual`) cria pedido `origem = lista_convidados` com titular + acompanhantes via `App\Support\EmissaoCortesia`
+  (qualquer lote do evento, baixa estoque, numera) e manda o ingresso por e-mail; "Remover" cancela os ingressos já emitidos.
+  O comprador do convidado é criado **sem senha** e define a senha por "Esqueci a senha" (`SenhaController::podeRedefinir` aceita
+  comprador sem senha). Ainda não: link de confirmação do convite (RSVP) e links de acesso privado.
 - **Política de cancelamento:** ao criar/editar evento o produtor marca a declaração
   `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
   (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores
@@ -215,7 +222,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-convidados.js` (19), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.
