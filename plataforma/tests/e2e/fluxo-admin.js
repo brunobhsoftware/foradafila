@@ -15,6 +15,11 @@ let clientIdUsado = null; let segredoUsado = null; let preferencia = null; let a
 const falso = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
   if (u.pathname === '/authorization') { clientIdUsado = u.searchParams.get('client_id'); res.writeHead(302, { Location: u.searchParams.get('redirect_uri') + '?error=cancelado&state=' + u.searchParams.get('state') }); return res.end(); }
+  if (u.pathname === '/v1/orders/ORDTST1' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ id: 'ORDTST1', status: 'processed', status_detail: 'accredited', total_amount: '5.00',
+      transactions: { payments: [{ id: 'PAY1', reference: { id: '123456' }, payment_method: { id: 'master', type: 'credit_card' } }] } }));
+  }
   if (u.pathname === '/users/me') {
     const a = req.headers.authorization; res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify(a === 'Bearer APP_USR-teste-123' ? { id: 2001, nickname: 'TESTUSER123', email: 'test_user_1@testuser.com', tags: ['test_user'] } : { id: 1001, nickname: 'BHSOFTWARE', email: 'bh@bh.test', tags: ['normal'] }));
@@ -24,6 +29,10 @@ const falso = http.createServer((req, res) => {
     return res.end(JSON.stringify({ id: 123456, status: 'approved', status_detail: 'accredited', transaction_amount: 5, payment_method_id: 'pix', payment_type_id: 'bank_transfer' }));
   }
   let corpo = ''; req.on('data', (d) => { corpo += d; }); req.on('end', () => {
+    if (u.pathname === '/v1/orders' && req.method === 'POST') {
+      preferencia = JSON.parse(corpo); autorizacaoPref = req.headers.authorization;
+      res.writeHead(201, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ id: 'ORDTST1', status: 'created', checkout_url: preferencia.config.online.success_url }));
+    }
     if (u.pathname === '/checkout/preferences') {
       preferencia = JSON.parse(corpo); autorizacaoPref = req.headers.authorization;
       const volta = preferencia.back_urls.success + '?collection_id=123456&payment_id=123456&status=approved&merchant_order_id=987654&preference_id=PREF-1&external_reference=' + preferencia.external_reference;
@@ -90,11 +99,13 @@ const falso = http.createServer((req, res) => {
   await P.goto(BASE + '/admin/mercadopago');
   ok(await P.inputValue('#adm-valor-teste') === '5.00' && await P.locator('#ambiente-teste').count() === 1 && await P.locator('#ambiente-producao input[name=access_token]').count() === 1
     && await P.locator('#ambiente-teste input[name=teste_access_token]').count() === 1, 'dois blocos (teste e produção), cada um com seus 4 campos e R$ 5,00');
+  await P.fill('#ambiente-teste [name=email]', 'test_user_comprador@testuser.com');
   await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
-  ok((await P.content()).includes('Cadastre primeiro as credenciais de teste'), 'sem credenciais de teste, avisa');
+  ok((await P.content()).includes('Cadastre primeiro as chaves de teste'), 'sem credenciais de teste, avisa');
   await P.fill('[name=teste_client_id]', 'teste-id'); await P.fill('[name=teste_client_secret]', 'teste-segredo');
   await nav(P, P.click('button:has-text("Salvar chaves de teste")'));
   ok(sql("SELECT COUNT(*) FROM parametro_sistema WHERE chave='mp_teste_client_secret' AND valor NOT LIKE '%teste-segredo%'") === '1', 'Client Secret de teste gravado criptografado');
+  await P.fill('#ambiente-teste [name=email]', 'test_user_comprador@testuser.com');
   await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
   await P.goto(await P.inputValue('#link-teste'));
   ok(autorizacaoPref === 'Bearer APP_USR-teste-cc', 'Teste com Client ID/Secret de teste: gera o token de teste e cria a preferência com ele');
@@ -105,19 +116,27 @@ const falso = http.createServer((req, res) => {
   await P.fill('[name=teste_access_token]', 'APP_USR-teste-123');
   await nav(P, P.click('button:has-text("Salvar chaves de teste")'));
   ok(sql("SELECT valor NOT LIKE '%APP_USR%' FROM parametro_sistema WHERE chave='mp_teste_access_token'") === '1', 'Access Token de teste gravado criptografado');
+  await P.fill('#ambiente-teste [name=email]', 'test_user_comprador@testuser.com');
   await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
   ok(await P.locator('.link-teste__qr svg').count() === 1 && (await P.inputValue('#link-teste')).includes('/admin/mercadopago/teste/retorno'), 'mostra o link para copiar e o QR Code');
   await P.goto(await P.inputValue('#link-teste'));
-  ok(autorizacaoPref === 'Bearer APP_USR-teste-123' && preferencia.items[0].unit_price === 5 && preferencia.items[0].currency_id === 'BRL'
-    && !('notification_url' in preferencia) && preferencia.external_reference.startsWith('teste-'), 'Teste: preferência de R$ 5 com o Access Token de teste, sem notification_url (usa o webhook do painel)');
+  const it = preferencia.items[0];
+  ok(autorizacaoPref === 'Bearer APP_USR-teste-123' && preferencia.type === 'online' && preferencia.processing_mode === 'manual' && preferencia.total_amount === '5.00'
+    && it.unit_price === '5.00' && it.quantity === 1 && it.title && it.description && it.category_id === 'tickets' && it.external_code, 'Teste: order de R$ 5 com o token de teste e itens completos');
+  ok(preferencia.payer.email === 'test_user_comprador@testuser.com' && preferencia.payer.first_name === 'APRO' && preferencia.payer.last_name === 'Teste'
+    && preferencia.payer.identification.type === 'CPF' && preferencia.payer.identification.number === '12345678909', 'comprador completo (e-mail, nome, sobrenome, CPF)');
+  ok(preferencia.config.statement_descriptor === 'FORADAFILA' && preferencia.config.online.success_url.includes('resultado=sucesso') && preferencia.config.online.failure_url.includes('resultado=falha')
+    && preferencia.config.online.pending_url.includes('resultado=pendente'), 'descrição na fatura e URLs de retorno (sucesso, falha, pendente)');
+  ok(preferencia.additional_info['payer.authentication_type'] === 'WEB' && preferencia.additional_info['payer.registration_date'] && preferencia.additional_info['payer.is_first_purchase_online'] === true
+    && preferencia.additional_info['payer.last_purchase'], 'additional_info do comprador');
   let ret = await P.content();
-  ok(ret.includes('123456') && ret.includes('987654') && ret.includes('Aprovado') && ret.includes('Credenciais de teste') && ret.includes('conferido na API'), 'retorno mostra IDs, status e "Credenciais de teste"');
+  ok(ret.includes('ORDTST1') && ret.includes('123456') && ret.includes('Aprovado') && ret.includes('Credenciais de teste') && ret.includes('conferido na API'), 'retorno mostra order, pagamento, status e "Credenciais de teste"');
 
   // retorno aberto numa janela sem login: mostra os IDs, sem consultar a API
   const anon = await (await b.newContext()).newPage();
   const r = await anon.goto(BASE + '/admin/mercadopago/teste/retorno?payment_id=555&merchant_order_id=666&status=approved');
   const txt = await anon.content();
-  ok(r.status() === 200 && txt.includes('555') && txt.includes('666') && !txt.includes('conferido na API') && txt.includes('anote os IDs'), 'retorno sem login mostra os IDs (sem consultar a API)');
+  ok(r.status() === 200 && txt.includes('555') && !txt.includes('conferido na API') && txt.includes('anote o ID'), 'retorno sem login mostra os IDs (sem consultar a API)');
   ok((await anon.goto(BASE + '/admin/mercadopago')).status() !== 200 || anon.url().endsWith('/entrar'), 'o resto da Administração continua fechado');
 
   // verificar de quem é o token, em cada ambiente
@@ -129,10 +148,11 @@ const falso = http.createServer((req, res) => {
 
   // Produção usa o token da aplicação (client_credentials)
   await P.goto(BASE + '/admin/mercadopago');
+  for (const [n, v] of [['email', 'comprador@real.test'], ['nome', 'Maria'], ['sobrenome', 'Silva'], ['cpf', '529.982.247-25'], ['telefone', '(31) 98888-7777']]) await P.fill(`#ambiente-producao [name=${n}]`, v);
   await nav(P, P.click('button:has-text("Pagar de verdade no Mercado Pago")'));
   await P.goto(await P.inputValue('#link-teste'));
   ret = await P.content();
-  ok(autorizacaoPref === 'Bearer APP-TOKEN-BH' && preferencia.notification_url.endsWith('/webhooks/mercadopago') && ret.includes('Produção') && ret.includes('Aprovado'), 'Produção: usa o token da aplicação e manda o webhook');
+  ok(autorizacaoPref === 'Bearer APP-TOKEN-BH' && preferencia.payer.phone.area_code === '31' && preferencia.payer.phone.number === '988887777' && ret.includes('Produção') && ret.includes('Aprovado'), 'Produção: token da aplicação e telefone do comprador');
 
   // assinatura secreta de teste dos webhooks (mesma URL)
   await P.goto(BASE + '/admin/mercadopago');
@@ -152,6 +172,7 @@ const falso = http.createServer((req, res) => {
   await P.fill('#ambiente-producao [name=access_token]', 'APP_USR-producao-999');
   await nav(P, P.click('button:has-text("Salvar chaves de produção")'));
   ok(sql("SELECT valor NOT LIKE '%producao-999%' FROM parametro_sistema WHERE chave='mp_access_token'") === '1', 'Access Token de produção gravado criptografado');
+  for (const [n, v] of [['email', 'comprador@real.test'], ['nome', 'Maria'], ['sobrenome', 'Silva'], ['cpf', '529.982.247-25'], ['telefone', '(31) 98888-7777']]) await P.fill(`#ambiente-producao [name=${n}]`, v);
   await nav(P, P.click('button:has-text("Pagar de verdade no Mercado Pago")'));
   ok(autorizacaoPref === 'Bearer APP_USR-producao-999', 'Produção usa o Access Token de produção cadastrado');
 

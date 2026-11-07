@@ -23,71 +23,110 @@ class AdminController extends Controller
         ]);
     }
 
-    /** Pagamento de teste (Checkout Pro) na conta da própria aplicação, para validar a integração de ponta a ponta. */
+    /**
+     * Pagamento de teste pela API de Orders (Checkout Pro com Orders), com os campos que a
+     * "Qualidade da integração" do Mercado Pago pede: comprador completo, itens, URLs de retorno,
+     * descrição na fatura e additional_info.
+     */
     public function testarPagamento(Request $request)
     {
-        $d = $request->validate(['valor' => ['required', 'numeric', 'min:1', 'max:100'], 'ambiente' => ['required', 'in:teste,producao']], [], ['valor' => 'valor']);
-        $valor = (float) $d['valor'];
+        $d = $request->validate([
+            'valor' => ['required', 'numeric', 'min:1', 'max:100'],
+            'ambiente' => ['required', 'in:teste,producao'],
+            'email' => ['required', 'email', 'max:150'],
+            'nome' => ['required', 'string', 'max:60'],
+            'sobrenome' => ['required', 'string', 'max:60'],
+            'cpf' => ['required', 'string', 'regex:/^\D*(\d\D*){11}$/'],
+            'telefone' => ['nullable', 'string', 'regex:/^\D*(\d\D*){10,11}$/'],
+        ], ['cpf.regex' => 'Informe os 11 números do CPF.', 'telefone.regex' => 'Telefone com DDD (10 ou 11 números).'],
+            ['valor' => 'valor', 'email' => 'e-mail do comprador', 'nome' => 'nome do comprador', 'sobrenome' => 'sobrenome do comprador']);
+        $valor = number_format((float) $d['valor'], 2, '.', '');
         $teste = $d['ambiente'] === 'teste';
-        if ($teste) {
-            try {
-                $tokenTeste = MercadoPago::tokenTeste();
-            } catch (\Throwable $e) {
-                return back()->withInput()->withErrors(['valor' => $e->getMessage()]);
-            }
-            if (! $tokenTeste) {
-                return back()->withInput()->withErrors(['valor' => 'Cadastre primeiro as credenciais de teste: Access Token de teste, ou Client ID e Client Secret de teste (Credenciais > Teste).']);
-            }
-        }
-        if (! $teste && ! MercadoPago::configurado() && ! MercadoPago::credencial('access_token')) {
-            return back()->withInput()->withErrors(['valor' => 'Cadastre primeiro o Client ID e o Client Secret.']);
-        }
-        session(['mp_teste_ambiente' => $d['ambiente']]);
-        $referencia = 'teste-'.\Illuminate\Support\Str::uuid();
         try {
-            $pref = MercadoPago::criarPreferencia($teste ? $tokenTeste : MercadoPago::tokenAplicacao(), [
-                'items' => [['id' => 'teste-ff', 'title' => 'Teste de integração Fora da Fila', 'quantity' => 1, 'unit_price' => round($valor, 2), 'currency_id' => 'BRL']],
-                'external_reference' => $referencia,
-                'back_urls' => array_fill_keys(['success', 'failure', 'pending'], route('admin.mercadopago.teste.retorno')),
-                'auto_return' => 'approved',
+            $token = $teste ? MercadoPago::tokenTeste() : MercadoPago::tokenAplicacao();
+        } catch (\Throwable $e) {
+            return back()->withInput()->withErrors(['valor' => $e->getMessage()]);
+        }
+        if (! $token) {
+            return back()->withInput()->withErrors(['valor' => $teste
+                ? 'Cadastre primeiro as chaves de teste (Access Token, ou Client ID e Client Secret de teste).'
+                : 'Cadastre primeiro as chaves de produção.']);
+        }
+
+        $referencia = 'teste-'.\Illuminate\Support\Str::uuid();
+        $volta = fn (string $r) => route('admin.mercadopago.teste.retorno', ['ref' => $referencia, 'resultado' => $r]);
+        $fone = preg_replace('/\D/', '', (string) ($d['telefone'] ?? ''));
+        $usuario = $request->user();
+        $agora = now()->toIso8601String();
+        $dados = [
+            'type' => 'online',
+            'processing_mode' => 'manual',
+            'total_amount' => $valor,
+            'external_reference' => $referencia,
+            'description' => 'Teste de integração Fora da Fila',
+            'payer' => array_filter([
+                'email' => $d['email'],
+                'first_name' => $d['nome'],
+                'last_name' => $d['sobrenome'],
+                'identification' => ['type' => 'CPF', 'number' => preg_replace('/\D/', '', $d['cpf'])],
+                'phone' => $fone ? ['area_code' => substr($fone, 0, 2), 'number' => substr($fone, 2)] : null,
+            ]),
+            'items' => [[
+                'external_code' => 'teste-ff',
+                'title' => 'Ingresso de teste Fora da Fila',
+                'description' => 'Ingresso de teste para validar a integração do Fora da Fila',
+                'category_id' => 'tickets',
+                'quantity' => 1,
+                'unit_price' => $valor,
+            ]],
+            'config' => [
                 'statement_descriptor' => 'FORADAFILA',
-            ] + ($teste ? [] : ['notification_url' => url(config('pagamentos.mercadopago.webhook'))]));
-            // Teste: sem notification_url, para o Mercado Pago usar (e registrar) o webhook do modo teste do painel;
-            // a notification_url da preferência teria prioridade sobre ele.
+                'online' => ['success_url' => $volta('sucesso'), 'failure_url' => $volta('falha'), 'pending_url' => $volta('pendente')],
+            ],
+            'additional_info' => [
+                'payer.authentication_type' => 'WEB',
+                'payer.registration_date' => \Illuminate\Support\Carbon::parse($usuario->criado_em ?? 'now')->toIso8601String(),
+                'payer.is_first_purchase_online' => true,
+                'payer.last_purchase' => $agora,
+            ],
+        ];
+        try {
+            $order = MercadoPago::criarOrder($token, $dados);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Cache::forget('mp_token_aplicacao_'.md5((string) MercadoPago::credencial('client_id')));
 
             return back()->withInput()->withErrors(['valor' => $e->getMessage()]);
         }
-        Auditoria::registrar('plataforma.mercadopago_teste', $request->user(), null,
-            ['valor' => $valor, 'ambiente' => $d['ambiente'], 'referencia' => $referencia, 'preferencia' => $pref['id']]);
+        \Illuminate\Support\Facades\Cache::put('mp_teste_'.$referencia, ['order' => $order['id'], 'ambiente' => $d['ambiente']], now()->addHours(6));
+        Auditoria::registrar('plataforma.mercadopago_teste', $usuario, null,
+            ['valor' => $valor, 'ambiente' => $d['ambiente'], 'referencia' => $referencia, 'order' => $order['id']]);
 
-        // Mostra o link (copiar / QR Code) para abrir numa janela anônima, outro navegador ou no celular,
-        // sem a conta da BH Software logada (o Mercado Pago recusa misturar conta real com teste).
         return view('admin.teste-link', [
-            'link' => $pref['init_point'],
-            'linkSandbox' => $teste && ! empty($pref['sandbox_init_point']) && $pref['sandbox_init_point'] !== $pref['init_point'] ? $pref['sandbox_init_point'] : null,
-            'valor' => $valor, 'teste' => $teste, 'referencia' => $referencia,
+            'link' => $order['checkout_url'] ?? '', 'linkSandbox' => null,
+            'valor' => (float) $valor, 'teste' => $teste, 'referencia' => $referencia, 'orderId' => $order['id'],
         ]);
     }
 
-    /** Volta do Checkout Pro: mostra os IDs do pagamento e do pedido (order) e confere o pagamento na API. */
+    /** Volta do Checkout Pro: mostra a order e o pagamento. A consulta à API é só para administrador logado. */
     public function retornoTeste(Request $request)
     {
-        $q = $request->only(['payment_id', 'collection_id', 'status', 'collection_status', 'merchant_order_id', 'preference_id', 'external_reference', 'payment_type']);
-        $id = $q['payment_id'] ?? $q['collection_id'] ?? null;
-        $pagamento = [];
+        $ref = (string) $request->query('ref', '');
+        $info = $ref !== '' ? \Illuminate\Support\Facades\Cache::get('mp_teste_'.$ref) : null;
         $admin = (bool) $request->user()?->admin_plataforma;
-        if ($admin && $id && $id !== 'null') {
+        $order = [];
+        if ($admin && $info) {
             try {
-                $token = session('mp_teste_ambiente') === 'teste' ? MercadoPago::tokenTeste() : MercadoPago::tokenAplicacao();
-                $pagamento = MercadoPago::pagamento($token, (string) $id);
+                $token = $info['ambiente'] === 'teste' ? MercadoPago::tokenTeste() : MercadoPago::tokenAplicacao();
+                $order = $token ? MercadoPago::order($token, $info['order']) : [];
             } catch (\Throwable $e) {
-                $pagamento = [];
+                $order = [];
             }
         }
 
-        return view('admin.teste-retorno', ['q' => $q, 'pagamento' => $pagamento, 'ambiente' => session('mp_teste_ambiente'), 'admin' => $admin]);
+        return view('admin.teste-retorno', [
+            'ref' => $ref, 'resultado' => (string) $request->query('resultado', ''), 'info' => $info,
+            'order' => $order, 'extras' => $request->except(['ref', 'resultado']), 'admin' => $admin,
+        ]);
     }
 
     /** De quem é cada token (conta, apelido, se é usuário de teste), para diagnosticar "uma das partes é de teste". */
