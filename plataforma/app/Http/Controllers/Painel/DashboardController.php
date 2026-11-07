@@ -40,7 +40,7 @@ class DashboardController extends Controller
 
         $org = $tenant->organizador();
         $passos = [
-            ['ok' => $org->dadosCompletos(), 'texto' => 'Completar os dados da organização (representante legal e dados bancários)', 'rota' => 'organizacao.edit'],
+            ['ok' => $org->dadosCompletos(), 'texto' => 'Completar os dados da organização (representante legal)', 'rota' => 'organizacao.edit'],
             ['ok' => filled($org->logo_url) && filled($org->descricao), 'texto' => 'Enviar a logomarca e a descrição da página pública', 'rota' => 'organizacao.edit'],
             ['ok' => Evento::exists(), 'texto' => 'Criar o primeiro evento', 'rota' => 'eventos.create'],
             ['ok' => Evento::whereHas('lotes')->exists(), 'texto' => 'Cadastrar tipos de ingresso e lotes', 'rota' => 'eventos.index'],

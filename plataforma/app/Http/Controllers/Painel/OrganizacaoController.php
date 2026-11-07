@@ -76,10 +76,11 @@ class OrganizacaoController extends Controller
             $regras += [
                 'representante_nome' => ['required', 'string', 'max:150'],
                 'representante_cpf' => ['required', new DocumentoValido('PF')],
-                'banco' => ['required', 'string', 'max:80'],
-                'agencia' => ['required', 'string', 'max:10', 'regex:/^[0-9]{1,6}(-?[0-9Xx])?$/'],
-                'conta' => ['required', 'string', 'max:20', 'regex:/^[0-9]{1,15}-?[0-9Xx]?$/'],
-                'favorecido' => ['required', 'string', 'max:150'],
+                // Dados bancários são opcionais; se um for preenchido, os quatro são pedidos juntos.
+                'banco' => ['nullable', 'required_with:agencia,conta,favorecido', 'string', 'max:80'],
+                'agencia' => ['nullable', 'required_with:banco,conta', 'string', 'max:10', 'regex:/^[0-9]{1,6}(-?[0-9Xx])?$/'],
+                'conta' => ['nullable', 'required_with:banco,agencia', 'string', 'max:20', 'regex:/^[0-9]{1,15}-?[0-9Xx]?$/'],
+                'favorecido' => ['nullable', 'required_with:banco,agencia,conta', 'string', 'max:150'],
             ];
         }
 
@@ -88,6 +89,10 @@ class OrganizacaoController extends Controller
             'agencia.regex' => 'Agência: use só números, com o dígito se houver (ex.: 1234 ou 1234-5).',
             'conta.regex' => 'Conta: use só números e o dígito (ex.: 12345-6).',
             'representante_cpf.required' => 'Informe o CPF do representante legal.',
+            'banco.required_with' => 'Para cadastrar a conta bancária, informe também o banco.',
+            'agencia.required_with' => 'Para cadastrar a conta bancária, informe também a agência.',
+            'conta.required_with' => 'Para cadastrar a conta bancária, informe também a conta.',
+            'favorecido.required_with' => 'Para cadastrar a conta bancária, informe também o favorecido.',
             'logo.max' => 'A logomarca pode ter no máximo 2 MB.',
             'logo.uploaded' => 'A logomarca pode ter no máximo 2 MB.',
             'logo.mimes' => 'Envie a logomarca em JPEG, GIF ou PNG.',
@@ -101,8 +106,8 @@ class OrganizacaoController extends Controller
         $dados['uf'] = isset($dados['uf']) ? strtoupper($dados['uf']) : null;
         if ($v004) {
             $dados['mostrar_eventos_passados'] = $request->boolean('mostrar_eventos_passados');
-            $dados['agencia'] = strtoupper($dados['agencia']);
-            $dados['conta'] = strtoupper($dados['conta']);
+            $dados['agencia'] = isset($dados['agencia']) ? strtoupper($dados['agencia']) : null;
+            $dados['conta'] = isset($dados['conta']) ? strtoupper($dados['conta']) : null;
         }
 
         $antes = $org->getAttributes();

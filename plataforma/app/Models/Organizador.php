@@ -32,13 +32,13 @@ class Organizador extends Model
         return ['api_chave_gerada_em' => 'datetime', 'mostrar_eventos_passados' => 'boolean'];
     }
 
-    /** Dados obrigatórios para operar (V004): representante legal e dados bancários. */
+    /** Dados obrigatórios (V004): representante legal e CPF. Os dados bancários são opcionais. */
     public function dadosCompletos(): bool
     {
         if (! \App\Support\Esquema::temV004()) {
             return false;
         }
-        foreach (['representante_nome', 'representante_cpf', 'banco', 'agencia', 'conta', 'favorecido'] as $campo) {
+        foreach (['representante_nome', 'representante_cpf'] as $campo) {
             if (blank($this->getAttribute($campo))) {
                 return false;
             }

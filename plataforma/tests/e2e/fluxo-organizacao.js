@@ -32,7 +32,8 @@ const salvar = async (p) => { await p.evaluate(() => { document.querySelector('f
   await P.fill('[name=favorecido]', '');
   await salvar(P);
   const c1 = await P.content();
-  ok(['representante legal', 'CPF do representante legal', 'banco', 'agência', 'conta', 'favorecido'].every((t) => c1.includes(`O campo ${t} é obrigatório`) || c1.includes('Informe o CPF do representante legal')), 'salvar sem os obrigatórios é recusado');
+  ok(c1.includes('O campo representante legal é obrigatório') && c1.includes('Informe o CPF do representante legal')
+    && !c1.includes('O campo banco é obrigatório'), 'salvar sem representante é recusado; dados bancários são opcionais');
   await P.fill('[name=representante_nome]', 'Bruno da Silva'); await P.fill('[name=representante_cpf]', '111.111.111-11');
   await P.fill('[name=banco]', '341 - Itaú Unibanco'); await P.fill('[name=agencia]', '1234'); await P.fill('[name=conta]', '12345-6'); await P.fill('[name=favorecido]', 'Estacao Slod Ltda');
   await salvar(P);

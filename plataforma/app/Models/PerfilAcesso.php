@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
@@ -18,6 +19,22 @@ class PerfilAcesso extends Model
     protected function casts(): array
     {
         return ['editavel' => 'boolean'];
+    }
+
+    /**
+     * O perfil padrão de código "dono" aparece como "Produtor" (pedido do Bruno, 07/11/2026).
+     * O código interno continua "dono": permissões e regras (último Dono ativo etc.) não mudam.
+     */
+    protected function nome(): Attribute
+    {
+        return Attribute::get(fn ($valor, $atributos) => ($atributos['organizador_id'] ?? null) === null && ($atributos['codigo'] ?? null) === 'dono'
+            ? 'Produtor' : $valor);
+    }
+
+    protected function descricao(): Attribute
+    {
+        return Attribute::get(fn ($valor, $atributos) => ($atributos['organizador_id'] ?? null) === null && ($atributos['codigo'] ?? null) === 'dono'
+            ? 'Acesso total; responde pela organização' : $valor);
     }
 
     public function permissoes(): BelongsToMany

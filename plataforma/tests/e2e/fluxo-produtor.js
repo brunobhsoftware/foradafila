@@ -100,7 +100,7 @@ async function cadastrar(page, { nome, email, tipo, doc, razao, fantasia }) {
   await linhaDono.locator('summary').click();
   await linhaDono.locator('[name=perfil_id]').selectOption({ label: 'Gerente' });
   await Promise.all([A.waitForNavigation(), linhaDono.locator('button:has-text("Salvar")').click()]);
-  ok((await A.content()).includes('pelo menos um Dono ativo'), 'último Dono não pode ser rebaixado');
+  ok((await A.content()).includes('pelo menos um Produtor ativo'), 'último Produtor (dono) não pode ser rebaixado');
 
   await A.goto(BASE + '/painel/perfis');
   await A.screenshot({ path: OUT + '05-perfis.png', fullPage: true });

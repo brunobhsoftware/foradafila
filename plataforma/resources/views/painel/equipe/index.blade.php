@@ -29,8 +29,13 @@
                         <td><small>{{ $v->todos_eventos ? 'Todos' : $v->eventos->pluck('titulo')->implode(', ') }}</small></td>
                         <td><span class="selo {{ ['ativo' => 'selo--verde', 'convidado' => 'selo--amarelo', 'suspenso' => 'selo--vermelho'][$v->status] ?? '' }}">{{ \App\Models\OrganizadorUsuario::STATUS[$v->status] }}</span>
                             @if ($v->status === 'convidado' && $v->convite_expira_em)<br><small>{{ $v->convite_expira_em->isPast() ? 'expirou' : 'até '.data_local($v->convite_expira_em, 'd/m H:i') }}</small>@endif</td>
-                        <td class="num">
-                            <details class="painel-recolhivel"><summary class="botao botao--contorno botao--pequeno">Alterar</summary>
+                        <td class="num" style="white-space:nowrap">
+                            @if ($v->status === 'convidado')
+                                <form method="post" action="{{ route('equipe.reenviar', $v) }}" style="display:inline-block;margin-right:6px">
+                                    @csrf <button class="botao botao--escuro botao--pequeno" title="Gera um novo link (o anterior deixa de valer) e envia por e-mail">Reenviar convite</button>
+                                </form>
+                            @endif
+                            <details class="painel-recolhivel" style="display:inline-block"><summary class="botao botao--contorno botao--pequeno">Alterar</summary>
                                 <form method="post" action="{{ route('equipe.update', $v) }}" style="text-align:left;min-width:min(380px,80vw)" class="pilha">
                                     @csrf @method('PUT')
                                     @include('painel.equipe.campos-acesso', ['perfilAtual' => $v->perfil_id, 'todos' => $v->todos_eventos, 'marcados' => $v->eventos->pluck('id')->all(), 'sufixo' => $v->id])
@@ -42,9 +47,6 @@
                                     <button class="botao botao--escuro botao--pequeno">Salvar</button>
                                 </form>
                                 <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
-                                    @if ($v->status === 'convidado')
-                                        <form method="post" action="{{ route('equipe.reenviar', $v) }}">@csrf<button class="botao botao--contorno botao--pequeno">Gerar novo link</button></form>
-                                    @endif
                                     @unless ($v->usuario_id === auth()->id())
                                         <form method="post" action="{{ route('equipe.destroy', $v) }}" data-confirmar="Remover {{ $v->usuario->nome }} da equipe?">@csrf @method('DELETE')<button class="botao botao--perigo botao--pequeno">Remover</button></form>
                                     @endunless

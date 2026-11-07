@@ -89,17 +89,26 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   servido por `/midia/eventos/{arquivo}` (`MidiaController`). `evento.imagem_capa_url` guarda `/midia/...?v=<data>`.
   Trocar de formato apaga a versão antiga; "remover" apaga o arquivo. Aparece no painel, na página do evento
   (com `og:image`) e na vitrine. Lógica em `App\Support\ImagemEvento`.
-- **Organização (V004):** representante legal e CPF, banco, agência, conta e favorecido são **obrigatórios** ao salvar
-  (o banco aceita NULL para não quebrar cadastros antigos). Logomarca opcional (JPEG/GIF/PNG até 2 MB, recomendada
+- **Organização (V004):** representante legal e CPF são **obrigatórios**; banco, agência, conta e favorecido são
+  **opcionais**, mas se um for preenchido os quatro são pedidos (decisão do Bruno, 07/11/2026). Logomarca opcional (JPEG/GIF/PNG até 2 MB, recomendada
   136x136) em `logomarcas/<nome-da-organizacao>_<uuid>.<ext>` no disco `midia` (`App\\Support\\Logomarca`), exibida no
   menu do painel, na página do evento e na do organizador. Opção "Mostrar eventos passados" na página pública.
   **Chave de acesso da API: campo bloqueado** (decisão do Bruno); colunas `api_chave_*` reservadas para o futuro
   botão "gerar token de integração" (guardar só o hash SHA-256).
+- **Perfil "Dono" aparece como "Produtor"** em todas as telas (accessor em `PerfilAcesso`); o código interno continua
+  `dono` e o banco não foi alterado. Mensagens falam em "Produtor".
+- **Trocar senha e trocar e-mail** (`/painel/minha-conta/senha` e `/email`, botões em Organização e "Trocar senha" no
+  menu): código de 6 dígitos por e-mail (fique@), só o hash no cache, 15 min, 5 tentativas, uso único, reenvio a cada
+  60 s (`App\\Support\\CodigoVerificacao`). O e-mail só troca depois de validar o código no e-mail **atual**; avisos de
+  segurança (noreply@) vão para o e-mail antigo e o novo. O código não fica em `mensagem_envio`.
+- **Equipe:** botão "Reenviar convite" na linha de cada convite pendente (novo link, o anterior deixa de valer).
+- **Limites de tentativas (throttle):** sempre com nome próprio (`throttle:5,15,codigo-senha`), senão rotas diferentes
+  dividem o mesmo contador.
 - **Preferências de notificação** (por pessoa da equipe, `organizador_usuario`): `/painel/preferencias` —
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18) e `fluxo-organizacao.js` (30, precisa do V004), com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (24) — os dois últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.
