@@ -47,6 +47,17 @@
     });
   }
 
+  // Formulário de lote: mostra os campos conforme gratuito/pago e por data/por lote
+  $$('[data-lote-form]').forEach((form) => {
+    const atualizar = () => form.querySelectorAll('[data-mostrar-se]').forEach((el) => {
+      const [nome, valor] = el.dataset.mostrarSe.split('=');
+      const marcado = form.querySelector(`input[name=${nome}]:checked`);
+      el.hidden = !marcado || marcado.value !== valor;
+    });
+    form.addEventListener('change', (e) => { if (['cobranca', 'liberacao'].includes(e.target.name)) atualizar(); });
+    atualizar();
+  });
+
   // Máscaras
   const mascaras = {
     cpf: (d) => d.slice(0, 11).replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'),
