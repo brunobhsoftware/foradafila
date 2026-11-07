@@ -103,6 +103,10 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
   (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores
   é responsabilidade do produtor, sob as leis de defesa do consumidor. Termos gerais (0.1) não foram alterados.
+- **Política de cancelamento pré-preenchida:** evento novo já vem com o modelo `App\\Support\\PoliticaCancelamento::modelo()`
+  (CDC art. 49 — arrependimento de 7 dias; devolução integral se o organizador cancelar; alteração de data/local;
+  contatos da organização), com razão social, CNPJ/CPF, e-mail e WhatsApp. Botão "Usar texto padrão" na edição.
+  Modelo sugerido, **não validado juridicamente** — revisar com advogado.
 - **Cadastro de evento:** ao lado do formato (presencial/híbrido) há o botão "Usar endereço da organização", que
   preenche nome do local e endereço com os dados de Organização (pergunta antes de substituir; desativado se a
   organização não tiver endereço). Só no navegador: o endereço continua editável e é gravado no `local` do evento.
@@ -121,7 +125,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (24) e `fluxo-evento-regras.js` (18, simula antes/depois do V005), `fluxo-endereco.js` (10) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (24) e `fluxo-evento-regras.js` (18, simula antes/depois do V005), `fluxo-endereco.js` (10), `fluxo-politica.js` (9) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.
@@ -191,7 +195,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - [ ] Validação jurídica de qualquer menção a responsabilidade civil e criminal do organizador (não publicada)
 - [ ] Confirmar se o comprador pode cancelar sozinho a inscrição gratuita (ligado no piloto)
 - [ ] Token de integração (API) — campo hoje bloqueado
-- [ ] Validação jurídica do texto da declaração de cancelamento
+- [ ] Validação jurídica do texto da declaração de cancelamento e do modelo de política de cancelamento
 - [ ] Trocar as senhas das caixas fique@ e noreply@ (foram enviadas no chat) e usar senhas diferentes entre elas
 - [ ] Confirmação de e-mail no cadastro e acesso por link para o comprador (o envio já existe)
 - [ ] Lembrete do evento (`lembrete_evento`) depende do cron do agendador

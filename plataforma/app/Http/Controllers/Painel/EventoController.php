@@ -9,6 +9,7 @@ use App\Models\EventoCategoria;
 use App\Models\Local;
 use App\Support\Auditoria;
 use App\Support\ImagemEvento;
+use App\Support\PoliticaCancelamento;
 use App\Support\RegraDoBanco;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +42,8 @@ class EventoController extends Controller
             'formato' => 'presencial', 'classificacao' => 'livre', 'visibilidade' => 'publico',
             'max_ingressos_pedido' => 10, 'exige_cpf_participante' => true, 'nominal' => true,
             'permite_transferencia' => true, 'transferencia_ate_h' => 24, 'permite_reentrada' => false,
+            // Já vem com o modelo sugerido, com os dados da organização (editável).
+            'politica_cancelamento' => PoliticaCancelamento::modelo(app(\App\Support\Tenant::class)->organizador()),
         ])));
     }
 
@@ -179,6 +182,7 @@ class EventoController extends Controller
             'evento' => $evento,
             'categorias' => EventoCategoria::where('ativo', 1)->orderBy('nome')->pluck('nome', 'id'),
             'contas' => ContaPagamento::whereIn('status', ['ativa', 'homologada', 'em_homologacao', 'conectada'])->pluck('apelido', 'id'),
+            'modeloPolitica' => PoliticaCancelamento::modelo(app(\App\Support\Tenant::class)->organizador()),
         ];
     }
 

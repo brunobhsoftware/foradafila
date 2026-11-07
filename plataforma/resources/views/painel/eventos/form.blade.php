@@ -107,7 +107,12 @@
                     @endforeach
                 </div>
             </div>
-            <x-campo nome="politica_cancelamento" rotulo="Política de cancelamento e reembolso" tipo="textarea" :valor="$evento->politica_cancelamento" rows="3" ajuda="Aparece na página do evento. O direito de arrependimento (7 dias, CDC) vale sempre." />
+            <div class="col-12" style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:-8px">
+                <span class="campo" style="margin:0"><label for="c_politica_cancelamento" style="margin:0">Política de cancelamento e reembolso</label></span>
+                <button type="button" class="botao botao--contorno botao--pequeno" data-modelo-politica="{{ $modeloPolitica }}">Usar texto padrão</button>
+            </div>
+            <x-campo nome="politica_cancelamento" tipo="textarea" :valor="$evento->politica_cancelamento" rows="12"
+                ajuda="Modelo sugerido com base no Código de Defesa do Consumidor e nos dados da sua organização. Revise e ajuste antes de publicar: não substitui orientação jurídica. Aparece na página do evento." />
             <div class="col-12 alerta alerta--info" style="margin:0">
                 <div>
                     <b>Política de cancelamento de eventos</b>
@@ -144,6 +149,16 @@
         const online = document.getElementById('bloco-online');
         const atualizarOnline = () => { const v = document.querySelector('[name="formato"]:checked')?.value; online.hidden = v === 'presencial'; };
         radios.forEach(r => r.addEventListener('change', atualizarOnline)); atualizarOnline();
+
+        // "Usar texto padrão": modelo da política de cancelamento com os dados da organização.
+        const botaoPolitica = document.querySelector('[data-modelo-politica]');
+        botaoPolitica?.addEventListener('click', () => {
+            const campo = document.querySelector('[name="politica_cancelamento"]');
+            if (campo.value.trim() !== '' && campo.value.trim() !== botaoPolitica.dataset.modeloPolitica.trim()
+                && !confirm('Substituir o texto atual da política de cancelamento pelo texto padrão?')) return;
+            campo.value = botaoPolitica.dataset.modeloPolitica;
+            campo.focus();
+        });
 
         // "Usar endereço da organização": copia o endereço cadastrado em Organização para o local do evento.
         const botaoEndereco = document.querySelector('[data-endereco-org]');
