@@ -94,6 +94,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/mercadopago', [\App\Http\Controllers\Admin\AdminController::class, 'mercadoPago'])->name('mercadopago');
     Route::put('/mercadopago', [\App\Http\Controllers\Admin\AdminController::class, 'salvarMercadoPago'])->name('mercadopago.salvar')
         ->middleware('throttle:20,10,admin-mp');
+    Route::post('/mercadopago/verificar', [\App\Http\Controllers\Admin\AdminController::class, 'verificarTokens'])->name('mercadopago.verificar')
+        ->middleware('throttle:20,10,admin-mp-verificar');
     Route::post('/mercadopago/teste', [\App\Http\Controllers\Admin\AdminController::class, 'testarPagamento'])->name('mercadopago.teste')
         ->middleware('throttle:10,10,admin-mp-teste');
 });

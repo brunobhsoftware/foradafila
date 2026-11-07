@@ -15,6 +15,10 @@ let clientIdUsado = null; let segredoUsado = null; let preferencia = null; let a
 const falso = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
   if (u.pathname === '/authorization') { clientIdUsado = u.searchParams.get('client_id'); res.writeHead(302, { Location: u.searchParams.get('redirect_uri') + '?error=cancelado&state=' + u.searchParams.get('state') }); return res.end(); }
+  if (u.pathname === '/users/me') {
+    const a = req.headers.authorization; res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify(a === 'Bearer APP_USR-teste-123' ? { id: 2001, nickname: 'TESTUSER123', email: 'test_user_1@testuser.com', tags: ['test_user'] } : { id: 1001, nickname: 'BHSOFTWARE', email: 'bh@bh.test', tags: ['normal'] }));
+  }
   if (u.pathname === '/v1/payments/123456') {
     res.writeHead(['Bearer APP-TOKEN-BH', 'Bearer APP_USR-teste-123'].includes(req.headers.authorization) ? 200 : 401, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ id: 123456, status: 'approved', status_detail: 'accredited', transaction_amount: 5, payment_method_id: 'pix', payment_type_id: 'bank_transfer' }));
@@ -106,6 +110,12 @@ const falso = http.createServer((req, res) => {
   const txt = await anon.content();
   ok(r.status() === 200 && txt.includes('555') && txt.includes('666') && !txt.includes('conferido na API') && txt.includes('anote os IDs'), 'retorno sem login mostra os IDs (sem consultar a API)');
   ok((await anon.goto(BASE + '/admin/mercadopago')).status() !== 200 || anon.url().endsWith('/entrar'), 'o resto da Administração continua fechado');
+
+  // verificar de quem são os tokens
+  await P.goto(BASE + '/admin/mercadopago');
+  await nav(P, P.click('button:has-text("Verificar de quem são os tokens")'));
+  const vt = await P.content();
+  ok(vt.includes('BHSOFTWARE') && vt.includes('Conta real') && vt.includes('TESTUSER123') && vt.includes('Conta de teste') && !vt.includes('mesma conta'), 'mostra de quem é cada token (real e de teste)');
 
   // Produção usa o token da aplicação (client_credentials)
   await P.goto(BASE + '/admin/mercadopago');
