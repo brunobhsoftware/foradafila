@@ -50,8 +50,11 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - Convenções: InnoDB, utf8mb4, datas em UTC, dinheiro `DECIMAL(12,2)`, `id BIGINT` interno + `uuid` público,
   multi-tenant por `organizador_id` em toda tabela de negócio, exclusão lógica para dados financeiros.
 - Triggers: `trg_conta_bu`, `trg_evento_bi`, `trg_evento_bu`, `trg_lote_bu`.
-- **V003 e V004 ainda não importados em produção.** Sem o V003 o código corrige o texto ao renderizar; sem o V004
-  (`App\\Support\\Esquema::temV004()`) as telas escondem os campos novos e mostram um aviso.
+- **V003 e V004 importados em produção** em 07/11/2026 (conferido: "V004 ok" e "preferencias ok").
+  O código continua tolerando banco sem o V004 (`App\\Support\\Esquema::temV004()`).
+- **phpMyAdmin da Hostinger:** nunca misturar consultas a `information_schema` com comandos no mesmo envio — a
+  sessão passa a usar esse banco e tudo dá `#1044 acesso negado`. Se acontecer, reabrir o phpMyAdmin e começar o
+  script com `USE u839930205_foradafila;` e nomes qualificados (`u839930205_foradafila.tabela`).
 
 ## Plataforma (Laravel)
 
@@ -165,7 +168,6 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - [ ] Canal de suporte da plataforma (e-mail/WhatsApp) — o FAQ hoje direciona ao organizador
 - [ ] Validação jurídica de qualquer menção a responsabilidade civil e criminal do organizador (não publicada)
 - [ ] Confirmar se o comprador pode cancelar sozinho a inscrição gratuita (ligado no piloto)
-- [ ] Importar `banco/V003` e `banco/V004` em produção
 - [ ] Token de integração (API) — campo hoje bloqueado
 - [ ] Trocar as senhas das caixas fique@ e noreply@ (foram enviadas no chat) e usar senhas diferentes entre elas
 - [ ] Confirmação de e-mail no cadastro e acesso por link para o comprador (o envio já existe)
