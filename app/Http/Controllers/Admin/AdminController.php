@@ -43,9 +43,10 @@ class AdminController extends Controller
                 'external_reference' => $referencia,
                 'back_urls' => array_fill_keys(['success', 'failure', 'pending'], route('admin.mercadopago.teste.retorno')),
                 'auto_return' => 'approved',
-                'notification_url' => url(config('pagamentos.mercadopago.webhook')),
                 'statement_descriptor' => 'FORADAFILA',
-            ]);
+            ] + ($teste ? [] : ['notification_url' => url(config('pagamentos.mercadopago.webhook'))]));
+            // Teste: sem notification_url, para o Mercado Pago usar (e registrar) o webhook do modo teste do painel;
+            // a notification_url da preferência teria prioridade sobre ele.
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Cache::forget('mp_token_aplicacao_'.md5((string) MercadoPago::credencial('client_id')));
 
