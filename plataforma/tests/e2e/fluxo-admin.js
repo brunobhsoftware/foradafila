@@ -88,7 +88,8 @@ const falso = http.createServer((req, res) => {
 
   // pagamento de teste: Teste (padrão) exige o Access Token de teste
   await P.goto(BASE + '/admin/mercadopago');
-  ok(await P.inputValue('[name=valor]') === '5.00' && await P.isChecked('input[name=ambiente][value=teste]'), 'pagamento de teste vem com R$ 5,00 e ambiente Teste');
+  ok(await P.inputValue('#adm-valor-teste') === '5.00' && await P.locator('#ambiente-teste').count() === 1 && await P.locator('#ambiente-producao input[name=access_token]').count() === 1
+    && await P.locator('#ambiente-teste input[name=teste_access_token]').count() === 1, 'dois blocos (teste e produção), cada um com seus 4 campos e R$ 5,00');
   await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
   ok((await P.content()).includes('Cadastre primeiro as credenciais de teste'), 'sem credenciais de teste, avisa');
   await P.fill('[name=teste_client_id]', 'teste-id'); await P.fill('[name=teste_client_secret]', 'teste-segredo');
@@ -119,16 +120,16 @@ const falso = http.createServer((req, res) => {
   ok(r.status() === 200 && txt.includes('555') && txt.includes('666') && !txt.includes('conferido na API') && txt.includes('anote os IDs'), 'retorno sem login mostra os IDs (sem consultar a API)');
   ok((await anon.goto(BASE + '/admin/mercadopago')).status() !== 200 || anon.url().endsWith('/entrar'), 'o resto da Administração continua fechado');
 
-  // verificar de quem são os tokens
+  // verificar de quem é o token, em cada ambiente
   await P.goto(BASE + '/admin/mercadopago');
-  await nav(P, P.click('button:has-text("Verificar de quem são os tokens")'));
-  const vt = await P.content();
-  ok(vt.includes('BHSOFTWARE') && vt.includes('Conta real') && vt.includes('TESTUSER123') && vt.includes('Conta de teste') && !vt.includes('mesma conta'), 'mostra de quem é cada token (real e de teste)');
+  await nav(P, P.click('#ambiente-teste button:has-text("Verificar de quem é o token")'));
+  ok((await P.locator('#ambiente-teste .verificacao').innerText()).includes('TESTUSER123') && (await P.locator('#ambiente-teste .verificacao').innerText()).includes('Conta de teste'), 'teste: token de conta de teste');
+  await nav(P, P.click('#ambiente-producao button:has-text("Verificar de quem é o token")'));
+  ok((await P.locator('#ambiente-producao .verificacao').innerText()).includes('BHSOFTWARE') && (await P.locator('#ambiente-producao .verificacao').innerText()).includes('Conta real'), 'produção: token de conta real');
 
   // Produção usa o token da aplicação (client_credentials)
   await P.goto(BASE + '/admin/mercadopago');
-  await P.check('input[name=ambiente][value=producao]', { force: true });
-  await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
+  await nav(P, P.click('button:has-text("Pagar de verdade no Mercado Pago")'));
   await P.goto(await P.inputValue('#link-teste'));
   ret = await P.content();
   ok(autorizacaoPref === 'Bearer APP-TOKEN-BH' && preferencia.notification_url.endsWith('/webhooks/mercadopago') && ret.includes('Produção') && ret.includes('Aprovado'), 'Produção: usa o token da aplicação e manda o webhook');
@@ -145,6 +146,14 @@ const falso = http.createServer((req, res) => {
     'aviso aceito com a assinatura de produção ou a de teste; outra é ignorada');
   await P.reload();
   ok((await P.content()).includes('Válida (teste)'), 'lista marca o aviso assinado com a assinatura de teste');
+
+  // Access Token de produção cadastrado passa a ser usado no lugar do client_credentials
+  await P.goto(BASE + '/admin/mercadopago');
+  await P.fill('#ambiente-producao [name=access_token]', 'APP_USR-producao-999');
+  await nav(P, P.click('button:has-text("Salvar chaves de produção")'));
+  ok(sql("SELECT valor NOT LIKE '%producao-999%' FROM parametro_sistema WHERE chave='mp_access_token'") === '1', 'Access Token de produção gravado criptografado');
+  await nav(P, P.click('button:has-text("Pagar de verdade no Mercado Pago")'));
+  ok(autorizacaoPref === 'Bearer APP_USR-producao-999', 'Produção usa o Access Token de produção cadastrado');
 
   ok(erros.length === 0, 'sem erros de JavaScript ' + erros.join(' | '));
   sql("DELETE FROM parametro_sistema WHERE chave LIKE 'mp\\_%'");
