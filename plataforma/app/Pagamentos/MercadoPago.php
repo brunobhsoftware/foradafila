@@ -19,6 +19,7 @@ class MercadoPago
         'webhook_secret' => ['parametro' => 'mp_webhook_secret', 'secreto' => true, 'env' => 'MP_WEBHOOK_SECRET'],
         // Credencial de TESTE da aplicação (Credenciais > Teste > Access Token): usada só no pagamento de teste.
         'teste_access_token' => ['parametro' => 'mp_teste_access_token', 'secreto' => true, 'env' => 'MP_TESTE_ACCESS_TOKEN'],
+        'teste_webhook_secret' => ['parametro' => 'mp_teste_webhook_secret', 'secreto' => true, 'env' => 'MP_TESTE_WEBHOOK_SECRET'],
     ];
 
     private static array $cache = [];
@@ -184,8 +185,25 @@ class MercadoPago
      */
     public static function assinaturaValida(?string $assinatura, ?string $requestId, ?string $dataId): bool
     {
-        $segredo = self::credencial('webhook_secret');
-        if (! $segredo || ! $assinatura) {
+        return self::origemAssinatura($assinatura, $requestId, $dataId) !== null;
+    }
+
+    /** "producao" ou "teste" conforme a assinatura secreta que confere; null se nenhuma confere. */
+    public static function origemAssinatura(?string $assinatura, ?string $requestId, ?string $dataId): ?string
+    {
+        foreach (['producao' => 'webhook_secret', 'teste' => 'teste_webhook_secret'] as $origem => $chave) {
+            $segredo = self::credencial($chave);
+            if ($segredo && self::confereAssinatura($segredo, $assinatura, $requestId, $dataId)) {
+                return $origem;
+            }
+        }
+
+        return null;
+    }
+
+    private static function confereAssinatura(string $segredo, ?string $assinatura, ?string $requestId, ?string $dataId): bool
+    {
+        if (! $assinatura) {
             return false;
         }
         $partes = [];

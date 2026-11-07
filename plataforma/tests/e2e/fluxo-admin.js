@@ -4,6 +4,7 @@
 //   BASE=http://127.0.0.1:8001 node tests/e2e/fluxo-admin.js
 const { chromium } = require('playwright');
 const http = require('http');
+const crypto = require('crypto');
 const { execSync } = require('child_process');
 const BASE = process.env.BASE || 'http://127.0.0.1:8001';
 const sql = (q) => execSync(`mysql --default-character-set=utf8mb4 -uroot foradafila -N -e "${q.replace(/"/g, '\\"')}"`).toString().trim();
@@ -103,6 +104,19 @@ const falso = http.createServer((req, res) => {
   await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
   ret = await P.content();
   ok(autorizacaoPref === 'Bearer APP-TOKEN-BH' && ret.includes('Produção') && ret.includes('Aprovado'), 'Produção: usa o token da aplicação');
+
+  // assinatura secreta de teste dos webhooks (mesma URL)
+  await P.goto(BASE + '/admin/mercadopago');
+  await P.fill('[name=teste_webhook_secret]', 'wh-segredo-de-teste');
+  await nav(P, P.click('button:has-text("Salvar chaves")'));
+  const assinar = (segredo, id, rid) => { const ts = String(Date.now()); return `ts=${ts},v1=${crypto.createHmac('sha256', segredo).update(`id:${id};request-id:${rid};ts:${ts};`).digest('hex')}`; };
+  for (const [idEv, segredo] of [['ev-teste', 'wh-segredo-de-teste'], ['ev-prod', 'assinatura-wh-9876'], ['ev-falso', 'outro']]) {
+    await P.request.post(BASE + '/webhooks/mercadopago?data.id=77&type=payment', { data: { id: idEv, type: 'payment', data: { id: '77' } }, headers: { 'x-request-id': 'r-' + idEv, 'x-signature': assinar(segredo, '77', 'r-' + idEv) } });
+  }
+  ok(sql("SELECT GROUP_CONCAT(CONCAT(id_evento_externo, ':', assinatura_valida) ORDER BY id_evento_externo) FROM webhook_evento WHERE id_evento_externo LIKE 'ev-%'") === 'ev-falso:0,ev-prod:1,ev-teste:1',
+    'aviso aceito com a assinatura de produção ou a de teste; outra é ignorada');
+  await P.reload();
+  ok((await P.content()).includes('Válida (teste)'), 'lista marca o aviso assinado com a assinatura de teste');
 
   ok(erros.length === 0, 'sem erros de JavaScript ' + erros.join(' | '));
   sql("DELETE FROM parametro_sistema WHERE chave LIKE 'mp\\_%'");

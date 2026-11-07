@@ -17,7 +17,8 @@ class WebhookController extends Controller
         $corpo = $request->json()->all() ?: $request->all();
         $dataId = (string) ($request->query('data_id') ?? data_get($corpo, 'data.id') ?? $request->query('id') ?? '');
         $requestId = $request->header('x-request-id');
-        $valida = MercadoPago::assinaturaValida($request->header('x-signature'), $requestId, $dataId);
+        $origem = MercadoPago::origemAssinatura($request->header('x-signature'), $requestId, $dataId);
+        $valida = $origem !== null;
         $idExterno = (string) (data_get($corpo, 'id') ?: ($requestId ?: sha1($request->getContent())));
 
         $cabecalhos = collect($request->headers->all())->only(['x-signature', 'x-request-id', 'user-agent', 'content-type'])
@@ -34,7 +35,7 @@ class WebhookController extends Controller
             'corpo' => json_encode($corpo ?: new \stdClass),
             'assinatura_valida' => $valida ? 1 : 0,
             'status' => $valida ? 'recebido' : 'ignorado',
-            'erro' => $valida ? null : 'Assinatura ausente ou inválida',
+            'erro' => $valida ? ($origem === 'teste' ? 'Assinatura de teste' : null) : 'Assinatura ausente ou inválida',
         ]);
 
         // 200 mesmo com assinatura inválida (só é registrado e ignorado), para não revelar a conferência.
