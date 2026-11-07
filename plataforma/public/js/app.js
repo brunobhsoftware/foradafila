@@ -162,6 +162,25 @@
     sel.addEventListener('change', atualizar);
   });
 
+  // Mensagens: inserir variável e pré-visualizar
+  $$('[data-modelo-form]').forEach((form) => {
+    const texto = form.querySelector('textarea[name=corpo_texto]');
+    form.querySelectorAll('[data-inserir]').forEach((b) => b.addEventListener('click', () => {
+      const ini = texto.selectionStart ?? texto.value.length;
+      texto.setRangeText(b.dataset.inserir, ini, texto.selectionEnd ?? ini, 'end'); texto.focus();
+    }));
+    form.querySelector('[data-ver-previa]').addEventListener('click', async () => {
+      const token = document.querySelector('meta[name=csrf-token]')?.content;
+      const resp = await fetch(form.dataset.previa, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': token },
+        body: JSON.stringify({ assunto: form.querySelector('[name=assunto]').value, corpo_texto: texto.value }) });
+      if (!resp.ok) return;
+      const r = await resp.json();
+      form.querySelector('[data-previa-assunto]').textContent = r.assunto;
+      form.querySelector('[data-previa-texto]').textContent = r.texto;
+      form.querySelector('[data-previa-caixa]').hidden = false;
+    });
+  });
+
   // Máscaras
   const mascaras = {
     cpf: (d) => d.slice(0, 11).replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'),

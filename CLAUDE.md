@@ -76,7 +76,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - Datas: banco em UTC; tela em `America/Sao_Paulo` (helpers `data_local`, `para_input_data`, `utc_de_local`).
 - Telas prontas (produtor): cadastro, login, convite da equipe, troca de organização, painel, **Meus eventos**
   (lista, novo, editar, publicar/pausar/encerrar/cancelar, link da página pública), tipos de ingresso e lotes,
-  equipe, níveis de acesso, dados da organização. Os demais módulos do menu lateral mostram "em breve".
+  equipe, níveis de acesso, dados da organização, Pedidos, Participantes, Check-in, Cupons, Convidados, Mensagens e Financeiro.
 - Site público (`layouts/publico` + `site/_topo`, `site/_rodape`, CSS `public/assets/css/publico.css`):
   início, `/solucao`, `/precos`, `/ajuda`, `/eventos` (vitrine), `/e/{slug}` (evento), `/p/{slug}` (organizador),
   `/termos/{tipo}`. Menu superior muda conforme quem está logado (produtor e/ou comprador).
@@ -188,6 +188,12 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   (qualquer lote do evento, baixa estoque, numera) e manda o ingresso por e-mail; "Remover" cancela os ingressos já emitidos.
   O comprador do convidado é criado **sem senha** e define a senha por "Esqueci a senha" (`SenhaController::podeRedefinir` aceita
   comprador sem senha). Ainda não: link de confirmação do convite (RSVP) e links de acesso privado.
+- **Divulgação → Mensagens** (`/painel/mensagens`, `MensagensController`): e-mails automáticos editáveis (`modelo_mensagem`:
+  confirmação da compra — já usada — e lembrete do evento — depende do cron), para a organização ou só para um evento (o evento
+  herda da organização, que herda do padrão), botões de variáveis, pré-visualização com dados de exemplo, "restaurar padrão"
+  (desativa o texto próprio: `ativo = 0`, porque `mensagem_envio.modelo_id` aponta para ele); comunicado avulso para quem tem
+  ingresso válido no evento (compradores ou participantes com e-mail; até 300 por envio, throttle `comunicado` 5/hora); histórico
+  dos últimos 40 envios. Os módulos do menu do produtor não mostram mais "em breve" (só a rota genérica continua existindo).
 - **Política de cancelamento:** ao criar/editar evento o produtor marca a declaração
   `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
   (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores
@@ -222,7 +228,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-convidados.js` (19), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-convidados.js` (19), `fluxo-mensagens.js` (13), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.

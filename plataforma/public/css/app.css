@@ -408,3 +408,6 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 @media (max-width: 900px) { .checkin { grid-template-columns: 1fr; } }
 .checkin > section:last-child { grid-column: 1 / -1; }
 .opcoes-lotes { display: grid; gap: 6px; }
+.chip-var { margin: 4px 4px 0 0; padding: 2px 8px; border: 1px solid var(--borda-forte); border-radius: 99px; background: #fff; font: .78rem ui-monospace, monospace; cursor: pointer; color: var(--tinta); }
+.chip-var:hover { border-color: var(--laranja); }
+.previa-msg { border: 1px dashed var(--borda-forte); border-radius: var(--raio-p); padding: 14px; background: var(--fundo); white-space: pre-wrap; }

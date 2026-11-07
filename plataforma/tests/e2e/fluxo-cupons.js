@@ -73,8 +73,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   ok(t.includes('Cupom VALE20 criado') && t.includes('R$ 20,00') && t.includes('Todos os eventos') && t.includes('Agendado'), 'cupom de valor fixo, todos os eventos, agendado');
 
   // filtro por evento: Festa B mostra o de todos os eventos, não o da Festa A
-  await P.selectOption('select[name=evento]:not([data-cupom-evento])', { label: 'Festa B' });
-  await P.waitForLoadState('load');
+  await nav(P, P.selectOption('select[name=evento]:not([data-cupom-evento])', { label: 'Festa B' }));
   t = await P.locator('table.tabela tbody').innerText();
   ok(t.includes('VALE20') && !t.includes('AMIGOS10'), 'filtro por evento (inclui cupons de todos os eventos)');
   await P.goto(BASE + '/painel/cupons');

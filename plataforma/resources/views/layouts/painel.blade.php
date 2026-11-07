@@ -15,7 +15,7 @@
         'Divulgação' => [
             ['rota' => 'cupons.index', 'ativo' => 'cupons.*', 'icone' => 'cupom', 'texto' => 'Cupons', 'pode' => ['cupom.gerenciar']],
             ['rota' => 'convidados.index', 'ativo' => 'convidados.*', 'icone' => 'convidados', 'texto' => 'Convidados', 'pode' => ['convidado.gerenciar']],
-            ['modulo' => 'mensagens', 'icone' => 'mensagem', 'texto' => 'Mensagens', 'pode' => ['mensagem.gerenciar']],
+            ['rota' => 'mensagens.index', 'ativo' => 'mensagens.*', 'icone' => 'mensagem', 'texto' => 'Mensagens', 'pode' => ['mensagem.gerenciar']],
         ],
         'Gestão' => [
             ['rota' => 'financeiro', 'ativo' => 'financeiro*', 'icone' => 'financeiro', 'texto' => 'Financeiro', 'pode' => ['financeiro.ver']],
