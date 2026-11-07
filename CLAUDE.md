@@ -40,7 +40,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 
 - MariaDB 11.8.9 na hospedagem web Hostinger. Banco `u839930205_foradafila`, usuário `u839930205_bhsoftware`.
 - **V001 já importado em produção em 07/11/2026** e conferido (54 tabelas, 3 views, 4 triggers, seeds).
-- **V002 (termos)**: precisa ser importado no phpMyAdmin — sem ele o cadastro de produtor não abre.
+- **V002 (termos) importado em produção** e conferido em 07/11/2026 (4 termos 0.1 vigentes).
 - Senha do usuário do banco trocada em 07/11/2026 por uma gerada (só existe no `.env.foradafila` do servidor).
 - A aplicação conecta em `127.0.0.1:3306`. O host `*.hstgr.io` é só para acesso remoto liberado por IP.
 - Senha nunca no código nem no Git: fica no `.env` do servidor, fora do `public_html`.
@@ -61,9 +61,24 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - Recusas dos triggers (SQLSTATE 45000) viram erro de formulário via `App\Support\RegraDoBanco::executar()`.
 - Toda ação relevante grava em `auditoria` via `App\Support\Auditoria::registrar()`.
 - Datas: banco em UTC; tela em `America/Sao_Paulo` (helpers `data_local`, `para_input_data`, `utc_de_local`).
-- Telas prontas: site (`/`), cadastro do produtor, login, convite da equipe, troca de organização, painel
-  (dashboard), eventos (lista, criar, editar, publicar/pausar/encerrar/cancelar), tipos de ingresso e lotes,
-  equipe, níveis de acesso (perfis próprios), dados da organização. Os demais módulos do menu mostram "em breve".
+- Telas prontas (produtor): cadastro, login, convite da equipe, troca de organização, painel, **Meus eventos**
+  (lista, novo, editar, publicar/pausar/encerrar/cancelar, link da página pública), tipos de ingresso e lotes,
+  equipe, níveis de acesso, dados da organização. Os demais módulos do menu lateral mostram "em breve".
+- Site público (`layouts/publico` + `site/_topo`, `site/_rodape`, CSS `public/assets/css/publico.css`):
+  início, `/solucao`, `/precos`, `/ajuda`, `/eventos` (vitrine), `/e/{slug}` (evento), `/p/{slug}` (organizador),
+  `/termos/{tipo}`. Menu superior muda conforme quem está logado (produtor e/ou comprador).
+- Comprador: guard **`comprador`** (tabela `comprador`), separado do produtor. Rotas em `/minha-conta`:
+  entrar, criar conta, Meus ingressos, segunda via (`/ingressos/{uuid}`, QR no navegador com
+  `public/js/vendor/qrcode-generator.js`, MIT) e cancelamento de inscrição gratuita.
+- **Inscrição gratuita real** (`InscricaoController`): só lotes com preço 0. Baixa de estoque por UPDATE condicional,
+  numeração por `evento.ultimo_numero_ingresso`, `codigo_qr` 256 bits + HMAC (`Ingresso::conteudoQr()`),
+  participante por ingresso, aceite de `compra_comprador` e `privacidade`, chave de idempotência.
+  Lotes pagos aparecem com preço e "venda online em breve" — sem botão de compra.
+- Sem cron ainda: lote `agendado` abre quando chega `venda_inicio`; lote com `lote_anterior_id` só abre quando o
+  anterior esgota, encerra ou passa do fim (`EventoPublicoController::loteAVenda`).
+- `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22) e `tests/e2e/fluxo-comprador.js` (30), com Playwright,
+  contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.
 
@@ -100,10 +115,19 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 
 ## Pendências
 
-- [ ] Importar `banco/V002__termos_iniciais.sql` em produção
 - [ ] Configurar o cron do agendador no hPanel (expirar reservas, virar lotes) quando houver vendas
 - [ ] Área administrativa da plataforma (equipe BH Software) — futuro próximo
-- [ ] Decidir o modo de cobrança (split ou fatura) e os valores: percentual, fixo e mínimo por ingresso
+- [ ] **Preços:** tabela completa das faixas (1% no primeiro evento, progressivo a cada R$ 1.000): percentuais de
+  cada faixa, base de cálculo, o que é "primeiro evento", demais eventos, gratuitos/cortesias. O schema atual (`plano`:
+  percentual + fixo + mínimo por ingresso) **não representa faixas progressivas** — vai exigir V003. O plano
+  "Lançamento" no banco está com 0%.
+- [ ] Decidir o modo de cobrança (split ou fatura)
+- [ ] Dados oficiais da BH Software (razão social, CNPJ) para Solução/rodapé/termos — hoje só "plataforma de tecnologia da BH Software"
+- [ ] Canal de suporte da plataforma (e-mail/WhatsApp) — o FAQ hoje direciona ao organizador
+- [ ] Validação jurídica de qualquer menção a responsabilidade civil e criminal do organizador (não publicada)
+- [ ] Confirmar se o comprador pode cancelar sozinho a inscrição gratuita (ligado no piloto)
+- [ ] E-mail transacional: confirmação de e-mail, recuperação de senha e acesso por link (comprador e produtor)
+- [ ] Cancelamento/reembolso de pedido pago: tabela `reembolso` exige `valor > 0`; entra com a integração de pagamento
 - [ ] Confirmar com o Mercado Pago se dá para reter a comissão na venda (split / marketplace)
 - [ ] Redigir com advogado os 4 termos (uso, responsabilidade do organizador, compra, privacidade)
 - [ ] Validar a política de cancelamento, o direito de arrependimento e a cota de meia-entrada
@@ -112,6 +136,6 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 
 ## Próximos passos
 
-1. Financeiro: conectar e homologar a conta do Mercado Pago (OAuth), para liberar ingressos pagos.
-2. Página pública do evento e checkout (vitrine `foradafila.com.br/e/<slug>`).
-3. Participantes, pedidos e check-in (PWA).
+1. Financeiro: conectar e homologar a conta do Mercado Pago (OAuth), checkout pago e pedido de reembolso.
+2. Check-in (PWA) lendo o QR `FF1.<codigo>.<hmac>` e participantes no painel.
+3. E-mail transacional (confirmação de pedido, recuperação de senha).

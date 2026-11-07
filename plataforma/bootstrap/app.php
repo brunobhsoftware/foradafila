@@ -21,8 +21,9 @@ $app = Application::configure(basePath: dirname(__DIR__))
             before: \Illuminate\Routing\Middleware\SubstituteBindings::class,
             prepend: IdentificarOrganizador::class,
         );
-        $middleware->redirectGuestsTo(fn () => route('entrar'));
-        $middleware->redirectUsersTo(fn () => route('painel'));
+        // Quem não está logado vai para o login da área que tentou abrir.
+        $middleware->redirectGuestsTo(fn ($request) => $request->is('minha-conta*') ? route('comprador.entrar') : route('entrar'));
+        $middleware->redirectUsersTo(fn ($request) => $request->is('minha-conta*') ? route('comprador.ingressos') : route('painel'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

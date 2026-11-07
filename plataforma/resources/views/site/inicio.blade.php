@@ -1,54 +1,19 @@
-<!doctype html>
-<html lang="pt-BR">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Fora da Fila — Plataforma de ingressos para eventos</title>
-  <meta name="description" content="Venda ingressos para o seu evento sem complicação. Plataforma completa, intuitiva e segura para eventos de todos os tamanhos. Sem taxa para o comprador.">
-  <meta name="theme-color" content="#101828">
-  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/site.css">
-</head>
-<body>
+@extends('layouts.publico')
+@section('sem_alertas', true)
 
-<!-- ============ CABEÇALHO ============ -->
-<header class="topo">
-  <div class="container topo__linha">
-    <a href="{{ route('inicio') }}" class="marca" aria-label="fora da fila — início">
-      <img src="/assets/img/simbolo.svg" alt="" class="marca__simbolo" width="70" height="41">
-      <span class="marca__nome">fora da fila<span class="ponto">.</span></span>
-    </a>
-    <button class="menu-botao" aria-label="Abrir menu" aria-expanded="false" aria-controls="menu">
-      <span></span><span></span><span></span>
-    </button>
-    <nav class="menu" id="menu" aria-label="Principal">
-      <a href="#">Soluções</a>
-      <a href="#">Planos</a>
-      <a href="#">Eventos</a>
-      <a href="#">Ajuda</a>
-      <a href="{{ route('entrar') }}">Entrar</a>
-      <a href="{{ route('cadastro') }}" class="botao botao--amarelo botao--pequeno">Criar evento</a>
-    </nav>
-  </div>
-</header>
-
-<main>
-
+@section('conteudo')
 <!-- ============ HERO ============ -->
 <section class="hero">
   <picture class="hero__foto">
-    <source srcset="/assets/img/hero-show.webp" type="image/webp">
-    <img src="/assets/img/hero-show.jpg" alt="Público com as mãos para o alto em um show com luzes no palco" width="1170" height="570">
+    <source srcset="{{ asset('assets/img/hero-show.webp') }}" type="image/webp">
+    <img src="{{ asset('assets/img/hero-show.jpg') }}" alt="Público com as mãos para o alto em um show com luzes no palco" width="1170" height="570">
   </picture>
   <div class="container hero__conteudo">
     <h1>Venda ingressos para o seu evento sem <span class="sublinhado">complicação</span><span class="ponto">.</span></h1>
     <p>Uma plataforma completa, intuitiva e segura para eventos de todos os tamanhos.</p>
     <div class="hero__acoes">
       <a href="{{ route('cadastro') }}" class="botao botao--amarelo">Criar evento grátis <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-      <a href="#" class="botao botao--contorno">Conhecer a plataforma</a>
+      <a href="{{ route('solucao') }}" class="botao botao--contorno">Conhecer a plataforma</a>
     </div>
   </div>
 </section>
@@ -131,7 +96,7 @@
     <!-- Ilustração do painel (estática, dados de exemplo) -->
     <div class="painel" aria-hidden="true">
       <aside class="painel__lado">
-        <div class="painel__marca"><img src="/assets/img/simbolo-branco.svg" alt="" width="34" height="20"> fora da fila<span class="ponto">.</span></div>
+        <div class="painel__marca"><img src="{{ asset('assets/img/simbolo-branco.svg') }}" alt="" width="34" height="20"> fora da fila<span class="ponto">.</span></div>
         <ul>
           <li class="ativo">Painel</li>
           <li>Eventos</li>
@@ -209,7 +174,7 @@
 <!-- ============ CONCEITO ============ -->
 <section class="conceito">
   <div class="container conceito__linha">
-    <img src="/assets/img/ilustracao-fila.png" alt="Pessoas esperando em fila enquanto uma delas sai da fila e sobe, animada" class="conceito__ilustracao" width="1080" height="414" loading="lazy">
+    <img src="{{ asset('assets/img/ilustracao-fila.png') }}" alt="Pessoas esperando em fila enquanto uma delas sai da fila e sobe, animada" class="conceito__ilustracao" width="1080" height="414" loading="lazy">
     <div class="conceito__texto">
       <h2>Coloque seu evento fora da fila<span class="ponto">.</span></h2>
       <p>Venda ingressos com mais liberdade, praticidade e profissionalismo, e ofereça uma experiência incrível do primeiro clique ao check-in.</p>
@@ -231,49 +196,4 @@
     <a href="{{ route('cadastro') }}" class="botao botao--amarelo">Criar evento grátis <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
   </div>
 </section>
-
-</main>
-
-<!-- ============ RODAPÉ ============ -->
-<footer class="rodape">
-  <div class="container rodape__linha">
-    <a href="{{ route('inicio') }}" class="marca marca--grande" aria-label="fora da fila — início">
-      <img src="/assets/img/simbolo.svg" alt="" class="marca__simbolo" width="70" height="41">
-      <span class="marca__nome">fora da fila<span class="ponto">.</span></span>
-    </a>
-    <nav class="rodape__colunas" aria-label="Rodapé">
-      <div>
-        <h3>Soluções</h3>
-        <a href="#">Casa de eventos</a><a href="#">Produtores</a><a href="#">Eventos corporativos</a><a href="#">Eventos acadêmicos</a>
-      </div>
-      <div>
-        <h3>Plataforma</h3>
-        <a href="#">Planos</a><a href="#">Recursos</a><a href="{{ route('termo', 'privacidade') }}">Privacidade</a><a href="#">Integrações</a>
-      </div>
-      <div>
-        <h3>Ajuda</h3>
-        <a href="#">Central de ajuda</a><a href="#">Fale conosco</a><a href="#">Dúvidas frequentes</a>
-      </div>
-    </nav>
-    <div class="rodape__social">
-      <div class="redes">
-        <a href="#" aria-label="Instagram"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6"/></svg></a>
-        <a href="#" aria-label="YouTube"><svg class="i i--cheio" viewBox="0 0 24 24"><path d="M22 8.2a3 3 0 0 0-2.1-2.1C18 5.6 12 5.6 12 5.6s-6 0-7.9.5A3 3 0 0 0 2 8.2 31 31 0 0 0 1.6 12 31 31 0 0 0 2 15.8a3 3 0 0 0 2.1 2.1c1.9.5 7.9.5 7.9.5s6 0 7.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .4-3.8 31 31 0 0 0-.4-3.8zM10 15V9l5.2 3z"/></svg></a>
-        <a href="#" aria-label="LinkedIn"><svg class="i i--cheio" viewBox="0 0 24 24"><path d="M3.5 9h3.8v12H3.5zM5.4 3a2.2 2.2 0 1 1 0 4.4 2.2 2.2 0 0 1 0-4.4zM9.6 9h3.6v1.7c.5-1 1.8-2 3.7-2 3.9 0 4.6 2.6 4.6 5.9V21h-3.8v-5.7c0-1.4 0-3.1-1.9-3.1s-2.2 1.5-2.2 3V21H9.6z"/></svg></a>
-      </div>
-      <b>foradafila.com.br</b>
-    </div>
-  </div>
-  <div class="container rodape__base">© {{ date('Y') }} fora da fila. Plataforma de ingressos para eventos.</div>
-</footer>
-
-<script>
-  // Menu do celular (única interação da página nesta fase)
-  const botao = document.querySelector('.menu-botao');
-  botao.addEventListener('click', () => {
-    const aberto = document.body.classList.toggle('menu-aberto');
-    botao.setAttribute('aria-expanded', aberto);
-  });
-</script>
-</body>
-</html>
+@endsection

@@ -11,6 +11,10 @@ use App\Http\Controllers\Painel\EventoController;
 use App\Http\Controllers\Painel\LoteController;
 use App\Http\Controllers\Painel\OrganizacaoController;
 use App\Http\Controllers\Painel\PerfilController;
+use App\Http\Controllers\Publico\CompradorAuthController;
+use App\Http\Controllers\Publico\EventoPublicoController;
+use App\Http\Controllers\Publico\InscricaoController;
+use App\Http\Controllers\Publico\MeusIngressosController;
 use App\Http\Controllers\SiteController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +22,32 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [SiteController::class, 'inicio'])->name('inicio');
 Route::get('/termos/{tipo}', [SiteController::class, 'termo'])->name('termo')
     ->whereIn('tipo', ['uso_organizador', 'responsabilidade_organizador', 'compra_comprador', 'privacidade']);
+Route::view('/solucao', 'site.solucao')->name('solucao');
+Route::view('/precos', 'site.precos')->name('precos');
+Route::view('/ajuda', 'site.ajuda')->name('ajuda');
+
+// ---------- Eventos (público) ----------
+Route::get('/eventos', [EventoPublicoController::class, 'vitrine'])->name('vitrine');
+Route::get('/e/{slug}', [EventoPublicoController::class, 'show'])->name('evento.publico');
+Route::get('/p/{slug}', [EventoPublicoController::class, 'organizador'])->name('organizador.publico');
+Route::get('/e/{slug}/inscricao', [InscricaoController::class, 'create'])->name('inscricao.create');
+Route::post('/e/{slug}/inscricao', [InscricaoController::class, 'store'])->name('inscricao.store')->middleware('throttle:15,1');
+
+// ---------- Área do comprador (guard próprio, separado do produtor) ----------
+Route::prefix('minha-conta')->name('comprador.')->group(function () {
+    Route::middleware('guest:comprador')->group(function () {
+        Route::get('/entrar', [CompradorAuthController::class, 'entrar'])->name('entrar');
+        Route::post('/entrar', [CompradorAuthController::class, 'autenticar'])->middleware('throttle:20,1');
+        Route::get('/criar', [CompradorAuthController::class, 'criar'])->name('criar');
+        Route::post('/criar', [CompradorAuthController::class, 'registrar'])->middleware('throttle:10,1');
+    });
+    Route::middleware('auth:comprador')->group(function () {
+        Route::get('/', [MeusIngressosController::class, 'index'])->name('ingressos');
+        Route::get('/ingressos/{uuid}', [MeusIngressosController::class, 'show'])->name('ingresso');
+        Route::post('/pedidos/{uuid}/cancelar', [MeusIngressosController::class, 'cancelar'])->name('cancelar');
+        Route::post('/sair', [CompradorAuthController::class, 'sair'])->name('sair');
+    });
+});
 
 // ---------- Entrada ----------
 Route::middleware('guest')->group(function () {
