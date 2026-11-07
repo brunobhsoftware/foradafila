@@ -15,6 +15,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V001__criacao_foradafila.sql` | Script de criação do banco (revisão 2, 1.462 linhas): 54 tabelas, 3 views, 4 triggers, dados iniciais |
 | `banco/V002__termos_iniciais.sql` | Termos provisórios 0.1 (uso, responsabilidade, compra, privacidade). Idempotente |
 | `banco/V003__ajuste_modelo_confirmacao.sql` | Só dados: tira "em anexo" do modelo padrão de confirmação. Idempotente |
+| `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
 O documento vivo (editável e comentável) continua em
 https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` é uma exportação de 07/11/2026
@@ -49,7 +50,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - Convenções: InnoDB, utf8mb4, datas em UTC, dinheiro `DECIMAL(12,2)`, `id BIGINT` interno + `uuid` público,
   multi-tenant por `organizador_id` em toda tabela de negócio, exclusão lógica para dados financeiros.
 - Triggers: `trg_conta_bu`, `trg_evento_bi`, `trg_evento_bu`, `trg_lote_bu`.
-- **V003 ainda não importado em produção** (até lá o código corrige o texto ao renderizar).
+- **V003 e V004 ainda não importados em produção.** Sem o V003 o código corrige o texto ao renderizar; sem o V004
+  (`App\\Support\\Esquema::temV004()`) as telas escondem os campos novos e mostram um aviso.
 
 ## Plataforma (Laravel)
 
@@ -84,8 +86,17 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   servido por `/midia/eventos/{arquivo}` (`MidiaController`). `evento.imagem_capa_url` guarda `/midia/...?v=<data>`.
   Trocar de formato apaga a versão antiga; "remover" apaga o arquivo. Aparece no painel, na página do evento
   (com `og:image`) e na vitrine. Lógica em `App\Support\ImagemEvento`.
+- **Organização (V004):** representante legal e CPF, banco, agência, conta e favorecido são **obrigatórios** ao salvar
+  (o banco aceita NULL para não quebrar cadastros antigos). Logomarca opcional (JPEG/GIF/PNG até 2 MB, recomendada
+  136x136) em `logomarcas/<nome-da-organizacao>_<uuid>.<ext>` no disco `midia` (`App\\Support\\Logomarca`), exibida no
+  menu do painel, na página do evento e na do organizador. Opção "Mostrar eventos passados" na página pública.
+  **Chave de acesso da API: campo bloqueado** (decisão do Bruno); colunas `api_chave_*` reservadas para o futuro
+  botão "gerar token de integração" (guardar só o hash SHA-256).
+- **Preferências de notificação** (por pessoa da equipe, `organizador_usuario`): `/painel/preferencias` —
+  "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
+  novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18) e `fluxo-organizacao.js` (30, precisa do V004), com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.
@@ -154,7 +165,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - [ ] Canal de suporte da plataforma (e-mail/WhatsApp) — o FAQ hoje direciona ao organizador
 - [ ] Validação jurídica de qualquer menção a responsabilidade civil e criminal do organizador (não publicada)
 - [ ] Confirmar se o comprador pode cancelar sozinho a inscrição gratuita (ligado no piloto)
-- [ ] Importar `banco/V003__ajuste_modelo_confirmacao.sql` em produção
+- [ ] Importar `banco/V003` e `banco/V004` em produção
+- [ ] Token de integração (API) — campo hoje bloqueado
 - [ ] Trocar as senhas das caixas fique@ e noreply@ (foram enviadas no chat) e usar senhas diferentes entre elas
 - [ ] Confirmação de e-mail no cadastro e acesso por link para o comprador (o envio já existe)
 - [ ] Lembrete do evento (`lembrete_evento`) depende do cron do agendador

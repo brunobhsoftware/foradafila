@@ -20,7 +20,32 @@ class Organizador extends Model
         'tipo_pessoa', 'documento', 'razao_social', 'nome_fantasia', 'slug', 'logo_url', 'descricao',
         'site', 'instagram', 'whatsapp', 'email_contato', 'email_financeiro',
         'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'situacao', 'situacao_motivo',
+        // V004
+        'representante_nome', 'representante_cpf', 'banco', 'agencia', 'conta', 'favorecido', 'mostrar_eventos_passados',
     ];
+
+    /** A chave da API nunca é guardada: só o hash (V004). */
+    protected $hidden = ['api_chave_hash'];
+
+    protected function casts(): array
+    {
+        return ['api_chave_gerada_em' => 'datetime', 'mostrar_eventos_passados' => 'boolean'];
+    }
+
+    /** Dados obrigatórios para operar (V004): representante legal e dados bancários. */
+    public function dadosCompletos(): bool
+    {
+        if (! \App\Support\Esquema::temV004()) {
+            return false;
+        }
+        foreach (['representante_nome', 'representante_cpf', 'banco', 'agencia', 'conta', 'favorecido'] as $campo) {
+            if (blank($this->getAttribute($campo))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     public const SITUACOES = [
         'pendente' => 'Pendente',

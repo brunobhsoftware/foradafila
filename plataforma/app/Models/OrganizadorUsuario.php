@@ -19,11 +19,13 @@ class OrganizadorUsuario extends Model
     protected $fillable = [
         'organizador_id', 'usuario_id', 'perfil_id', 'todos_eventos', 'status',
         'convite_token_hash', 'convite_expira_em', 'convidado_por',
+        // V004: preferências de notificação de cada pessoa
+        'notificar_compra', 'receber_novidades_em',
     ];
 
     protected function casts(): array
     {
-        return ['todos_eventos' => 'boolean', 'convite_expira_em' => 'datetime'];
+        return ['todos_eventos' => 'boolean', 'convite_expira_em' => 'datetime', 'notificar_compra' => 'boolean', 'receber_novidades_em' => 'datetime'];
     }
 
     public const STATUS = [

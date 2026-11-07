@@ -34,6 +34,7 @@
             <span>fora da fila<span class="ponto">.</span></span>
         </a>
         <div class="menu-lateral__org">
+            @if ($organizadorAtual->logo_url)<img src="{{ $organizadorAtual->logo_url }}" alt="" class="menu-lateral__logo" width="36" height="36">@endif
             <b title="{{ $organizadorAtual->nomeExibicao() }}">{{ $organizadorAtual->nomeExibicao() }}</b>
             {{ $tenant->vinculo()->perfil->nome }}
             @if ($temOutrasOrganizacoes) · <a href="{{ route('organizacoes') }}">trocar</a>@endif
@@ -59,7 +60,8 @@
         <div class="menu-lateral__rodape">
             <b>{{ auth()->user()->nome }}</b>
             <span>{{ auth()->user()->email }}</span>
-            <a href="{{ route('inicio') }}" style="display:block;margin-top:8px;color:#D0D5DD">Ir para o site</a>
+            <a href="{{ route('preferencias.edit') }}" style="display:block;margin-top:8px;color:#D0D5DD">Minhas preferências</a>
+            <a href="{{ route('inicio') }}" style="display:block;margin-top:4px;color:#D0D5DD">Ir para o site</a>
             <form method="post" action="{{ route('sair') }}" style="margin-top:8px">
                 @csrf
                 <button type="submit">Sair</button>

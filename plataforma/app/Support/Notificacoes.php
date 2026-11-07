@@ -104,4 +104,36 @@ class Notificacoes
         Email::operacao('redefinir_senha', $email, 'Redefinir a senha — Fora da Fila', $html,
             "Para criar uma nova senha, acesse em até 60 minutos: $url", ['ocultar' => $url]);
     }
+
+    /**
+     * noreply@ — aviso de nova compra/inscrição para quem marcou "Notificar-me cada vez que um participante
+     * realizar uma compra" (V004), entre as pessoas ativas da equipe que podem ver o evento.
+     */
+    public static function novaCompraParaEquipe(Pedido $pedido, Comprador $comprador, Evento $evento, Organizador $org, int $quantidade): void
+    {
+        if (! Esquema::temV004()) {
+            return;
+        }
+        $destinos = \App\Models\OrganizadorUsuario::withoutGlobalScope('organizador')->with('usuario')
+            ->where('organizador_id', $org->id)->where('status', 'ativo')->where('notificar_compra', 1)
+            ->where(fn ($q) => $q->where('todos_eventos', 1)
+                ->orWhereExists(fn ($s) => $s->selectRaw('1')->from('organizador_usuario_evento as oue')
+                    ->whereColumn('oue.organizador_usuario_id', 'organizador_usuario.id')->where('oue.evento_id', $evento->id)))
+            ->get();
+
+        $link = route('eventos.show', $evento);
+        $tipo = $pedido->ehGratuito() ? 'inscrição gratuita' : 'compra';
+        foreach ($destinos as $vinculo) {
+            $html = Email::layout('Nova '.$tipo.' em '.$evento->titulo,
+                '<p>Olá, '.self::e($vinculo->usuario->primeiroNome()).'.</p><p>O pedido <b>'.self::e($pedido->codigo).'</b> foi confirmado: <b>'
+                .$quantidade.' '.($quantidade > 1 ? 'ingressos' : 'ingresso').'</b> para <b>'.self::e($evento->titulo).'</b>'
+                .($pedido->ehGratuito() ? '' : ', no valor de '.self::e(moeda($pedido->valor_total))).'.</p>'
+                .'<p>Comprador: '.self::e($comprador->nome).'.</p>'
+                .'<p style="font-size:13px;color:#667085">Você recebe este aviso porque ativou a notificação de compras nas suas preferências. Este é um aviso automático: não responda.</p>',
+                'Ver o evento no painel', $link);
+            Email::aviso('aviso_compra_equipe', $vinculo->usuario->email, "Nova {$tipo}: {$pedido->codigo} — {$evento->titulo}", $html,
+                "Pedido {$pedido->codigo} confirmado: {$quantidade} ingresso(s) para {$evento->titulo}. Ver: $link",
+                ['organizador_id' => $org->id, 'pedido_id' => $pedido->id, 'prioridade' => 3]);
+        }
+    }
 }

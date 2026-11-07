@@ -43,11 +43,20 @@ class EventoPublicoController extends Controller
     public function organizador(string $slug)
     {
         $org = Organizador::where('slug', $slug)->where('situacao', '<>', 'encerrado')->firstOrFail();
-        $eventos = Evento::withoutGlobalScope('organizador')->where('organizador_id', $org->id)
+        $comLocal = ['local' => fn ($q) => $q->withoutGlobalScope('organizador')];
+        $eventos = Evento::withoutGlobalScope('organizador')->with($comLocal)->where('organizador_id', $org->id)
             ->where('status', 'publicado')->where('visibilidade', 'publico')->where('data_fim', '>=', now())
             ->orderBy('data_inicio')->get();
 
-        return view('publico.organizador', compact('org', 'eventos'));
+        // "Mostrar eventos passados" (V004): realizados ou encerrados, do mais recente para o mais antigo.
+        $passados = collect();
+        if (\App\Support\Esquema::temV004() && $org->mostrar_eventos_passados) {
+            $passados = Evento::withoutGlobalScope('organizador')->with($comLocal)->where('organizador_id', $org->id)
+                ->whereIn('status', ['publicado', 'pausado', 'encerrado'])->where('visibilidade', 'publico')
+                ->where('data_fim', '<', now())->orderByDesc('data_inicio')->limit(24)->get();
+        }
+
+        return view('publico.organizador', compact('org', 'eventos', 'passados'));
     }
 
     /** Evento pela URL pública. Privados exigem link de acesso privado, que ainda não existe: 404. */
