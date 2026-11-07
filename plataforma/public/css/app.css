@@ -362,3 +362,5 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 .topo-admin__quem { color: var(--suave); font-size: .9rem; }
 .topo-painel form { margin: 0; }
 @media (max-width: 900px) { .topo-admin__selo { color: var(--amarelo); } .topo-admin__quem { display: none; } }
+.teste-pagamento { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.teste-pagamento .campo { margin: 0; width: 160px; }

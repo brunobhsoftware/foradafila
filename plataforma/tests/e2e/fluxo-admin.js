@@ -10,11 +10,24 @@ const sql = (q) => execSync(`mysql --default-character-set=utf8mb4 -uroot forada
 const ok = (c, m) => { console.log((c ? 'PASSOU ' : 'FALHOU ') + m); if (!c) process.exitCode = 1; };
 const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
 
-let clientIdUsado = null; let segredoUsado = null;
+let clientIdUsado = null; let segredoUsado = null; let preferencia = null; let autorizacaoPref = null;
 const falso = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
   if (u.pathname === '/authorization') { clientIdUsado = u.searchParams.get('client_id'); res.writeHead(302, { Location: u.searchParams.get('redirect_uri') + '?error=cancelado&state=' + u.searchParams.get('state') }); return res.end(); }
-  let corpo = ''; req.on('data', (d) => { corpo += d; }); req.on('end', () => { segredoUsado = new URLSearchParams(corpo).get('client_secret'); res.writeHead(400); res.end('{}'); });
+  if (u.pathname === '/v1/payments/123456') {
+    res.writeHead(req.headers.authorization === 'Bearer APP-TOKEN-BH' ? 200 : 401, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ id: 123456, status: 'approved', status_detail: 'accredited', transaction_amount: 5, payment_method_id: 'pix', payment_type_id: 'bank_transfer' }));
+  }
+  let corpo = ''; req.on('data', (d) => { corpo += d; }); req.on('end', () => {
+    if (u.pathname === '/checkout/preferences') {
+      preferencia = JSON.parse(corpo); autorizacaoPref = req.headers.authorization;
+      const volta = preferencia.back_urls.success + '?collection_id=123456&payment_id=123456&status=approved&merchant_order_id=987654&preference_id=PREF-1&external_reference=' + preferencia.external_reference;
+      res.writeHead(201, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ id: 'PREF-1', init_point: volta }));
+    }
+    const f = new URLSearchParams(corpo); segredoUsado = f.get('client_secret');
+    if (f.get('grant_type') === 'client_credentials') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ access_token: 'APP-TOKEN-BH', expires_in: 21600 })); }
+    res.writeHead(400); res.end('{}');
+  });
 }).listen(8099);
 
 (async () => {
@@ -66,6 +79,15 @@ const falso = http.createServer((req, res) => {
   await P.goto(BASE + '/painel/financeiro');
   await nav(P, P.click('button:has-text("Conectar Mercado Pago")'));
   ok(clientIdUsado === '9999999999999999', 'Conectar usa o Client ID cadastrado na Administração');
+
+  // pagamento de teste (Checkout Pro na conta da aplicação)
+  await P.goto(BASE + '/admin/mercadopago');
+  ok(await P.inputValue('[name=valor]') === '5.00', 'pagamento de teste vem com R$ 5,00');
+  await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
+  ok(autorizacaoPref === 'Bearer APP-TOKEN-BH' && preferencia.items[0].unit_price === 5 && preferencia.items[0].currency_id === 'BRL'
+    && preferencia.notification_url.endsWith('/webhooks/mercadopago') && preferencia.external_reference.startsWith('teste-'), 'cria a preferência de R$ 5 com o token da aplicação e o webhook');
+  const ret = await P.content();
+  ok(ret.includes('123456') && ret.includes('987654') && ret.includes('Aprovado') && ret.includes('conferido na API'), 'retorno mostra ID do pagamento, do pedido e status conferido');
 
   ok(erros.length === 0, 'sem erros de JavaScript ' + erros.join(' | '));
   sql("DELETE FROM parametro_sistema WHERE chave LIKE 'mp\\_%'");

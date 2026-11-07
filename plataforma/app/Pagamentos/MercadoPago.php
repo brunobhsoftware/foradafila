@@ -127,6 +127,33 @@ class MercadoPago
         return self::token(['grant_type' => 'refresh_token', 'refresh_token' => $refreshToken]);
     }
 
+    /** Token da própria aplicação (fluxo client_credentials), para operar na conta da BH Software. Guardado 5 h em cache. */
+    public static function tokenAplicacao(): string
+    {
+        return \Illuminate\Support\Facades\Cache::remember('mp_token_aplicacao_'.md5((string) self::credencial('client_id')), now()->addHours(5),
+            fn () => self::token(['grant_type' => 'client_credentials'])['access_token']);
+    }
+
+    /** Checkout Pro: cria a preferência e devolve a resposta (init_point, id...). */
+    public static function criarPreferencia(string $accessToken, array $dados): array
+    {
+        $r = Http::withToken($accessToken)->acceptJson()->asJson()->timeout(20)
+            ->withHeaders(['X-Idempotency-Key' => (string) \Illuminate\Support\Str::uuid()])
+            ->post(config('pagamentos.mercadopago.api_url').'/checkout/preferences', $dados);
+        if (! $r->successful() || ! $r->json('id')) {
+            throw new RuntimeException('O Mercado Pago recusou a criação do pagamento (HTTP '.$r->status().($r->json('message') ? ': '.mb_substr((string) $r->json('message'), 0, 200) : '').').');
+        }
+
+        return $r->json();
+    }
+
+    public static function pagamento(string $accessToken, string $id): array
+    {
+        $r = Http::withToken($accessToken)->acceptJson()->timeout(15)->get(config('pagamentos.mercadopago.api_url').'/v1/payments/'.rawurlencode($id));
+
+        return $r->successful() ? $r->json() : [];
+    }
+
     /** Dados da conta conectada (e-mail, apelido, país). Falha aqui não impede a conexão. */
     public static function usuario(string $accessToken): array
     {
