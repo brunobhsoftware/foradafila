@@ -30,45 +30,23 @@
     </header>
 
     <ol class="mp__etapas" aria-label="Etapas da integração">
-        @foreach ([1 => 'Criar a aplicação', 2 => 'Conectar a conta', 3 => 'Homologar e ativar'] as $n => $t)
+        @foreach ([1 => 'Liberação', 2 => 'Conectar a conta', 3 => 'Homologar e ativar'] as $n => $t)
             <li class="{{ $n < $etapa ? 'feito' : ($n === $etapa ? 'atual' : '') }}" @if ($n === $etapa) aria-current="step" @endif>
                 <span>{{ $n < $etapa ? '✓' : $n }}</span>{{ $t }}
             </li>
         @endforeach
     </ol>
 
-    {{-- 1. Aplicação no Mercado Pago (gera o Client ID) --}}
+    {{-- 1. Aplicação do Fora da Fila no Mercado Pago: feita uma vez pela equipe da plataforma (Administração) --}}
     <details class="mp__bloco" @if ($etapa === 1) open @endif>
-        <summary><b>1. Criar a aplicação no Mercado Pago</b>
-            <small>{{ $configurado ? 'Concluído: a aplicação já está configurada na plataforma.' : 'Gera o Client ID e o Client Secret.' }}</small></summary>
+        <summary><b>1. Liberação pela plataforma</b>
+            <small>{{ $configurado ? 'Concluído: a integração está liberada.' : 'A equipe do Fora da Fila está configurando a integração.' }}</small></summary>
         <div class="mp__conteudo">
-            <div class="mp__ia">
-                <div class="mp__ia-topo"><span class="selo selo--verde">Mais simples</span><b>Com ajuda de IA, em 2 passos</b></div>
-                <div class="mp__ia-passo">
-                    <b>1. Conecte seu agente de IA ao Mercado Pago</b>
-                    <small>No Claude Code (terminal), instale o plugin oficial do Mercado Pago:</small>
-                    <div class="copiar"><input id="mp-ia-plugin" value="claude plugin install mercadopago" readonly class="mono"><button type="button" class="botao botao--contorno botao--pequeno" data-copiar="mp-ia-plugin">Copiar</button></div>
-                </div>
-                <div class="mp__ia-passo">
-                    <b>2. Use o prompt para criar a aplicação</b>
-                    <div class="copiar"><textarea id="mp-ia-prompt" readonly rows="4">Quero integrar com o Mercado Pago. Recomende a solução de pagamentos ideal para o meu projeto, crie a aplicação e me guie na integração. O projeto é o Fora da Fila (venda de ingressos): use OAuth para conectar a conta de cada organizador, com o endereço de retorno {{ \App\Pagamentos\MercadoPago::retornoUrl() }} e webhooks de Pagamentos em {{ url(config('pagamentos.mercadopago.webhook')) }}.</textarea><button type="button" class="botao botao--contorno botao--pequeno" data-copiar="mp-ia-prompt">Copiar</button></div>
-                    <small>Finalize a integração com apoio da IA. Se precisar de ajuda, veja o <a href="https://www.mercadopago.com.br/developers/pt/docs/ai-resources" target="_blank" rel="noopener">guia de uso</a>.</small>
-                </div>
-            </div>
-            <p class="mp__ou"><span>ou faça manualmente</span></p>
-            <ol class="mp__passos">
-                <li>Abra o painel de desenvolvedores e clique em <b>Criar aplicação</b> (nome "Fora da Fila", pagamentos on-line).</li>
-                <li>Em <b>Configurações de OAuth</b>, cadastre o endereço de retorno abaixo.</li>
-                <li>Em <b>Webhooks</b>, cadastre o endereço de avisos, marque o evento <b>Pagamentos</b> e gere a assinatura secreta.</li>
-                <li>Copie o <b>Client ID</b>, o <b>Client Secret</b> e a <b>assinatura secreta</b> e envie à equipe do Fora da Fila por um canal seguro (nunca por e-mail aberto ou chat).</li>
-            </ol>
-            <div class="mp__campos">
-                <div class="campo"><label for="mp-retorno">Endereço de retorno (OAuth)</label>
-                    <div class="copiar"><input id="mp-retorno" value="{{ \App\Pagamentos\MercadoPago::retornoUrl() }}" readonly><button type="button" class="botao botao--contorno botao--pequeno" data-copiar="mp-retorno">Copiar</button></div></div>
-                <div class="campo"><label for="mp-webhook">Endereço dos avisos (Webhooks)</label>
-                    <div class="copiar"><input id="mp-webhook" value="{{ url(config('pagamentos.mercadopago.webhook')) }}" readonly><button type="button" class="botao botao--contorno botao--pequeno" data-copiar="mp-webhook">Copiar</button></div></div>
-            </div>
-            <a href="{{ $painelMp }}" target="_blank" rel="noopener" class="botao botao--escuro">Abrir painel de desenvolvedores do Mercado Pago ↗</a>
+            <p class="suave">O Fora da Fila tem uma aplicação única no Mercado Pago. Você não precisa criar nada nem copiar chaves:
+                basta conectar a sua conta na etapa 2, e o dinheiro das vendas cai direto nela.</p>
+            @if (auth()->user()->admin_plataforma)
+                <a href="{{ route('admin.mercadopago') }}" class="botao botao--escuro botao--pequeno">Configurar na Administração</a>
+            @endif
         </div>
     </details>
 
@@ -99,7 +77,7 @@
                 </ol>
                 @if ($conta && $conta->status === 'revogada')<p><small>Conta desconectada em {{ data_local($conta->desconectado_em) }}.</small></p>@endif
                 @unless ($configurado)
-                    <div class="alerta alerta--info"><p>O botão é liberado quando a aplicação da etapa 1 estiver configurada na plataforma.</p></div>
+                    <div class="alerta alerta--info"><p>O botão é liberado assim que a equipe do Fora da Fila concluir a configuração.</p></div>
                 @endunless
                 @can('financeiro.contas')
                     <form method="post" action="{{ route('financeiro.mp.conectar') }}">

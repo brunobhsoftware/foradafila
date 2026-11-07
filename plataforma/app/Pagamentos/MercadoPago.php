@@ -12,9 +12,65 @@ use RuntimeException;
  */
 class MercadoPago
 {
+    /** Chaves da aplicação: cadastradas pelo administrador da plataforma (parametro_sistema, segredos criptografados) ou no .env. */
+    public const CHAVES = [
+        'client_id' => ['parametro' => 'mp_client_id', 'secreto' => false, 'env' => 'MP_CLIENT_ID'],
+        'client_secret' => ['parametro' => 'mp_client_secret', 'secreto' => true, 'env' => 'MP_CLIENT_SECRET'],
+        'webhook_secret' => ['parametro' => 'mp_webhook_secret', 'secreto' => true, 'env' => 'MP_WEBHOOK_SECRET'],
+    ];
+
+    private static array $cache = [];
+
+    public static function credencial(string $nome): ?string
+    {
+        if (! array_key_exists($nome, self::$cache)) {
+            $def = self::CHAVES[$nome];
+            $valor = null;
+            try {
+                $bruto = \Illuminate\Support\Facades\DB::table('parametro_sistema')->where('chave', $def['parametro'])->value('valor');
+                if (filled($bruto)) {
+                    $valor = $def['secreto'] ? decrypt($bruto, false) : $bruto;
+                }
+            } catch (\Throwable $e) {
+                $valor = null; // tabela indisponível ou APP_KEY trocada: cai no .env
+            }
+            self::$cache[$nome] = $valor ?: config('pagamentos.mercadopago.'.$nome);
+        }
+
+        return self::$cache[$nome];
+    }
+
+    /** Grava as chaves (só administrador da plataforma). Valor vazio mantém o atual. */
+    public static function salvarCredenciais(array $valores): void
+    {
+        foreach (self::CHAVES as $nome => $def) {
+            $v = trim((string) ($valores[$nome] ?? ''));
+            if ($v === '') {
+                continue;
+            }
+            \Illuminate\Support\Facades\DB::table('parametro_sistema')->updateOrInsert(['chave' => $def['parametro']], [
+                'valor' => $def['secreto'] ? encrypt($v, false) : $v,
+                'descricao' => 'Mercado Pago: '.$def['env'].($def['secreto'] ? ' (criptografado)' : ''),
+            ]);
+        }
+        self::$cache = [];
+    }
+
+    /** Situação de cada chave, sem revelar os segredos. */
+    public static function situacaoCredenciais(): array
+    {
+        $r = [];
+        foreach (self::CHAVES as $nome => $def) {
+            $v = self::credencial($nome);
+            $r[$nome] = ['definida' => filled($v), 'dica' => filled($v) ? ($def['secreto'] ? '••••'.substr($v, -4) : $v) : null];
+        }
+
+        return $r;
+    }
+
     public static function configurado(): bool
     {
-        return filled(config('pagamentos.mercadopago.client_id')) && filled(config('pagamentos.mercadopago.client_secret'));
+        return filled(self::credencial('client_id')) && filled(self::credencial('client_secret'));
     }
 
     public static function retornoUrl(): string
@@ -28,7 +84,7 @@ class MercadoPago
         $desafio = rtrim(strtr(base64_encode(hash('sha256', $codeVerifier, true)), '+/', '-_'), '=');
 
         return config('pagamentos.mercadopago.autorizacao_url').'?'.http_build_query([
-            'client_id' => config('pagamentos.mercadopago.client_id'),
+            'client_id' => self::credencial('client_id'),
             'response_type' => 'code',
             'platform_id' => 'mp',
             'state' => $state,
@@ -65,8 +121,8 @@ class MercadoPago
     private static function token(array $dados): array
     {
         $r = Http::asForm()->acceptJson()->timeout(20)->post(config('pagamentos.mercadopago.api_url').'/oauth/token', $dados + [
-            'client_id' => config('pagamentos.mercadopago.client_id'),
-            'client_secret' => config('pagamentos.mercadopago.client_secret'),
+            'client_id' => self::credencial('client_id'),
+            'client_secret' => self::credencial('client_secret'),
         ]);
         if (! $r->successful() || ! $r->json('access_token')) {
             // Sem tokens nem segredos na mensagem.
@@ -82,7 +138,7 @@ class MercadoPago
      */
     public static function assinaturaValida(?string $assinatura, ?string $requestId, ?string $dataId): bool
     {
-        $segredo = config('pagamentos.mercadopago.webhook_secret');
+        $segredo = self::credencial('webhook_secret');
         if (! $segredo || ! $assinatura) {
             return false;
         }

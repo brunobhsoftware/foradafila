@@ -35,10 +35,10 @@ class SenhaController extends Controller
         $modelo = self::AREAS[$area]['modelo'];
         $conta = $modelo::where('email', $email)->first();
 
-        if ($conta && $conta->senha_hash && ($area !== 'produtor' || $conta->ativo)) {
+        if ($conta && self::podeRedefinir($conta) && ($area !== 'produtor' || $conta->ativo)) {
             // Assinatura só do caminho (sem domínio/esquema): na Hostinger o HTTPS termina na CDN.
             $url = url(URL::temporarySignedRoute('senha.nova', now()->addMinutes(60), [
-                'area' => $area, 'uuid' => $conta->uuid, 'h' => self::impressao($conta->senha_hash),
+                'area' => $area, 'uuid' => $conta->uuid, 'h' => self::impressao(self::base($conta)),
             ], absolute: false));
             Notificacoes::redefinirSenha($conta->nome, $conta->email, $url, self::AREAS[$area]['nome']);
         }
@@ -72,10 +72,25 @@ class SenhaController extends Controller
     {
         abort_unless($request->hasValidSignature(absolute: false), 403, 'Link inválido ou expirado. Peça um novo.');
         $conta = self::AREAS[$area]['modelo']::where('uuid', $uuid)->firstOrFail();
-        abort_unless($conta->senha_hash && hash_equals(self::impressao($conta->senha_hash), (string) $request->query('h')), 403,
+        abort_unless(self::podeRedefinir($conta) && hash_equals(self::impressao(self::base($conta)), (string) $request->query('h')), 403,
             'Este link já foi usado ou expirou. Peça um novo.');
 
         return $conta;
+    }
+
+    /**
+     * Tem senha, ou é administrador da plataforma criado sem senha (primeiro acesso pelo link do e-mail).
+     * Convites de equipe pendentes (sem senha) continuam fora: entram pelo link do convite.
+     */
+    private static function podeRedefinir($conta): bool
+    {
+        return (bool) $conta->senha_hash || ($conta instanceof Usuario && $conta->admin_plataforma);
+    }
+
+    /** O link deixa de valer quando a senha muda (ou é criada, no primeiro acesso). */
+    private static function base($conta): string
+    {
+        return $conta->senha_hash ?: 'primeiro-acesso:'.$conta->uuid;
     }
 
     private static function impressao(string $senhaHash): string

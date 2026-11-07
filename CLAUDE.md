@@ -17,6 +17,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V003__ajuste_modelo_confirmacao.sql` | Só dados: tira "em anexo" do modelo padrão de confirmação. Idempotente |
 | `banco/V005__evento_capacidade_opcional.sql` | `evento.capacidade` aceita NULL (capacidade máxima opcional). Idempotente |
 | `banco/V006__integracao_pagamentos.sql` | Campos para Mercado Pago e outras operadoras (OAuth, checkout, idempotência, webhooks). Idempotente. Importado em produção em 07/11/2026 ("V006 ok") |
+| `banco/V007__administrador_plataforma.sql` | Só dados: cria o administrador da plataforma (Bruno, bruno@bhsoftware.com.br, `admin_plataforma = 1`, sem senha). Idempotente |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
@@ -118,6 +119,15 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   renovação de token e reembolso: ainda não feitos. A tela mostra 3 etapas (criar a aplicação — com os endereços para copiar e o botão
   para https://www.mercadopago.com.br/developers/panel/app —, conectar a conta, homologar). A etapa 1 tem antes o caminho
   "Com ajuda de IA, em 2 passos" (`claude plugin install mercadopago` + prompt com os endereços, para copiar).
+- **Administração da plataforma** (`/admin`, link "Administração" no rodapé; middleware `admin` = `usuario.admin_plataforma`,
+  os demais recebem 404): início com números gerais e **Mercado Pago** (`admin/mercadopago`): prompt de IA que cria a
+  aplicação e devolve `MP_CLIENT_ID`/`MP_CLIENT_SECRET`/`MP_WEBHOOK_SECRET`, endereços para copiar, botão do painel de
+  desenvolvedores e formulário das chaves. Chaves em `parametro_sistema` (`mp_client_id`; `mp_client_secret` e
+  `mp_webhook_secret` criptografados com a APP_KEY; em branco mantém); o `.env` é só reserva
+  (`MercadoPago::credencial()`). Empresas e taxas/isenções: em breve. Administrador sem empresa entra direto em `/admin`.
+  **Primeiro acesso:** administrador criado sem senha usa "Esqueci a senha" (link de 60 min, `SenhaController::podeRedefinir`).
+  Modelo decidido pelo Bruno (07/11/2026): **aplicação única da BH Software + "Conectar" de cada produtor**; o dinheiro
+  cai direto na conta do produtor. O Financeiro do produtor mostra a etapa 1 só como "Liberação pela plataforma".
 - **Política de cancelamento:** ao criar/editar evento o produtor marca a declaração
   `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
   (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores
@@ -152,7 +162,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-financeiro.js` (17, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-admin.js` (15, porta 8001), `fluxo-financeiro.js` (17, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.

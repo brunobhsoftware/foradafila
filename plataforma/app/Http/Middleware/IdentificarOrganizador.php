@@ -23,6 +23,9 @@ class IdentificarOrganizador
         $usuario = $request->user();
         $vinculos = $usuario->vinculosAtivos()->with('perfil')->get();
 
+        if ($vinculos->isEmpty() && $usuario->admin_plataforma) {
+            return redirect()->route('admin.inicio');
+        }
         if ($vinculos->isEmpty()) {
             Auth::logout();
             $request->session()->invalidate();

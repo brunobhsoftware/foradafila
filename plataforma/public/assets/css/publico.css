@@ -195,3 +195,5 @@ button.botao { cursor: pointer; font-family: var(--fonte-texto); }
 .pub-evento__capa { width: 100%; aspect-ratio: 1600 / 838; object-fit: cover; border-radius: var(--raio); border: 1px solid var(--borda); box-shadow: var(--sombra); }
 .pub-evento-card__img { width: 100%; aspect-ratio: 1600 / 838; object-fit: cover; display: block; }
 .pub-eventos--passados .pub-evento-card { opacity: .78; } .pub-eventos--passados .pub-evento-card:hover { opacity: 1; }
+.rodape__admin { display: block; margin-top: 10px; font-size: .8rem; color: var(--texto-suave); opacity: .8; }
+.rodape__admin:hover { opacity: 1; }

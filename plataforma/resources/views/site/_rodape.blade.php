@@ -29,6 +29,7 @@
     <div class="rodape__social">
       <b>foradafila.com.br</b>
       <small>Uma plataforma de tecnologia da BH Software.</small>
+      <a href="{{ route('admin.inicio') }}" class="rodape__admin">Administração</a>
     </div>
   </div>
   <div class="container rodape__base">
