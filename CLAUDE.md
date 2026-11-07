@@ -115,7 +115,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   `config/pagamentos.php` (`MP_API_URL`/`MP_AUTORIZACAO_URL` só para teste). **Webhook** `POST /webhooks/mercadopago`
   (sem CSRF, throttle `webhook-mp`): confere `x-signature` com `MP_WEBHOOK_SECRET`, grava em `webhook_evento`
   (`recebido` ou `ignorado`), não duplica, sempre 200; o processamento entra com o checkout. Homologação, checkout,
-  renovação de token e reembolso: ainda não feitos.
+  renovação de token e reembolso: ainda não feitos. A tela mostra 3 etapas (criar a aplicação — com os endereços para copiar e o botão
+  para https://www.mercadopago.com.br/developers/panel/app —, conectar a conta, homologar).
 - **Política de cancelamento:** ao criar/editar evento o produtor marca a declaração
   `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
   (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores
