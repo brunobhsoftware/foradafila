@@ -4,6 +4,7 @@
 @push('meta')
   <meta property="og:title" content="{{ $evento->titulo }}">
   <meta property="og:description" content="{{ $evento->resumo }}">
+  @if ($evento->imagem_capa_url)<meta property="og:image" content="{{ url($evento->imagem_capa_url) }}">@endif
 @endpush
 
 @php
@@ -25,6 +26,9 @@
 <section class="pub-secao">
   <div class="container pub-evento">
     <div class="pub-evento__info">
+      @if ($evento->imagem_capa_url)
+        <img class="pub-evento__capa" src="{{ $evento->imagem_capa_url }}" alt="Imagem de divulgação de {{ $evento->titulo }}" width="1600" height="838">
+      @endif
       @if ($evento->status === 'cancelado')
         <div class="pub-aviso" style="background:#FEE4E2;border-color:#FECDCA;color:#7A271A"><div><b>Evento cancelado pelo organizador.</b> {{ $evento->cancelamento_motivo }}</div></div>
       @elseif ($evento->status === 'encerrado')

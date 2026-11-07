@@ -90,6 +90,39 @@
     sel.addEventListener('change', atualizar); atualizar();
   });
 
+  // Envio de imagem: clique ou arraste, com conferência no navegador (o servidor confere de novo)
+  $$('[data-upload]').forEach((zona) => {
+    const input = zona.querySelector('input[type=file]');
+    const previa = zona.querySelector('.upload__previa');
+    const status = zona.parentElement.querySelector('[data-upload-status]');
+    const maxKb = Number(zona.dataset.maxKb), larg = Number(zona.dataset.largura), alt = Number(zona.dataset.altura);
+    const tipos = ['image/jpeg', 'image/png', 'image/gif'];
+    const avisar = (texto, erro) => { if (status) { status.textContent = texto; status.style.color = erro ? 'var(--vermelho)' : ''; } };
+    const mostrar = (arquivo) => {
+      if (!arquivo) return;
+      if (!tipos.includes(arquivo.type)) { input.value = ''; return avisar('Formato não aceito. Envie JPEG, GIF ou PNG.', true); }
+      if (arquivo.size > maxKb * 1024) { input.value = ''; return avisar(`A imagem tem ${(arquivo.size / 1048576).toFixed(1).replace('.', ',')} MB. O limite é ${maxKb / 1024} MB.`, true); }
+      const url = URL.createObjectURL(arquivo);
+      const img = new Image();
+      img.onload = () => {
+        previa.src = url; previa.hidden = false; zona.classList.add('upload--com-imagem');
+        const dif = Math.abs(img.width / img.height - larg / alt) > 0.05;
+        avisar(`${arquivo.name} · ${img.width} x ${img.height} px` + (dif ? ` — a proporção recomendada é ${larg} x ${alt}; a imagem pode ser cortada nas bordas.` : ' — pronta para enviar.'), false);
+      };
+      img.onerror = () => { input.value = ''; avisar('Não foi possível ler esta imagem.', true); };
+      img.src = url;
+    };
+    input.addEventListener('change', () => mostrar(input.files[0]));
+    ['dragenter', 'dragover'].forEach((ev) => zona.addEventListener(ev, (e) => { e.preventDefault(); zona.classList.add('upload--arrastando'); }));
+    ['dragleave', 'drop'].forEach((ev) => zona.addEventListener(ev, (e) => { e.preventDefault(); zona.classList.remove('upload--arrastando'); }));
+    zona.addEventListener('drop', (e) => {
+      const arquivo = e.dataTransfer.files[0];
+      if (!arquivo) return;
+      const dt = new DataTransfer(); dt.items.add(arquivo); input.files = dt.files;
+      mostrar(arquivo);
+    });
+  });
+
   // Copiar link
   $$('[data-copiar]').forEach((b) => b.addEventListener('click', async () => {
     const alvo = document.getElementById(b.dataset.copiar);

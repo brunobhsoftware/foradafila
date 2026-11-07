@@ -191,3 +191,5 @@ button.botao { cursor: pointer; font-family: var(--fonte-texto); }
 .lista-breve { list-style: none; padding: 0; margin: 22px 0 0; display: grid; gap: 10px; }
 .lista-breve li { position: relative; padding-left: 26px; color: var(--tinta); }
 .lista-breve li::before { content: ""; position: absolute; left: 4px; top: 8px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--texto-suave); }
+.pub-evento__capa { width: 100%; aspect-ratio: 1600 / 838; object-fit: cover; border-radius: var(--raio); border: 1px solid var(--borda); box-shadow: var(--sombra); }
+.pub-evento-card__img { width: 100%; aspect-ratio: 1600 / 838; object-fit: cover; display: block; }

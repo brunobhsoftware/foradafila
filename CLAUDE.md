@@ -78,8 +78,14 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   Lotes pagos aparecem com preço e "venda online em breve" — sem botão de compra.
 - Sem cron ainda: lote `agendado` abre quando chega `venda_inicio`; lote com `lote_anterior_id` só abre quando o
   anterior esgota, encerra ou passa do fim (`EventoPublicoController::loteAVenda`).
+- **Imagem de divulgação do evento** (opcional): JPEG/GIF/PNG até 2 MB, recomendada 1600 x 838, campo "clique ou
+  arraste" (`components/upload-imagem`). Arquivo `eventos/<id do evento>_<uuid do evento>.<ext>` no disco `midia`
+  (`FF_ARMAZENAMENTO`, em produção `/home/u839930205/domains/foradafila.com.br/armazenamento`, fora do public_html),
+  servido por `/midia/eventos/{arquivo}` (`MidiaController`). `evento.imagem_capa_url` guarda `/midia/...?v=<data>`.
+  Trocar de formato apaga a versão antiga; "remover" apaga o arquivo. Aparece no painel, na página do evento
+  (com `og:image`) e na vitrine. Lógica em `App\Support\ImagemEvento`.
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22) e `tests/e2e/fluxo-comprador.js` (30), com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.
@@ -92,6 +98,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   - `noreply@foradafila.com.br` — mensagens sem resposta (avisos automáticos). Mailer `noreply`.
     Use `App\Support\Email::aviso(...)`. A caixa tem resposta automática configurada.
   - Existe também `atendimento@foradafila.com.br` (caixa que pega tudo do domínio) — ainda não usada pela plataforma.
+  Em produção há uma conta de comprador de teste com esse e-mail ("Teste de e-mail Fora da Fila"), usada para validar o SMTP.
 - As senhas estão **só** no `.env.foradafila` do servidor (`MAIL_FIQUE_PASSWORD`, `MAIL_NOREPLY_PASSWORD`, entre
   aspas simples porque começam com `$`). Nunca no Git, no código, no CLAUDE.md ou em respostas.
 - Todo envio passa pela tabela `mensagem_envio` (corpo renderizado, status `enviado`/`erro`, motivo do erro) e
@@ -126,7 +133,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 
 - **Backend: Laravel 12 (PHP 8.3)** — confirmado pelo Bruno em 07/11/2026. Telas em Blade com padrão visual único
   (menu lateral), sem Filament por enquanto.
-- Projeto piloto: o Bruno vai cadastrar uma empresa dele como primeiro organizador. A conta nasce `ativo`
+- Projeto piloto: **Estação Slod** (CNPJ 41.902.878/0001-08), cadastrada pelo Bruno em 07/11/2026. A conta nasce `ativo`
   (sem confirmação de e-mail enquanto não houver e-mail transacional).
 - App de check-in como **PWA** (QR Code pela câmera, funciona offline), consumindo a mesma API.
 - Rotinas automáticas (expirar reservas, virar lote, fila de e-mail, conciliação com o Mercado Pago) pelo

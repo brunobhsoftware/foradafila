@@ -232,3 +232,22 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
   .acoes-form .botao { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* Envio de imagem (clique ou arraste) */
+.upload { position: relative; display: grid; place-items: center; min-height: 190px; padding: 18px; border: 2px dashed var(--borda-forte);
+  border-radius: var(--raio); background: #FCFCFD; text-align: center; cursor: pointer; overflow: hidden; transition: border-color .15s, background-color .15s; }
+.upload:hover, .upload--arrastando { border-color: var(--laranja); background: var(--laranja-claro); }
+.upload:focus-within { outline: 3px solid rgba(242,92,5,.35); outline-offset: 2px; }
+.upload__texto { display: grid; gap: 6px; justify-items: center; color: var(--suave); position: relative; z-index: 1; }
+.upload__texto b { color: var(--tinta); }
+.upload__texto .i { width: 28px; height: 28px; color: var(--laranja); }
+.upload__previa { width: 100%; max-height: 320px; object-fit: cover; border-radius: var(--raio-p); aspect-ratio: 1600 / 838; }
+.upload--com-imagem { padding: 10px; }
+.upload--com-imagem .upload__texto { position: absolute; inset: auto 10px 10px; background: rgba(255,255,255,.92); border-radius: var(--raio-p); padding: 8px 10px; }
+.upload--com-imagem .upload__texto small { display: none; }
+.campo.com-erro .upload { border-color: #FDA29B; }
+.capa-evento { width: 100%; aspect-ratio: 1600 / 838; object-fit: cover; border-radius: var(--raio); border: 1px solid var(--borda); }
+.upload__previa { max-height: none; max-width: 640px; }
+.upload--com-imagem { gap: 10px; }
+.upload--com-imagem .upload__texto { position: static; background: none; padding: 0; }
+.upload--com-imagem .upload__texto .i { display: none; }

@@ -11,7 +11,7 @@
     </div>
 </div>
 
-<form method="post" action="{{ $editando ? route('eventos.update', $evento) : route('eventos.store') }}" class="cartao">
+<form method="post" action="{{ $editando ? route('eventos.update', $evento) : route('eventos.store') }}" class="cartao" enctype="multipart/form-data">
     @csrf
     @if ($editando) @method('PUT') @endif
 
@@ -23,6 +23,7 @@
             <x-campo nome="categoria_id" rotulo="Categoria" tipo="select" :opcoes="$categorias" :valor="$evento->categoria_id" vazio="Escolha" classe="col-4" />
             <x-campo nome="resumo" rotulo="Resumo" :valor="$evento->resumo" maxlength="300" ajuda="Uma frase que aparece na vitrine e no compartilhamento (até 300 caracteres)." />
             <x-campo nome="descricao" rotulo="Descrição completa" tipo="textarea" :valor="$evento->descricao" rows="6" ajuda="Atrações, programação, o que está incluso, regras do local." />
+            <x-upload-imagem nome="imagem" rotulo="Imagem de divulgação do evento" :atual="$evento->imagem_capa_url" />
             <x-campo nome="classificacao" rotulo="Classificação etária" tipo="select" :opcoes="\App\Models\Evento::CLASSIFICACOES" :valor="$evento->classificacao" obrigatorio classe="col-4" />
             <x-campo nome="capacidade" rotulo="Capacidade total" tipo="number" min="1" :valor="$evento->capacidade" obrigatorio classe="col-4" ajuda="Lotação máxima. A soma dos lotes não pode passar disso." />
             <x-campo nome="visibilidade" rotulo="Visibilidade" tipo="select" :opcoes="\App\Models\Evento::VISIBILIDADES" :valor="$evento->visibilidade" obrigatorio classe="col-4" />

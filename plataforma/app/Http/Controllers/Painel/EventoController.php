@@ -8,6 +8,7 @@ use App\Models\Evento;
 use App\Models\EventoCategoria;
 use App\Models\Local;
 use App\Support\Auditoria;
+use App\Support\ImagemEvento;
 use App\Support\RegraDoBanco;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -55,6 +56,10 @@ class EventoController extends Controller
                 'slug' => Evento::slugDisponivel($dadosEvento['titulo']),
                 'criado_por' => $request->user()->id,
             ]);
+            // O nome do arquivo usa o id e o uuid do evento, então a imagem é gravada depois da criação.
+            if ($request->hasFile('imagem')) {
+                $evento->forceFill(['imagem_capa_url' => ImagemEvento::salvar($evento, $request->file('imagem'))])->save();
+            }
             Auditoria::registrar('evento.criar', $evento);
 
             return $evento;
@@ -92,8 +97,14 @@ class EventoController extends Controller
         abort_if(in_array($evento->status, ['encerrado', 'cancelado']), 403);
         [$dadosEvento, $dadosLocal] = $this->validar($request, $evento);
 
-        RegraDoBanco::executar(fn () => DB::transaction(function () use ($evento, $dadosEvento, $dadosLocal) {
+        RegraDoBanco::executar(fn () => DB::transaction(function () use ($evento, $dadosEvento, $dadosLocal, $request) {
             $antes = $evento->getAttributes();
+            if ($request->hasFile('imagem')) {
+                $dadosEvento['imagem_capa_url'] = ImagemEvento::salvar($evento, $request->file('imagem'));
+            } elseif ($request->boolean('remover_imagem')) {
+                ImagemEvento::remover($evento);
+                $dadosEvento['imagem_capa_url'] = null;
+            }
             if ($dadosLocal) {
                 $local = $evento->local ?? new Local;
                 $local->fill($dadosLocal)->save();
@@ -177,6 +188,7 @@ class EventoController extends Controller
             'max_ingressos_cpf' => ['nullable', 'integer', 'min:1', 'max:100'],
             'transferencia_ate_h' => ['required', 'integer', 'min:0', 'max:720'],
             'politica_cancelamento' => ['nullable', 'string', 'max:5000'],
+            'imagem' => ImagemEvento::regras(),
             'local.nome' => [Rule::requiredIf($presencial), 'nullable', 'string', 'max:150'],
             'local.cep' => ['nullable', 'string', 'max:9'],
             'local.logradouro' => ['nullable', 'string', 'max:150'],
@@ -185,12 +197,19 @@ class EventoController extends Controller
             'local.bairro' => ['nullable', 'string', 'max:100'],
             'local.cidade' => [Rule::requiredIf($presencial), 'nullable', 'string', 'max:100'],
             'local.uf' => [Rule::requiredIf($presencial), 'nullable', 'string', 'size:2'],
-        ], [], [
+        ], [
+            'imagem.max' => 'A imagem pode ter no máximo 2 MB.',
+            'imagem.mimes' => 'Envie a imagem em JPEG, GIF ou PNG.',
+            'imagem.mimetypes' => 'Envie a imagem em JPEG, GIF ou PNG.',
+            'imagem.image' => 'O arquivo enviado não é uma imagem válida.',
+            'imagem.uploaded' => 'A imagem pode ter no máximo 2 MB.',
+        ], [
+            'imagem' => 'imagem de divulgação',
             'local.nome' => 'nome do local', 'local.cidade' => 'cidade', 'local.uf' => 'UF',
             'data_inicio' => 'início', 'data_fim' => 'término', 'abertura_portoes' => 'abertura dos portões',
         ]);
 
-        $dadosEvento = collect($v)->except('local')->all();
+        $dadosEvento = collect($v)->except(['local', 'imagem'])->all();
         foreach (['data_inicio', 'data_fim', 'abertura_portoes'] as $campo) {
             $dadosEvento[$campo] = utc_de_local($dadosEvento[$campo] ?? null);
         }
