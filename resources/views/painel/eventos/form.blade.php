@@ -49,12 +49,32 @@
     <section class="secao-form">
         <h2>Onde vai ser</h2>
         <div class="form-grade">
+            @php
+                // Endereço da organização (tela Organização) para preencher o local com um clique.
+                $org = $organizadorAtual;
+                $enderecoOrg = [
+                    'nome' => $org->nomeExibicao(), 'cep' => $org->cep, 'logradouro' => $org->logradouro, 'numero' => $org->numero,
+                    'complemento' => $org->complemento, 'bairro' => $org->bairro, 'cidade' => $org->cidade, 'uf' => $org->uf,
+                ];
+                $temEnderecoOrg = filled($org->logradouro) && filled($org->cidade) && filled($org->uf);
+            @endphp
             <div class="campo col-12">
                 <span class="rotulo">Formato</span>
-                <div class="segmentado">
-                    @foreach (\App\Models\Evento::FORMATOS as $valor => $texto)
-                        <label><input type="radio" name="formato" value="{{ $valor }}" @checked(old('formato', $evento->formato) === $valor)><span>{{ $texto }}</span></label>
-                    @endforeach
+                <div class="formato-linha">
+                    <div class="segmentado">
+                        @foreach (\App\Models\Evento::FORMATOS as $valor => $texto)
+                            <label><input type="radio" name="formato" value="{{ $valor }}" @checked(old('formato', $evento->formato) === $valor)><span>{{ $texto }}</span></label>
+                        @endforeach
+                    </div>
+                    <span id="acao-endereco-org">
+                        <button type="button" class="botao botao--contorno botao--pequeno" data-endereco-org='@json($enderecoOrg)'
+                            @disabled(! $temEnderecoOrg) title="Preenche o local com o endereço cadastrado em Organização">
+                            <x-icone nome="organizacao" /> Usar endereço da organização
+                        </button>
+                        @unless ($temEnderecoOrg)
+                            <small class="suave">Cadastre o endereço em <a href="{{ route('organizacao.edit') }}">Organização</a> para usar este botão.</small>
+                        @endunless
+                    </span>
                 </div>
             </div>
         </div>
@@ -118,11 +138,26 @@
     document.addEventListener('DOMContentLoaded', () => {
         const bloco = document.getElementById('bloco-local');
         const radios = document.querySelectorAll('[name="formato"]');
-        const atualizar = () => { const v = document.querySelector('[name="formato"]:checked')?.value; bloco.hidden = v === 'online'; };
+        const acaoEndereco = document.getElementById('acao-endereco-org');
+        const atualizar = () => { const v = document.querySelector('[name="formato"]:checked')?.value; bloco.hidden = v === 'online'; acaoEndereco.hidden = v === 'online'; };
         radios.forEach(r => r.addEventListener('change', atualizar)); atualizar();
         const online = document.getElementById('bloco-online');
         const atualizarOnline = () => { const v = document.querySelector('[name="formato"]:checked')?.value; online.hidden = v === 'presencial'; };
         radios.forEach(r => r.addEventListener('change', atualizarOnline)); atualizarOnline();
+
+        // "Usar endereço da organização": copia o endereço cadastrado em Organização para o local do evento.
+        const botaoEndereco = document.querySelector('[data-endereco-org]');
+        botaoEndereco?.addEventListener('click', () => {
+            const dados = JSON.parse(botaoEndereco.dataset.enderecoOrg);
+            const campo = (n) => document.querySelector(`[name="local[${n}]"]`);
+            const preenchido = Object.keys(dados).some((n) => campo(n) && campo(n).value.trim() !== '');
+            if (preenchido && !confirm('Substituir o local preenchido pelo endereço da organização?')) return;
+            Object.entries(dados).forEach(([n, v]) => {
+                const c = campo(n); if (!c) return;
+                c.value = v || ''; c.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+            campo('nome').focus();
+        });
     });
 </script>
 @endsection
