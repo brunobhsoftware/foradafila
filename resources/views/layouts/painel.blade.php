@@ -14,7 +14,7 @@
         ],
         'Divulgação' => [
             ['rota' => 'cupons.index', 'ativo' => 'cupons.*', 'icone' => 'cupom', 'texto' => 'Cupons', 'pode' => ['cupom.gerenciar']],
-            ['modulo' => 'convidados', 'icone' => 'convidados', 'texto' => 'Convidados', 'pode' => ['convidado.gerenciar', 'acesso_privado.gerenciar']],
+            ['rota' => 'convidados.index', 'ativo' => 'convidados.*', 'icone' => 'convidados', 'texto' => 'Convidados', 'pode' => ['convidado.gerenciar']],
             ['modulo' => 'mensagens', 'icone' => 'mensagem', 'texto' => 'Mensagens', 'pode' => ['mensagem.gerenciar']],
         ],
         'Gestão' => [

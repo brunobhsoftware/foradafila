@@ -84,7 +84,8 @@ class SenhaController extends Controller
      */
     private static function podeRedefinir($conta): bool
     {
-        return (bool) $conta->senha_hash || ($conta instanceof Usuario && $conta->admin_plataforma);
+        // Comprador criado pela organização (convidado/cortesia) não tem senha: cria pelo link do e-mail.
+        return (bool) $conta->senha_hash || ($conta instanceof Usuario && $conta->admin_plataforma) || $conta instanceof \App\Models\Comprador;
     }
 
     /** O link deixa de valer quando a senha muda (ou é criada, no primeiro acesso). */

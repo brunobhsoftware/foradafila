@@ -182,6 +182,14 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::put('/cupons/{cupom}', [\App\Http\Controllers\Painel\CuponsController::class, 'update'])->name('cupons.update');
     Route::post('/cupons/{cupom}/alternar', [\App\Http\Controllers\Painel\CuponsController::class, 'alternar'])->name('cupons.alternar');
 
+    Route::get('/convidados', [\App\Http\Controllers\Painel\ConvidadosController::class, 'index'])->name('convidados.index');
+    Route::post('/convidados/{evento}/listas', [\App\Http\Controllers\Painel\ConvidadosController::class, 'salvarLista'])->name('convidados.lista.criar');
+    Route::get('/convidados/{evento}/listas/{lista}', [\App\Http\Controllers\Painel\ConvidadosController::class, 'lista'])->name('convidados.lista')->whereNumber('lista');
+    Route::post('/convidados/{evento}/listas/{lista}', [\App\Http\Controllers\Painel\ConvidadosController::class, 'salvarLista'])->name('convidados.lista.salvar')->whereNumber('lista');
+    Route::post('/convidados/{evento}/listas/{lista}/convidados', [\App\Http\Controllers\Painel\ConvidadosController::class, 'adicionar'])->name('convidados.adicionar')->whereNumber('lista');
+    Route::post('/convidados/{evento}/listas/{lista}/emitir', [\App\Http\Controllers\Painel\ConvidadosController::class, 'emitir'])->name('convidados.emitir')->whereNumber('lista')->middleware('throttle:30,10,convidados-emitir');
+    Route::post('/convidados/{evento}/listas/{lista}/convidados/{convidado}/remover', [\App\Http\Controllers\Painel\ConvidadosController::class, 'remover'])->name('convidados.remover')->whereNumber(['lista', 'convidado']);
+
     // Módulos das próximas fases: a tela explica o que vem e o menu já fica no lugar certo.
     Route::get('/{modulo}', EmBreveController::class)->name('em-breve')
         ->whereIn('modulo', array_keys(EmBreveController::MODULOS));
