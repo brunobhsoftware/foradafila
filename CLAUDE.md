@@ -168,6 +168,14 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   com status `aprovado` = a devolver ou `concluido`; pedido → `reembolso_parcial`/`reembolsado`/`cancelado`). Aviso ao comprador:
   `Notificacoes::ingressosCanceladosPelaOrganizacao` (fique@). Permissões: `participante.ver`, `participante.exportar`, `pedido.ver`,
   `pedido.reembolsar`. A devolução do dinheiro em si é do produtor (com o Mercado Pago, sairá pela API).
+- **Vendas → Check-in** (`/painel/checkin`, `CheckinController`): por evento; campo para leitor USB/Bluetooth ou digitação (QR
+  `FF1.<codigo>.<hmac>` com assinatura conferida antes do banco, ou número `FF-0001-000123`/só o número), câmera pelo
+  `BarcodeDetector` do navegador (Chrome/Android; sem ele, aviso), busca manual (nome, CPF, número) com "Registrar entrada",
+  contadores (entraram, válidos, %, dentro agora se houver reentrada), últimas 15 leituras e "Desfazer" (`checkin.configurar`).
+  Resultados: aceito, já utilizado, cancelado, outro evento, inexistente, assinatura inválida, portões fechados (antes de
+  `abertura_portoes` — o cadastro preenche com o início do evento). Entrada por UPDATE condicional (dois portões não passam o mesmo
+  QR); toda leitura em `checkin_log` (método, resultado, operador). Saída/reentrada só com `permite_reentrada`.
+  Ainda não: PWA offline e cadastro de portões/dispositivos.
 - **Política de cancelamento:** ao criar/editar evento o produtor marca a declaração
   `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
   (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores
@@ -202,7 +210,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.

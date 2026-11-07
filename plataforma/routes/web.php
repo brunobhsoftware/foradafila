@@ -172,6 +172,11 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::post('/pedidos/{pedido}/reenviar', [\App\Http\Controllers\Painel\PedidosController::class, 'reenviar'])->name('pedidos.reenviar')->middleware('throttle:30,10,reenviar-pedido');
     Route::post('/pedidos/{pedido}/cancelar', [\App\Http\Controllers\Painel\PedidosController::class, 'cancelar'])->name('pedidos.cancelar');
 
+    Route::get('/checkin', [\App\Http\Controllers\Painel\CheckinController::class, 'index'])->name('checkin.index');
+    Route::post('/checkin/{evento}/registrar', [\App\Http\Controllers\Painel\CheckinController::class, 'registrar'])->name('checkin.registrar')->middleware('throttle:240,1,checkin');
+    Route::get('/checkin/{evento}/buscar', [\App\Http\Controllers\Painel\CheckinController::class, 'buscar'])->name('checkin.buscar')->middleware('throttle:240,1,checkin-busca');
+    Route::post('/checkin/{evento}/desfazer', [\App\Http\Controllers\Painel\CheckinController::class, 'desfazer'])->name('checkin.desfazer');
+
     // Módulos das próximas fases: a tela explica o que vem e o menu já fica no lugar certo.
     Route::get('/{modulo}', EmBreveController::class)->name('em-breve')
         ->whereIn('modulo', array_keys(EmBreveController::MODULOS));
