@@ -10,6 +10,7 @@ use App\Http\Controllers\Painel\EmBreveController;
 use App\Http\Controllers\Painel\EquipeController;
 use App\Http\Controllers\Painel\EventoController;
 use App\Http\Controllers\Painel\LoteController;
+use App\Http\Controllers\Painel\MinhaContaController;
 use App\Http\Controllers\Painel\OrganizacaoController;
 use App\Http\Controllers\Painel\PerfilController;
 use App\Http\Controllers\Painel\PreferenciasController;
@@ -36,15 +37,15 @@ Route::get('/eventos', [EventoPublicoController::class, 'vitrine'])->name('vitri
 Route::get('/e/{slug}', [EventoPublicoController::class, 'show'])->name('evento.publico');
 Route::get('/p/{slug}', [EventoPublicoController::class, 'organizador'])->name('organizador.publico');
 Route::get('/e/{slug}/inscricao', [InscricaoController::class, 'create'])->name('inscricao.create');
-Route::post('/e/{slug}/inscricao', [InscricaoController::class, 'store'])->name('inscricao.store')->middleware('throttle:15,1');
+Route::post('/e/{slug}/inscricao', [InscricaoController::class, 'store'])->name('inscricao.store')->middleware('throttle:15,1,inscricao');
 
 // ---------- Área do comprador (guard próprio, separado do produtor) ----------
 Route::prefix('minha-conta')->name('comprador.')->group(function () {
     Route::middleware('guest:comprador')->group(function () {
         Route::get('/entrar', [CompradorAuthController::class, 'entrar'])->name('entrar');
-        Route::post('/entrar', [CompradorAuthController::class, 'autenticar'])->middleware('throttle:20,1');
+        Route::post('/entrar', [CompradorAuthController::class, 'autenticar'])->middleware('throttle:20,1,login-comprador');
         Route::get('/criar', [CompradorAuthController::class, 'criar'])->name('criar');
-        Route::post('/criar', [CompradorAuthController::class, 'registrar'])->middleware('throttle:10,1');
+        Route::post('/criar', [CompradorAuthController::class, 'registrar'])->middleware('throttle:10,1,cadastro-comprador');
     });
     Route::middleware('auth:comprador')->group(function () {
         Route::get('/', [MeusIngressosController::class, 'index'])->name('ingressos');
@@ -57,19 +58,19 @@ Route::prefix('minha-conta')->name('comprador.')->group(function () {
 // ---------- Entrada ----------
 Route::middleware('guest')->group(function () {
     Route::get('/cadastro', [CadastroController::class, 'create'])->name('cadastro');
-    Route::post('/cadastro', [CadastroController::class, 'store'])->middleware('throttle:10,1');
+    Route::post('/cadastro', [CadastroController::class, 'store'])->middleware('throttle:10,1,cadastro');
     Route::get('/entrar', [LoginController::class, 'create'])->name('entrar');
-    Route::post('/entrar', [LoginController::class, 'store'])->middleware('throttle:20,1');
+    Route::post('/entrar', [LoginController::class, 'store'])->middleware('throttle:20,1,login');
 });
 
 // ---------- Esqueci a senha (produtor e comprador) ----------
 Route::get('/esqueci-a-senha/{area}', [SenhaController::class, 'pedir'])->name('senha.pedir')->whereIn('area', ['produtor', 'comprador']);
-Route::post('/esqueci-a-senha/{area}', [SenhaController::class, 'enviar'])->whereIn('area', ['produtor', 'comprador'])->middleware('throttle:5,10');
+Route::post('/esqueci-a-senha/{area}', [SenhaController::class, 'enviar'])->whereIn('area', ['produtor', 'comprador'])->middleware('throttle:5,10,esqueci-senha');
 Route::get('/nova-senha/{area}/{uuid}', [SenhaController::class, 'nova'])->name('senha.nova')->whereIn('area', ['produtor', 'comprador']);
-Route::post('/nova-senha/{area}/{uuid}', [SenhaController::class, 'salvar'])->whereIn('area', ['produtor', 'comprador'])->middleware('throttle:10,10');
+Route::post('/nova-senha/{area}/{uuid}', [SenhaController::class, 'salvar'])->whereIn('area', ['produtor', 'comprador'])->middleware('throttle:10,10,nova-senha');
 
 Route::get('/convite/{token}', [ConviteController::class, 'show'])->name('convite');
-Route::post('/convite/{token}', [ConviteController::class, 'store'])->middleware('throttle:10,1');
+Route::post('/convite/{token}', [ConviteController::class, 'store'])->middleware('throttle:10,1,convite');
 
 Route::middleware('auth')->group(function () {
     Route::post('/sair', [LoginController::class, 'destroy'])->name('sair');
@@ -110,6 +111,14 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
 
     Route::get('/organizacao', [OrganizacaoController::class, 'edit'])->name('organizacao.edit');
     Route::put('/organizacao', [OrganizacaoController::class, 'update'])->name('organizacao.update');
+
+    // Conta de acesso da pessoa logada: trocar senha e e-mail com código enviado por e-mail.
+    Route::get('/minha-conta/senha', [MinhaContaController::class, 'senha'])->name('conta.senha');
+    Route::post('/minha-conta/senha/codigo', [MinhaContaController::class, 'enviarCodigoSenha'])->name('conta.senha.codigo')->middleware('throttle:5,15,codigo-senha');
+    Route::put('/minha-conta/senha', [MinhaContaController::class, 'salvarSenha'])->name('conta.senha.salvar')->middleware('throttle:10,15,salvar-senha');
+    Route::get('/minha-conta/email', [MinhaContaController::class, 'email'])->name('conta.email');
+    Route::post('/minha-conta/email/codigo', [MinhaContaController::class, 'enviarCodigoEmail'])->name('conta.email.codigo')->middleware('throttle:5,15,codigo-email');
+    Route::put('/minha-conta/email', [MinhaContaController::class, 'salvarEmail'])->name('conta.email.salvar')->middleware('throttle:10,15,salvar-email');
 
     Route::get('/preferencias', [PreferenciasController::class, 'edit'])->name('preferencias.edit');
     Route::put('/preferencias', [PreferenciasController::class, 'update'])->name('preferencias.update');

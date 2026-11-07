@@ -61,6 +61,7 @@
             <b>{{ auth()->user()->nome }}</b>
             <span>{{ auth()->user()->email }}</span>
             <a href="{{ route('preferencias.edit') }}" style="display:block;margin-top:8px;color:#D0D5DD">Minhas preferências</a>
+            <a href="{{ route('conta.senha') }}" style="display:block;margin-top:4px;color:#D0D5DD">Trocar senha</a>
             <a href="{{ route('inicio') }}" style="display:block;margin-top:4px;color:#D0D5DD">Ir para o site</a>
             <form method="post" action="{{ route('sair') }}" style="margin-top:8px">
                 @csrf

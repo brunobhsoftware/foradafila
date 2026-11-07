@@ -56,7 +56,7 @@ class Email
         // Links com token (convite, senha) não ficam gravados em texto aberto: só o corpo sem o segredo.
         if (! empty($refs['ocultar'])) {
             DB::table('mensagem_envio')->where('id', $id)->update([
-                'corpo_renderizado' => str_replace($refs['ocultar'], '[link de uso único removido]', $html),
+                'corpo_renderizado' => str_replace($refs['ocultar'], '[removido por segurança]', $html),
             ]);
         }
 

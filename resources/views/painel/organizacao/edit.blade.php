@@ -11,7 +11,7 @@
     <div class="alerta alerta--info"><p><b>Campos novos aguardando o banco de dados:</b> representante legal, dados bancários e chave de acesso da API
         aparecem aqui depois que o script <b>banco/V004</b> for importado no phpMyAdmin.</p></div>
 @elseif (! $org->dadosCompletos())
-    <div class="alerta alerta--info"><p><b>Complete os campos obrigatórios:</b> representante legal, CPF do representante e dados bancários.</p></div>
+    <div class="alerta alerta--info"><p><b>Complete os campos obrigatórios:</b> representante legal e CPF do representante legal.</p></div>
 @endif
 
 
@@ -40,13 +40,13 @@
         </section>
 
         <section class="secao-form">
-            <h2>Dados bancários</h2>
-            <p>Conta da organização para repasses e acertos com o Fora da Fila.</p>
+            <h2>Dados bancários <small class="suave" style="font-weight:400;font-size:.85rem">(opcional)</small></h2>
+            <p>Conta da organização para repasses e acertos com o Fora da Fila. Se preencher, informe os quatro campos.</p>
             <div class="form-grade">
-                <x-campo nome="banco" rotulo="Banco" :valor="$org->banco" obrigatorio classe="col-6" list="lista-bancos" placeholder="Ex.: 341 - Itaú Unibanco" autocomplete="off" />
-                <x-campo nome="agencia" rotulo="Agência" :valor="$org->agencia" obrigatorio classe="col-2" inputmode="numeric" placeholder="1234" />
-                <x-campo nome="conta" rotulo="Conta" :valor="$org->conta" obrigatorio classe="col-4" placeholder="12345-6" ajuda="Com o dígito." />
-                <x-campo nome="favorecido" rotulo="Favorecido" :valor="$org->favorecido ?? $org->razao_social" obrigatorio classe="col-12" ajuda="Titular da conta, como está no banco." />
+                <x-campo nome="banco" rotulo="Banco" :valor="$org->banco" classe="col-6" list="lista-bancos" placeholder="Ex.: 341 - Itaú Unibanco" autocomplete="off" />
+                <x-campo nome="agencia" rotulo="Agência" :valor="$org->agencia" classe="col-2" inputmode="numeric" placeholder="1234" />
+                <x-campo nome="conta" rotulo="Conta" :valor="$org->conta" classe="col-4" placeholder="12345-6" ajuda="Com o dígito." />
+                <x-campo nome="favorecido" rotulo="Favorecido" :valor="$org->favorecido" classe="col-12" ajuda="Titular da conta, como está no banco." />
             </div>
             <datalist id="lista-bancos">@foreach (\App\Http\Controllers\Painel\OrganizacaoController::BANCOS as $b)<option value="{{ $b }}">@endforeach</datalist>
         </section>
@@ -106,5 +106,15 @@
     </section>
 @endif
 
-<p style="margin-top:18px"><a href="{{ route('preferencias.edit') }}">Minhas preferências de notificação ›</a></p>
+<section class="cartao" style="margin-top:18px">
+    <div class="cartao__titulo"><h2>Minha conta de acesso</h2></div>
+    <div class="cartao__corpo">
+        <p>Você entra como <b>{{ auth()->user()->email }}</b>. A troca de senha e de e-mail é confirmada por um código enviado ao seu e-mail atual.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <a href="{{ route('conta.senha') }}" class="botao botao--escuro">Trocar senha</a>
+            <a href="{{ route('conta.email') }}" class="botao botao--contorno">Trocar e-mail</a>
+            <a href="{{ route('preferencias.edit') }}" class="botao botao--contorno">Preferências de notificação</a>
+        </div>
+    </div>
+</section>
 @endsection

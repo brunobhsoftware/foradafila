@@ -132,7 +132,7 @@ class EquipeController extends Controller
         $outros = OrganizadorUsuario::where('id', '<>', $vinculo->id)->where('status', 'ativo')
             ->where('perfil_id', PerfilAcesso::dono()->id)->count();
         if ($outros === 0) {
-            throw ValidationException::withMessages(['perfil_id' => 'A organização precisa ter pelo menos um Dono ativo. Promova outra pessoa a Dono antes.']);
+            throw ValidationException::withMessages(['perfil_id' => 'A organização precisa ter pelo menos um Produtor ativo (perfil de acesso total). Promova outra pessoa a Produtor antes.']);
         }
     }
 

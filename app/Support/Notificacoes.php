@@ -136,4 +136,26 @@ class Notificacoes
                 ['organizador_id' => $org->id, 'pedido_id' => $pedido->id, 'prioridade' => 3]);
         }
     }
+
+    /** fique@ — código de 6 dígitos para confirmar uma ação da conta (trocar senha, trocar e-mail). O código não fica gravado. */
+    public static function codigoVerificacao(string $nome, string $email, string $codigo, string $acao): void
+    {
+        $html = Email::layout('Seu código de verificação',
+            '<p>Olá, '.self::e(strtok($nome, ' ') ?: $nome).'.</p><p>Use o código abaixo para '.self::e($acao).' no Fora da Fila:</p>'
+            .'<p style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#101828;margin:18px 0">'.self::e($codigo).'</p>'
+            .'<p>O código vale por '.CodigoVerificacao::VALIDADE_MIN.' minutos e só pode ser usado uma vez. Se você não pediu, ignore este e-mail e considere trocar a sua senha.</p>');
+        Email::operacao('codigo_verificacao', $email, 'Seu código de verificação — Fora da Fila', $html,
+            "Seu código para {$acao} no Fora da Fila: {$codigo} (vale por ".CodigoVerificacao::VALIDADE_MIN.' minutos).',
+            ['ocultar' => $codigo, 'prioridade' => 1]);
+    }
+
+    /** noreply@ — aviso de segurança de que a conta foi alterada (senha ou e-mail). */
+    public static function contaAlterada(string $nome, string $email, string $mensagem): void
+    {
+        $html = Email::layout('Sua conta foi alterada',
+            '<p>Olá, '.self::e(strtok($nome, ' ') ?: $nome).'.</p><p>'.self::e($mensagem).'</p><p>Data: '.self::e(data_local(now())).' (horário de Brasília).</p>'
+            .'<p>Se não foi você, use “Esqueci a senha” na tela de entrada e fale com o responsável pela sua organização.</p>'
+            .'<p style="font-size:13px;color:#667085">Este é um aviso automático. Não responda a este e-mail.</p>');
+        Email::aviso('conta_alterada', $email, 'Sua conta no Fora da Fila foi alterada', $html, $mensagem, ['prioridade' => 1]);
+    }
 }
