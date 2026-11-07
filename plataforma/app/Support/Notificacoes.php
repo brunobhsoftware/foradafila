@@ -66,6 +66,22 @@ class Notificacoes
             ['organizador_id' => $org->id, 'comprador_id' => $comprador->id, 'pedido_id' => $pedido->id, 'prioridade' => 2]);
     }
 
+    /** fique@ — ingressos cancelados pela organização (com o valor a devolver, se houver). */
+    public static function ingressosCanceladosPelaOrganizacao(Pedido $pedido, Comprador $comprador, Evento $evento, Organizador $org, Collection $ingressos, float $valor): void
+    {
+        $lista = $ingressos->map(fn ($i) => '<li>'.self::e($i->numeroExibicao()).' — '.self::e($i->participante?->nome ?? '').'</li>')->implode('');
+        $devolucao = $valor > 0
+            ? '<p>O valor de <b>'.self::e(moeda($valor)).'</b> será devolvido pela organização, pelo mesmo meio de pagamento da compra. Em caso de dúvida, fale com a organização pelo contato abaixo.</p>'
+            : '';
+        $html = Email::layout('Ingressos cancelados',
+            '<p>Olá, '.self::e($comprador->primeiroNome()).'.</p><p>A organização de <b>'.self::e($evento->titulo).'</b> cancelou os ingressos abaixo do pedido <b>'
+            .self::e($pedido->codigo).'</b>. Eles deixaram de valer para a entrada.</p><ul style="padding-left:18px">'.$lista.'</ul>'.$devolucao,
+            null, null, self::rodapeOrganizador($org));
+        Email::operacao('cancelamento_organizacao', $comprador->email, "Ingressos cancelados — {$evento->titulo}", $html,
+            "A organização de {$evento->titulo} cancelou ingressos do pedido {$pedido->codigo}.".($valor > 0 ? ' Valor a devolver: '.moeda($valor).'.' : ''),
+            ['organizador_id' => $org->id, 'comprador_id' => $comprador->id, 'pedido_id' => $pedido->id]);
+    }
+
     /** fique@ — boas-vindas ao produtor que acabou de criar a conta. */
     public static function boasVindasProdutor(Usuario $usuario, Organizador $org): void
     {

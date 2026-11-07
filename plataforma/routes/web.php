@@ -163,6 +163,15 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::get('/preferencias', [PreferenciasController::class, 'edit'])->name('preferencias.edit');
     Route::put('/preferencias', [PreferenciasController::class, 'update'])->name('preferencias.update');
 
+    Route::get('/participantes', [\App\Http\Controllers\Painel\ParticipantesController::class, 'index'])->name('participantes.index');
+    Route::get('/participantes/exportar', [\App\Http\Controllers\Painel\ParticipantesController::class, 'exportar'])->name('participantes.exportar');
+    Route::post('/ingressos/{ingresso}/reenviar', [\App\Http\Controllers\Painel\ParticipantesController::class, 'reenviar'])->name('ingressos.reenviar')->middleware('throttle:30,10,reenviar-ingresso');
+    Route::post('/ingressos/{ingresso}/cancelar', [\App\Http\Controllers\Painel\ParticipantesController::class, 'cancelar'])->name('ingressos.cancelar');
+    Route::get('/pedidos', [\App\Http\Controllers\Painel\PedidosController::class, 'index'])->name('pedidos.index');
+    Route::get('/pedidos/{pedido}', [\App\Http\Controllers\Painel\PedidosController::class, 'show'])->name('pedidos.show');
+    Route::post('/pedidos/{pedido}/reenviar', [\App\Http\Controllers\Painel\PedidosController::class, 'reenviar'])->name('pedidos.reenviar')->middleware('throttle:30,10,reenviar-pedido');
+    Route::post('/pedidos/{pedido}/cancelar', [\App\Http\Controllers\Painel\PedidosController::class, 'cancelar'])->name('pedidos.cancelar');
+
     // Módulos das próximas fases: a tela explica o que vem e o menu já fica no lugar certo.
     Route::get('/{modulo}', EmBreveController::class)->name('em-breve')
         ->whereIn('modulo', array_keys(EmBreveController::MODULOS));

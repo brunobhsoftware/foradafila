@@ -44,6 +44,11 @@ class Pedido extends Model
         return $this->belongsTo(Organizador::class, 'organizador_id');
     }
 
+    public function comprador(): BelongsTo
+    {
+        return $this->belongsTo(Comprador::class);
+    }
+
     public function itens(): HasMany
     {
         return $this->hasMany(PedidoItem::class);

@@ -158,6 +158,16 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   **Primeiro acesso:** administrador criado sem senha usa "Esqueci a senha" (link de 60 min, `SenhaController::podeRedefinir`).
   Modelo decidido pelo Bruno (07/11/2026): **aplicação única da BH Software + "Conectar" de cada produtor**; o dinheiro
   cai direto na conta do produtor. O Financeiro do produtor mostra a etapa 1 só como "Liberação pela plataforma".
+- **Vendas → Participantes** (`/painel/participantes`, `ParticipantesController`): por evento (seletor; padrão = próximo), busca
+  (nome, e-mail, nº do ingresso, código do pedido), filtros (situação, lote), resumo (válidos, check-in, emitidos, cancelados),
+  botão "Ações" abre uma linha com **reenviar ingresso** (para o participante ou o comprador, via `Notificacoes::ingressosConfirmados`)
+  e **cancelar** (mostra o valor pago a devolver; motivo, observação, "já devolvi", avisar por e-mail). Exportar CSV (`;`, BOM;
+  CPF mascarado sem `participante.ver_dados_completos`). **Vendas → Pedidos** (`/painel/pedidos`, `PedidosController`): lista com
+  filtros e totais, detalhe com ingressos e devoluções, reenviar confirmação, cancelar o pedido. Cancelamento compartilhado em
+  `App\Support\CancelamentoIngressos` (devolve estoque; ingresso pago → `reembolsado` + linha em `reembolso`/`reembolso_ingresso`
+  com status `aprovado` = a devolver ou `concluido`; pedido → `reembolso_parcial`/`reembolsado`/`cancelado`). Aviso ao comprador:
+  `Notificacoes::ingressosCanceladosPelaOrganizacao` (fique@). Permissões: `participante.ver`, `participante.exportar`, `pedido.ver`,
+  `pedido.reembolsar`. A devolução do dinheiro em si é do produtor (com o Mercado Pago, sairá pela API).
 - **Política de cancelamento:** ao criar/editar evento o produtor marca a declaração
   `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
   (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores
@@ -192,7 +202,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-admin-empresas.js` (23), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.
