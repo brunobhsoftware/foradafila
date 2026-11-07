@@ -10,7 +10,7 @@
         'Vendas' => [
             ['rota' => 'pedidos.index', 'ativo' => 'pedidos.*', 'icone' => 'vendas', 'texto' => 'Pedidos', 'pode' => ['pedido.ver']],
             ['rota' => 'participantes.index', 'ativo' => 'participantes.*', 'icone' => 'participantes', 'texto' => 'Participantes', 'pode' => ['participante.ver']],
-            ['modulo' => 'checkin', 'icone' => 'checkin', 'texto' => 'Check-in', 'pode' => ['checkin.realizar', 'checkin.acompanhar']],
+            ['rota' => 'checkin.index', 'ativo' => 'checkin.*', 'icone' => 'checkin', 'texto' => 'Check-in', 'pode' => ['checkin.realizar']],
         ],
         'Divulgação' => [
             ['modulo' => 'cupons', 'icone' => 'cupom', 'texto' => 'Cupons', 'pode' => ['cupom.gerenciar', 'promoter.gerenciar']],

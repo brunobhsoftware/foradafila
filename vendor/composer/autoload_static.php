@@ -491,6 +491,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'App\\Http\\Controllers\\Auth\\SenhaController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/SenhaController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
         'App\\Http\\Controllers\\MidiaController' => __DIR__ . '/../..' . '/app/Http/Controllers/MidiaController.php',
+        'App\\Http\\Controllers\\Painel\\CheckinController' => __DIR__ . '/../..' . '/app/Http/Controllers/Painel/CheckinController.php',
         'App\\Http\\Controllers\\Painel\\DashboardController' => __DIR__ . '/../..' . '/app/Http/Controllers/Painel/DashboardController.php',
         'App\\Http\\Controllers\\Painel\\EmBreveController' => __DIR__ . '/../..' . '/app/Http/Controllers/Painel/EmBreveController.php',
         'App\\Http\\Controllers\\Painel\\EquipeController' => __DIR__ . '/../..' . '/app/Http/Controllers/Painel/EquipeController.php',

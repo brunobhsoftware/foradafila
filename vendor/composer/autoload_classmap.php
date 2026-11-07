@@ -16,6 +16,7 @@ return array(
     'App\\Http\\Controllers\\Auth\\SenhaController' => $baseDir . '/app/Http/Controllers/Auth/SenhaController.php',
     'App\\Http\\Controllers\\Controller' => $baseDir . '/app/Http/Controllers/Controller.php',
     'App\\Http\\Controllers\\MidiaController' => $baseDir . '/app/Http/Controllers/MidiaController.php',
+    'App\\Http\\Controllers\\Painel\\CheckinController' => $baseDir . '/app/Http/Controllers/Painel/CheckinController.php',
     'App\\Http\\Controllers\\Painel\\DashboardController' => $baseDir . '/app/Http/Controllers/Painel/DashboardController.php',
     'App\\Http\\Controllers\\Painel\\EmBreveController' => $baseDir . '/app/Http/Controllers/Painel/EmBreveController.php',
     'App\\Http\\Controllers\\Painel\\EquipeController' => $baseDir . '/app/Http/Controllers/Painel/EquipeController.php',

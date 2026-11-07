@@ -66,6 +66,88 @@
     b.setAttribute('aria-expanded', String(!alvo.hidden));
   }));
 
+  // Check-in pelo navegador: leitor (teclado), câmera (BarcodeDetector) e busca manual
+  $$('[data-checkin]').forEach((raiz) => {
+    const token = document.querySelector('meta[name=csrf-token]')?.content;
+    const caixa = raiz.querySelector('[data-resultado]');
+    const campo = raiz.querySelector('#checkin-codigo');
+    const sentido = () => raiz.querySelector('input[name=sentido]:checked')?.value || 'entrada';
+    let ocupado = false;
+    const mostrar = (r) => {
+      caixa.hidden = false;
+      caixa.className = 'checkin__resultado ' + (r.aceito ? 'ok' : 'erro');
+      const i = r.ingresso;
+      caixa.innerHTML = '';
+      const t = document.createElement('b'); t.textContent = r.mensagem; caixa.appendChild(t);
+      if (i) { const d = document.createElement('span'); d.textContent = `${i.nome || ''} · ${i.numero} · ${i.tipo || ''}${i.primeiro_checkin && !r.aceito ? ' · entrou ' + i.primeiro_checkin : ''}`; caixa.appendChild(d); }
+      if (r.numeros) {
+        Object.entries(r.numeros).forEach(([k, v]) => { const el = raiz.querySelector(`[data-n="${k}"]`); if (el) el.textContent = Number(v).toLocaleString('pt-BR'); });
+        const barra = raiz.querySelector('[data-barra]'); if (barra) barra.style.width = r.numeros.pct + '%';
+      }
+      if (navigator.vibrate) navigator.vibrate(r.aceito ? 80 : [80, 60, 80]);
+    };
+    const enviar = async (dados) => {
+      if (ocupado) return; ocupado = true;
+      try {
+        const resp = await fetch(raiz.dataset.registrar, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': token },
+          body: JSON.stringify({ ...dados, sentido: sentido() }) });
+        const r = await resp.json().catch(() => ({ aceito: false, mensagem: 'Erro ao validar. Tente de novo.' }));
+        mostrar(resp.ok ? r : { aceito: false, mensagem: r.message || 'Erro ao validar. Tente de novo.' });
+      } catch (e) { mostrar({ aceito: false, mensagem: 'Sem conexão. Tente de novo.' }); }
+      finally { ocupado = false; campo.value = ''; campo.focus(); }
+    };
+    raiz.querySelector('[data-checkin-form]').addEventListener('submit', (e) => { e.preventDefault(); if (campo.value.trim()) enviar({ codigo: campo.value.trim() }); });
+
+    // câmera
+    const botaoCam = raiz.querySelector('[data-camera]'); const video = raiz.querySelector('[data-video]');
+    let fluxo = null; let ultimo = ''; let ultimoEm = 0;
+    botaoCam.addEventListener('click', async () => {
+      if (fluxo) { fluxo.getTracks().forEach((t) => t.stop()); fluxo = null; video.hidden = true; botaoCam.textContent = 'Ler com a câmera'; return; }
+      if (!('BarcodeDetector' in window) || !navigator.mediaDevices) { raiz.querySelector('[data-camera-aviso]').hidden = false; return; }
+      try {
+        const det = new window.BarcodeDetector({ formats: ['qr_code'] });
+        fluxo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = fluxo; video.hidden = false; await video.play(); botaoCam.textContent = 'Parar câmera';
+        const loop = async () => {
+          if (!fluxo) return;
+          try {
+            const achados = await det.detect(video);
+            const v = achados[0]?.rawValue;
+            if (v && (v !== ultimo || Date.now() - ultimoEm > 4000)) { ultimo = v; ultimoEm = Date.now(); await enviar({ codigo: v }); }
+          } catch (e) { /* quadro sem leitura */ }
+          setTimeout(loop, 250);
+        };
+        loop();
+      } catch (e) { raiz.querySelector('[data-camera-aviso]').hidden = false; raiz.querySelector('[data-camera-aviso]').textContent = 'Não foi possível abrir a câmera (permissão negada?).'; }
+    });
+
+    // busca manual
+    const busca = raiz.querySelector('[data-busca]'); const lista = raiz.querySelector('[data-lista]'); let atraso;
+    busca.addEventListener('input', () => {
+      clearTimeout(atraso);
+      const q = busca.value.trim();
+      if (q.length < 2) { lista.innerHTML = ''; return; }
+      atraso = setTimeout(async () => {
+        const resp = await fetch(raiz.dataset.buscar + '?q=' + encodeURIComponent(q), { headers: { Accept: 'application/json' } });
+        const itens = resp.ok ? await resp.json() : [];
+        lista.innerHTML = '';
+        if (!itens.length) { lista.textContent = 'Ninguém encontrado.'; return; }
+        itens.forEach((i) => {
+          const linha = document.createElement('div'); linha.className = 'checkin__item';
+          const info = document.createElement('div');
+          const nome = document.createElement('b'); nome.textContent = i.nome || '—'; info.appendChild(nome);
+          info.appendChild(document.createElement('br'));
+          const sub = document.createElement('small'); sub.textContent = `${i.numero} · ${i.tipo || ''} · ${i.status_texto}`; info.appendChild(sub);
+          const b = document.createElement('button'); b.type = 'button'; b.className = 'botao botao--primario botao--pequeno';
+          b.textContent = sentido() === 'saida' ? 'Registrar saída' : 'Registrar entrada';
+          b.disabled = i.status !== 'valido' && !(i.status === 'utilizado' && sentido() === 'saida');
+          b.addEventListener('click', async () => { await enviar({ ingresso: i.uuid }); busca.dispatchEvent(new Event('input')); });
+          linha.append(info, b); lista.appendChild(linha);
+        });
+      }, 250);
+    });
+  });
+
   // Máscaras
   const mascaras = {
     cpf: (d) => d.slice(0, 11).replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'),
