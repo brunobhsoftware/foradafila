@@ -54,8 +54,12 @@ class AdminController extends Controller
         Auditoria::registrar('plataforma.mercadopago_teste', $request->user(), null,
             ['valor' => $valor, 'ambiente' => $d['ambiente'], 'referencia' => $referencia, 'preferencia' => $pref['id']]);
 
-        // No ambiente de teste, o checkout de testes (sandbox) do Mercado Pago, quando existir.
-        return redirect()->away($teste && ! empty($pref['sandbox_init_point']) ? $pref['sandbox_init_point'] : $pref['init_point']);
+        // Mostra o link (copiar / QR Code) para abrir numa janela anônima, outro navegador ou no celular,
+        // sem a conta da BH Software logada (o Mercado Pago recusa misturar conta real com teste).
+        return view('admin.teste-link', [
+            'link' => $teste && ! empty($pref['sandbox_init_point']) ? $pref['sandbox_init_point'] : $pref['init_point'],
+            'valor' => $valor, 'teste' => $teste, 'referencia' => $referencia,
+        ]);
     }
 
     /** Volta do Checkout Pro: mostra os IDs do pagamento e do pedido (order) e confere o pagamento na API. */
@@ -64,7 +68,8 @@ class AdminController extends Controller
         $q = $request->only(['payment_id', 'collection_id', 'status', 'collection_status', 'merchant_order_id', 'preference_id', 'external_reference', 'payment_type']);
         $id = $q['payment_id'] ?? $q['collection_id'] ?? null;
         $pagamento = [];
-        if ($id && $id !== 'null') {
+        $admin = (bool) $request->user()?->admin_plataforma;
+        if ($admin && $id && $id !== 'null') {
             try {
                 $token = session('mp_teste_ambiente') === 'teste' ? MercadoPago::credencial('teste_access_token') : MercadoPago::tokenAplicacao();
                 $pagamento = MercadoPago::pagamento($token, (string) $id);
@@ -73,7 +78,7 @@ class AdminController extends Controller
             }
         }
 
-        return view('admin.teste-retorno', ['q' => $q, 'pagamento' => $pagamento, 'ambiente' => session('mp_teste_ambiente', 'producao')]);
+        return view('admin.teste-retorno', ['q' => $q, 'pagamento' => $pagamento, 'ambiente' => session('mp_teste_ambiente'), 'admin' => $admin]);
     }
 
     public function mercadoPago()

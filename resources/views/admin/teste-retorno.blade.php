@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends($admin ? 'layouts.admin' : 'layouts.simples')
 @section('titulo', 'Pagamento de teste')
 
 @php
@@ -12,7 +12,7 @@
 <section class="cartao" style="padding:20px">
     <p>Situação:
         <span class="selo {{ $status === 'approved' ? 'selo--verde' : ($status === 'rejected' ? 'selo--laranja' : 'selo--amarelo') }}">{{ $nomes[$status] ?? ($status ?: 'desconhecida') }}</span>
-        <span class="selo {{ $ambiente === 'teste' ? 'selo--azul' : 'selo--cinza' }}">{{ $ambiente === 'teste' ? 'Credenciais de teste' : 'Produção' }}</span>
+        @if ($ambiente)<span class="selo {{ $ambiente === 'teste' ? 'selo--azul' : 'selo--cinza' }}">{{ $ambiente === 'teste' ? 'Credenciais de teste' : 'Produção' }}</span>@endif
         @if ($pagamento)<small class="suave">(conferido na API do Mercado Pago)</small>@endif
     </p>
     <dl class="mp__dados">
@@ -28,6 +28,10 @@
     </dl>
     <p style="margin-top:16px"><small class="suave">Copie o ID do pagamento ou do pedido para a "Qualidade da integração" no painel do Mercado Pago.
         Em alguns segundos o aviso (webhook) deve aparecer na página do Mercado Pago da Administração.</small></p>
-    <a href="{{ route('admin.mercadopago') }}" class="botao botao--escuro botao--pequeno">Voltar para Mercado Pago</a>
+    @if ($admin)
+        <a href="{{ route('admin.mercadopago') }}" class="botao botao--escuro botao--pequeno">Voltar para Mercado Pago</a>
+    @else
+        <p><small class="suave">Você está numa janela sem login: anote os IDs acima. Na Administração (logado), a lista de avisos do Mercado Pago mostra o mesmo pagamento.</small></p>
+    @endif
 </section>
 @endsection

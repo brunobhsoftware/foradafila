@@ -364,3 +364,7 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 @media (max-width: 900px) { .topo-admin__selo { color: var(--amarelo); } .topo-admin__quem { display: none; } }
 .teste-pagamento { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
 .teste-pagamento .campo { margin: 0; width: 160px; }
+.link-teste { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+.link-teste__qr { width: 220px; flex: none; background: #fff; border: 1px solid var(--borda); border-radius: var(--raio); padding: 8px; }
+.link-teste__qr svg { width: 100%; height: auto; display: block; }
+.link-teste__texto { flex: 1 1 320px; min-width: 0; }
