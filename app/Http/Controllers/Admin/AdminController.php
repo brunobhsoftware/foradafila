@@ -88,12 +88,13 @@ class AdminController extends Controller
             'client_secret' => ['nullable', 'string', 'max:200', 'regex:/^\S+$/'],
             'webhook_secret' => ['nullable', 'string', 'max:200', 'regex:/^\S+$/'],
             'teste_access_token' => ['nullable', 'string', 'max:300', 'regex:/^(APP_USR|TEST)-\S+$/'],
+            'teste_webhook_secret' => ['nullable', 'string', 'max:200', 'regex:/^\S+$/'],
         ], [
             'teste_access_token.regex' => 'O Access Token de teste começa com APP_USR- (ou TEST-) e não tem espaços.',
             'client_id.regex' => 'O Client ID tem só letras, números, "-" e "_".',
             'client_secret.regex' => 'O Client Secret não pode ter espaços.',
             'webhook_secret.regex' => 'A assinatura secreta não pode ter espaços.',
-        ], ['client_id' => 'Client ID', 'client_secret' => 'Client Secret', 'webhook_secret' => 'assinatura secreta', 'teste_access_token' => 'Access Token de teste']);
+        ], ['client_id' => 'Client ID', 'client_secret' => 'Client Secret', 'webhook_secret' => 'assinatura secreta', 'teste_access_token' => 'Access Token de teste', 'teste_webhook_secret' => 'assinatura secreta de teste']);
 
         $pkce = $request->boolean('pkce');
         if ($pkce !== MercadoPago::usaPkce()) {

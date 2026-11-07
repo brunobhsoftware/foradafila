@@ -48,7 +48,7 @@
     <h2 style="margin-top:0">2. Informar as chaves</h2>
     <p class="suave">Os segredos são guardados criptografados e nunca aparecem de novo na tela (só os 4 últimos caracteres). Campo em branco mantém o valor atual.</p>
     <div class="form-grade">
-        @foreach (['client_id' => ['MP_CLIENT_ID', 'Client ID', 'text'], 'client_secret' => ['MP_CLIENT_SECRET', 'Client Secret', 'password'], 'webhook_secret' => ['MP_WEBHOOK_SECRET', 'Assinatura secreta dos webhooks', 'password'], 'teste_access_token' => ['Credenciais > Teste > Access Token', 'Access Token de TESTE (só para o pagamento de teste)', 'password']] as $campo => [$env, $rotulo, $tipo])
+        @foreach (['client_id' => ['MP_CLIENT_ID', 'Client ID', 'text'], 'client_secret' => ['MP_CLIENT_SECRET', 'Client Secret', 'password'], 'webhook_secret' => ['MP_WEBHOOK_SECRET', 'Assinatura secreta dos webhooks', 'password'], 'teste_access_token' => ['Credenciais > Teste > Access Token', 'Access Token de TESTE (só para o pagamento de teste)', 'password'], 'teste_webhook_secret' => ['Webhooks > modo teste', 'Assinatura secreta dos webhooks de TESTE (se for diferente da de produção)', 'password']] as $campo => [$env, $rotulo, $tipo])
             <div class="campo col-12">
                 <label for="adm-{{ $campo }}">{{ $rotulo }} <small class="suave">({{ $env }})</small></label>
                 <input id="adm-{{ $campo }}" name="{{ $campo }}" type="{{ $tipo }}" autocomplete="off" spellcheck="false"
@@ -103,8 +103,8 @@
                     <td>{{ data_local($a->recebido_em) }}</td>
                     <td>{{ $a->tipo ?? '—' }}@if ($a->acao)<br><small>{{ $a->acao }}</small>@endif</td>
                     <td>{{ $a->recurso_id ?? '—' }}</td>
-                    <td>@if ($a->assinatura_valida)<span class="selo selo--verde">Válida</span>@else<span class="selo selo--cinza">Inválida</span>@endif</td>
-                    <td>{{ $a->status }}@if ($a->erro)<br><small>{{ $a->erro }}</small>@endif</td>
+                    <td>@if ($a->assinatura_valida)<span class="selo selo--verde">Válida{{ $a->erro === 'Assinatura de teste' ? ' (teste)' : '' }}</span>@else<span class="selo selo--cinza">Inválida</span>@endif</td>
+                    <td>{{ $a->status }}@if ($a->erro && ! $a->assinatura_valida)<br><small>{{ $a->erro }}</small>@endif</td>
                 </tr>
             @endforeach
             </tbody>
