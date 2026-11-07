@@ -108,6 +108,14 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   `convidados` = restrito a convidados (link por e-mail/WhatsApp, futuro), `oculto` = **adicionado manualmente** pela
   equipe (o enum do banco não mudou; só o significado de `oculto`). Só `publico` aparece na página do evento.
   Lote pago só publica com conta de recebimento ativa (Mercado Pago, próxima fase).
+- **Financeiro / Mercado Pago (OAuth pronto, aguardando a aplicação no MP):** `/painel/financeiro` (`FinanceiroController`)
+  conecta a conta do organizador por OAuth com PKCE (`state` na sessão), grava em `conta_pagamento` (status `conectada`,
+  tokens criptografados com a APP_KEY, e-mail/apelido/país via `/users/me`) e desconecta (apaga tokens, `revogada`).
+  Sem `MP_CLIENT_ID`/`MP_CLIENT_SECRET` no `.env`, o botão fica desativado com aviso. Cliente em `App\Pagamentos\MercadoPago`;
+  `config/pagamentos.php` (`MP_API_URL`/`MP_AUTORIZACAO_URL` só para teste). **Webhook** `POST /webhooks/mercadopago`
+  (sem CSRF, throttle `webhook-mp`): confere `x-signature` com `MP_WEBHOOK_SECRET`, grava em `webhook_evento`
+  (`recebido` ou `ignorado`), não duplica, sempre 200; o processamento entra com o checkout. Homologação, checkout,
+  renovação de token e reembolso: ainda não feitos.
 - **Política de cancelamento:** ao criar/editar evento o produtor marca a declaração
   `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
   (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores
@@ -142,7 +150,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-financeiro.js` (17, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.

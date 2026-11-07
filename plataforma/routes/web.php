@@ -11,7 +11,9 @@ use App\Http\Controllers\Painel\EquipeController;
 use App\Http\Controllers\Painel\EventoController;
 use App\Http\Controllers\Painel\LoteController;
 use App\Http\Controllers\Painel\MinhaContaController;
+use App\Http\Controllers\Painel\FinanceiroController;
 use App\Http\Controllers\Painel\OrganizacaoController;
+use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\Painel\PerfilController;
 use App\Http\Controllers\Painel\PreferenciasController;
 use App\Http\Controllers\Publico\CompradorAuthController;
@@ -78,9 +80,18 @@ Route::middleware('auth')->group(function () {
     Route::post('/organizacoes', [OrganizacaoSelecaoController::class, 'store']);
 });
 
+// ---------- Avisos das operadoras de pagamento (sem login e sem CSRF) ----------
+Route::post('/webhooks/mercadopago', [WebhookController::class, 'mercadoPago'])->name('webhook.mercadopago')
+    ->middleware('throttle:120,1,webhook-mp');
+
 // ---------- Área do produtor ----------
 Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () {
     Route::get('/', DashboardController::class)->name('painel');
+
+    Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro');
+    Route::post('/financeiro/mercadopago/conectar', [FinanceiroController::class, 'conectar'])->name('financeiro.mp.conectar');
+    Route::get('/financeiro/mercadopago/retorno', [FinanceiroController::class, 'retorno'])->name('financeiro.mp.retorno');
+    Route::post('/financeiro/mercadopago/desconectar', [FinanceiroController::class, 'desconectar'])->name('financeiro.mp.desconectar');
 
     Route::get('/eventos', [EventoController::class, 'index'])->name('eventos.index');
     Route::get('/eventos/novo', [EventoController::class, 'create'])->name('eventos.create');
