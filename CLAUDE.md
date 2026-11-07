@@ -18,6 +18,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V005__evento_capacidade_opcional.sql` | `evento.capacidade` aceita NULL (capacidade máxima opcional). Idempotente |
 | `banco/V006__integracao_pagamentos.sql` | Campos para Mercado Pago e outras operadoras (OAuth, checkout, idempotência, webhooks). Idempotente. Importado em produção em 07/11/2026 ("V006 ok") |
 | `banco/V007__administrador_plataforma.sql` | Só dados: cria o administrador da plataforma (Bruno, bruno@bhsoftware.com.br, `admin_plataforma = 1`, sem senha). Idempotente. Importado em produção em 07/11/2026 ("V007 ok") |
+| `banco/V008__administracao_taxas_impersonacao.sql` | Motor de taxas (`taxa_regra` com faixas por volume, `taxa_organizador` com isenções/validade), `impersonacao_log` e `auditoria.admin_impersonando_id`/`impersonacao_id`. Idempotente. **Ainda não importado** |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
@@ -144,6 +145,16 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   de teste não redireciona: mostra o link (copiar + QR Code) para abrir em janela anônima/celular, sem a conta da BH Software logada
   (o MP recusa misturar conta real e de teste). Botão "Verificar de quem são os tokens" (`/users/me` com cada token: conta, apelido,
   conta de teste ou real; avisa se os dois são da mesma conta). O retorno `/admin/mercadopago/teste/retorno` é aberto (sem login só mostra os IDs). Empresas e taxas/isenções: em breve. Administrador sem empresa entra direto em `/admin`.
+  **Empresas** (`/admin/empresas`, V008): lista com busca (nome/CNPJ), filtros (situação, período), ações "Assumir conta",
+  "Taxas e isenções" e "Status"; detalhe (`/admin/empresas/{uuid}`) com números, usuários, integrações, situação (ativo/em teste/
+  suspenso/encerrado + motivo), taxas específicas, acessos da Administração e auditoria. **Assumir conta** (`App\Support\Impersonacao`):
+  sessão `impersonacao` (admin, empresa, log); o middleware `organizador` monta um vínculo virtual com o perfil Produtor; faixa
+  laranja no painel com "Sair do modo assumir conta" (`POST /admin/sair-da-conta`); toda auditoria nesse período leva
+  `admin_impersonando_id` e `impersonacao_id`, e `impersonacao_log.acoes` conta as ações. **Taxas** (`/admin/taxas`,
+  `App\Support\MotorTaxas::calcular()`): regras padrão por operação com faixas de volume mensal (sem sobreposição), % + fixo,
+  mínimo, carência para conta nova; taxa específica da empresa (isenção ou valores próprios; vazio = padrão) com início/fim;
+  encerrar = fim ontem (ou remove se ainda não valeu). Sem o V008, essas telas mostram aviso (`admin.precisa-v008`).
+  Ainda não há cobrança aplicada: o motor só calcula (simulação na tela da empresa).
   **Primeiro acesso:** administrador criado sem senha usa "Esqueci a senha" (link de 60 min, `SenhaController::podeRedefinir`).
   Modelo decidido pelo Bruno (07/11/2026): **aplicação única da BH Software + "Conectar" de cada produtor**; o dinheiro
   cai direto na conta do produtor. O Financeiro do produtor mostra a etapa 1 só como "Liberação pela plataforma".
@@ -181,7 +192,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-admin-empresas.js` (23), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.

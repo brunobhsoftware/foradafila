@@ -21,6 +21,24 @@ class IdentificarOrganizador
     public function handle(Request $request, Closure $next): Response
     {
         $usuario = $request->user();
+
+        // Administrador da plataforma "assumindo a conta" de uma empresa: vínculo virtual com o perfil Produtor.
+        if (\App\Support\Esquema::temV008() && ($imp = \App\Support\Impersonacao::ativa())) {
+            $organizador = Organizador::find($imp['organizador_id']);
+            if ($organizador) {
+                $vinculo = new OrganizadorUsuario(['organizador_id' => $organizador->id, 'status' => 'ativo', 'todos_eventos' => 1]);
+                $vinculo->setRelation('perfil', \App\Models\PerfilAcesso::whereNull('organizador_id')->where('codigo', 'dono')->firstOrFail());
+                app(Tenant::class)->definir($organizador, $vinculo);
+                view()->share('tenant', app(Tenant::class));
+                view()->share('organizadorAtual', $organizador);
+                view()->share('temOutrasOrganizacoes', false);
+                view()->share('impersonacao', $imp);
+
+                return $next($request);
+            }
+            \App\Support\Impersonacao::encerrar();
+        }
+
         $vinculos = $usuario->vinculosAtivos()->with('perfil')->get();
 
         if ($vinculos->isEmpty() && $usuario->admin_plataforma) {

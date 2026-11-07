@@ -92,6 +92,15 @@ Route::get('/admin/mercadopago/teste/retorno', [\App\Http\Controllers\Admin\Admi
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Admin\AdminController::class, 'inicio'])->name('inicio');
     Route::get('/mercadopago', [\App\Http\Controllers\Admin\AdminController::class, 'mercadoPago'])->name('mercadopago');
+    Route::get('/empresas', [\App\Http\Controllers\Admin\EmpresasController::class, 'index'])->name('empresas');
+    Route::get('/empresas/{organizador}', [\App\Http\Controllers\Admin\EmpresasController::class, 'show'])->name('empresas.show');
+    Route::put('/empresas/{organizador}/situacao', [\App\Http\Controllers\Admin\EmpresasController::class, 'situacao'])->name('empresas.situacao');
+    Route::post('/empresas/{organizador}/assumir', [\App\Http\Controllers\Admin\EmpresasController::class, 'assumir'])->name('empresas.assumir');
+    Route::post('/empresas/{organizador}/taxas', [\App\Http\Controllers\Admin\EmpresasController::class, 'salvarTaxa'])->name('empresas.taxas');
+    Route::post('/empresas/{organizador}/taxas/{taxa}/encerrar', [\App\Http\Controllers\Admin\EmpresasController::class, 'encerrarTaxa'])->name('empresas.taxas.encerrar')->whereNumber('taxa');
+    Route::get('/taxas', [\App\Http\Controllers\Admin\TaxasController::class, 'index'])->name('taxas');
+    Route::post('/taxas', [\App\Http\Controllers\Admin\TaxasController::class, 'salvar'])->name('taxas.criar');
+    Route::put('/taxas/{regra}', [\App\Http\Controllers\Admin\TaxasController::class, 'salvar'])->name('taxas.salvar')->whereNumber('regra');
     Route::put('/mercadopago', [\App\Http\Controllers\Admin\AdminController::class, 'salvarMercadoPago'])->name('mercadopago.salvar')
         ->middleware('throttle:20,10,admin-mp');
     Route::post('/mercadopago/verificar', [\App\Http\Controllers\Admin\AdminController::class, 'verificarTokens'])->name('mercadopago.verificar')
@@ -99,6 +108,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/mercadopago/teste', [\App\Http\Controllers\Admin\AdminController::class, 'testarPagamento'])->name('mercadopago.teste')
         ->middleware('throttle:10,10,admin-mp-teste');
 });
+
+// Sair do "assumir conta" (fora do grupo admin: é chamado de dentro do painel da empresa).
+Route::post('/admin/sair-da-conta', [\App\Http\Controllers\Admin\EmpresasController::class, 'sairDaConta'])->middleware(['auth', 'admin'])->name('admin.sair-da-conta');
 
 // ---------- Área do produtor ----------
 Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () {

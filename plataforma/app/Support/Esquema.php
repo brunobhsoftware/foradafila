@@ -21,6 +21,12 @@ class Esquema
             && Schema::hasColumn('organizador_usuario', 'notificar_compra');
     }
 
+    /** V008: motor de taxas e "assumir conta" (impersonação) da Administração. */
+    public static function temV008(): bool
+    {
+        return self::$cache['v008'] ??= Schema::hasTable('impersonacao_log') && Schema::hasColumn('auditoria', 'admin_impersonando_id');
+    }
+
     /** V005: evento.capacidade aceita NULL (capacidade máxima opcional). */
     public static function capacidadeOpcional(): bool
     {
