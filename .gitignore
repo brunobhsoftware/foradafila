@@ -1,0 +1,9 @@
+/node_modules
+/storage/*.key
+/storage/logs/*.log
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/framework/cache/data/*
+.env
