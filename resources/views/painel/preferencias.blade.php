@@ -1,9 +1,9 @@
 @extends('layouts.painel')
-@section('titulo', 'Preferências de notificação')
+@section('titulo', 'Preferências')
 
 @section('conteudo')
 <div class="cabecalho">
-    <div><h1>Preferências de notificação</h1><p>Valem só para você ({{ auth()->user()->email }}) em {{ $organizadorAtual->nomeExibicao() }}.</p></div>
+    <div><h1>Preferências</h1><p>As notificações valem só para você ({{ auth()->user()->email }}); a exibição de eventos passados vale para a organização.</p></div>
 </div>
 
 @unless ($temV004)
@@ -12,6 +12,7 @@
     <form method="post" action="{{ route('preferencias.update') }}" class="cartao">
         @csrf @method('PUT')
         <section class="secao-form">
+            <h2>Notificações por e-mail</h2>
             <div class="opcoes">
                 <label class="opcao">
                     <input type="checkbox" name="notificar_compra" value="1" @checked($vinculo->notificar_compra)>
@@ -25,6 +26,18 @@
                     Você pode desmarcar quando quiser.</small></span>
                 </label>
             </div>
+        </section>
+        <section class="secao-form">
+            <h2>Página pública da organização</h2>
+            @if ($podeEditarOrg)
+                <input type="hidden" name="mostrar_eventos_passados" value="0">
+            @endif
+            <label class="opcao">
+                <input type="checkbox" name="mostrar_eventos_passados" value="1" @checked($org->mostrar_eventos_passados) @disabled(! $podeEditarOrg)>
+                <span><b>Mostrar eventos passados</b><br>
+                <small>A página pública ({{ route('organizador.publico', $org->slug) }}) lista também os eventos que já aconteceram.
+                    Vale para toda a organização{{ $podeEditarOrg ? '' : '; só quem pode editar a organização altera esta opção' }}.</small></span>
+            </label>
         </section>
         <div class="acoes-form"><button class="botao botao--primario">Salvar preferências</button></div>
     </form>

@@ -58,9 +58,12 @@
         <div><h2>Sobre o evento</h2><div class="pub-evento__descricao">{{ $evento->descricao }}</div></div>
       @endif
 
-      @if ($evento->politica_cancelamento)
-        <div><h2>Política de cancelamento</h2><div class="pub-evento__descricao">{{ $evento->politica_cancelamento }}</div></div>
-      @endif
+      <div>
+        <h2>Política de cancelamento</h2>
+        @if ($evento->politica_cancelamento)<div class="pub-evento__descricao">{{ $evento->politica_cancelamento }}</div>@endif
+        <p style="margin-top:10px"><b>Em caso de cancelamento do evento, é responsabilidade do produtor ({{ $evento->organizador->razao_social }}) devolver todos os valores pagos aos clientes,
+          sob as penas das leis de defesa do consumidor.</b></p>
+      </div>
 
       <div class="pub-cartao pub-organizador">
         <small>Organizado e realizado por</small>

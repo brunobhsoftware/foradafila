@@ -61,6 +61,7 @@ class EventoController extends Controller
                 $evento->forceFill(['imagem_capa_url' => ImagemEvento::salvar($evento, $request->file('imagem'))])->save();
             }
             Auditoria::registrar('evento.criar', $evento);
+            self::registrarDeclaracao($evento);
 
             return $evento;
         }), 'titulo');
@@ -114,6 +115,7 @@ class EventoController extends Controller
             }
             $evento->update($dadosEvento);
             Auditoria::registrar('evento.editar', $evento, $antes);
+            self::registrarDeclaracao($evento);
         }), 'titulo');
 
         return redirect()->route('eventos.show', $evento)->with('ok', 'Evento atualizado.');
@@ -151,6 +153,21 @@ class EventoController extends Controller
         return back()->with('ok', $mensagens[$novo] ?? 'Status atualizado.');
     }
 
+    /** Texto da declaração que o produtor marca ao criar ou editar o evento. */
+    public const DECLARACAO_CANCELAMENTO = 'Declaro que, em caso de cancelamento do evento, é responsabilidade do produtor (organizador) '
+        .'devolver todos os valores pagos aos clientes, sob as penas das leis de defesa do consumidor.';
+
+    /** Prova da declaração: quem marcou, quando, de qual IP e o texto exato (tabela auditoria). */
+    private static function registrarDeclaracao(Evento $evento): void
+    {
+        \App\Models\Auditoria::create([
+            'organizador_id' => $evento->organizador_id, 'usuario_id' => auth()->id(),
+            'acao' => 'evento.declaracao_cancelamento', 'tabela' => 'evento', 'registro_id' => $evento->id,
+            'depois' => ['texto' => self::DECLARACAO_CANCELAMENTO, 'user_agent' => mb_substr((string) request()->userAgent(), 0, 255)],
+            'ip' => request()->ip(),
+        ]);
+    }
+
     private function garantirAcesso(Evento $evento): void
     {
         abort_unless(Evento::visiveis()->whereKey($evento->id)->exists(), 404);
@@ -181,7 +198,9 @@ class EventoController extends Controller
             'data_inicio' => ['required', 'date'],
             'data_fim' => ['required', 'date', 'after:data_inicio'],
             'abertura_portoes' => ['nullable', 'date', 'before_or_equal:data_inicio'],
-            'capacidade' => ['required', 'integer', 'min:1', 'max:10000000'],
+            'capacidade' => [\App\Support\Esquema::capacidadeOpcional() ? 'nullable' : 'required', 'integer', 'min:1', 'max:10000000'],
+            // Declaração do produtor sobre cancelamento (pedido do Bruno, 07/11/2026), registrada na auditoria.
+            'aceite_cancelamento' => ['accepted'],
             'visibilidade' => ['required', Rule::in(array_keys(Evento::VISIBILIDADES))],
             'conta_pagamento_id' => ['nullable', Rule::exists('conta_pagamento', 'id')->where('organizador_id', app(\App\Support\Tenant::class)->id())],
             'max_ingressos_pedido' => ['required', 'integer', 'min:1', 'max:100'],
@@ -203,13 +222,15 @@ class EventoController extends Controller
             'imagem.mimetypes' => 'Envie a imagem em JPEG, GIF ou PNG.',
             'imagem.image' => 'O arquivo enviado não é uma imagem válida.',
             'imagem.uploaded' => 'A imagem pode ter no máximo 2 MB.',
+            'aceite_cancelamento.accepted' => 'Para salvar o evento, marque a declaração sobre a política de cancelamento.',
         ], [
             'imagem' => 'imagem de divulgação',
             'local.nome' => 'nome do local', 'local.cidade' => 'cidade', 'local.uf' => 'UF',
             'data_inicio' => 'início', 'data_fim' => 'término', 'abertura_portoes' => 'abertura dos portões',
         ]);
 
-        $dadosEvento = collect($v)->except(['local', 'imagem'])->all();
+        $dadosEvento = collect($v)->except(['local', 'imagem', 'aceite_cancelamento'])->all();
+        $dadosEvento['capacidade'] = $dadosEvento['capacidade'] ?? null;
         foreach (['data_inicio', 'data_fim', 'abertura_portoes'] as $campo) {
             $dadosEvento[$campo] = utc_de_local($dadosEvento[$campo] ?? null);
         }

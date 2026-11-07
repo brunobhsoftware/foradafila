@@ -57,7 +57,7 @@
 
 <div class="grade grade-4">
     <div class="cartao kpi"><small>Ingressos vendidos</small><b>{{ numero($indicadores->ingressos_vendidos) }}</b><small>{{ numero($indicadores->ingressos_reservados) }} reservados agora</small></div>
-    <div class="cartao kpi"><small>Ofertados nos lotes</small><b>{{ numero($indicadores->ingressos_ofertados) }}</b><small>capacidade {{ numero($evento->capacidade) }}</small></div>
+    <div class="cartao kpi"><small>Ofertados nos lotes</small><b>{{ numero($indicadores->ingressos_ofertados) }}</b><small>capacidade {{ $evento->capacidadeTexto() }}</small></div>
     @can('financeiro.ver')
         <div class="cartao kpi"><small>Receita bruta</small><b>{{ moeda($indicadores->receita_bruta) }}</b><small>{{ numero($indicadores->pedidos_pagos) }} pedidos pagos</small></div>
     @else
@@ -69,7 +69,7 @@
 <section class="cartao" style="margin-top:18px">
     <div class="cartao__titulo">
         <div><h2>Ingressos e lotes</h2><small>Setores (Pista, VIP…) e os lotes de cada um, com preço, quantidade e período de venda.</small></div>
-        <small>{{ numero($somaLotes) }} de {{ numero($evento->capacidade) }} lugares em lotes</small>
+        <small>{{ numero($somaLotes) }} {{ $evento->capacidade === null ? 'ingressos em lotes · sem capacidade máxima' : 'de '.numero($evento->capacidade).' lugares em lotes' }}</small>
     </div>
 
     @forelse ($evento->tipos as $tipo)
