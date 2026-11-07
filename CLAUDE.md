@@ -16,6 +16,8 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V002__termos_iniciais.sql` | Termos provisórios 0.1 (uso, responsabilidade, compra, privacidade). Idempotente |
 | `banco/V003__ajuste_modelo_confirmacao.sql` | Só dados: tira "em anexo" do modelo padrão de confirmação. Idempotente |
 | `banco/V005__evento_capacidade_opcional.sql` | `evento.capacidade` aceita NULL (capacidade máxima opcional). Idempotente |
+| `banco/V006__integracao_pagamentos.sql` | Campos para Mercado Pago e outras operadoras (OAuth, checkout, idempotência, webhooks). Idempotente. **Ainda não importado** |
+| `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
 O documento vivo (editável e comentável) continua em
@@ -99,6 +101,13 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   botão "gerar token de integração" (guardar só o hash SHA-256).
 - **Capacidade máxima do evento é opcional** (com o V005): em branco, a quantidade de ingressos é livre e a lotação é
   responsabilidade da empresa; com capacidade, a soma dos lotes continua limitada (app e trigger).
+- **Cadastro de ingressos (lotes):** nome, quantidade, interruptor "Ingresso ativo" (desativado = status `pausado`,
+  também pelo botão Ativar/Desativar da lista, `lotes.alternar`), **Gratuito/Pago** (pago pede valor > 0 e
+  modalidade inteira/meia), **Por data** (início e fim) ou **Por lote** (escolhe o lote anterior; começa quando ele
+  esgota, encerra ou passa do fim; recusa dependência circular) e **Quem pode comprar**: `publico` = todo o público,
+  `convidados` = restrito a convidados (link por e-mail/WhatsApp, futuro), `oculto` = **adicionado manualmente** pela
+  equipe (o enum do banco não mudou; só o significado de `oculto`). Só `publico` aparece na página do evento.
+  Lote pago só publica com conta de recebimento ativa (Mercado Pago, próxima fase).
 - **Política de cancelamento:** ao criar/editar evento o produtor marca a declaração
   `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
   (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores
@@ -133,7 +142,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.
@@ -215,6 +224,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 
 ## Próximos passos
 
-1. Financeiro: conectar e homologar a conta do Mercado Pago (OAuth), checkout pago e pedido de reembolso.
+1. Importar o V006; criar a aplicação no Mercado Pago (`MP_*` no `.env`, ver `docs/integracao-pagamentos.md`).
+   Financeiro: conectar e homologar a conta do Mercado Pago (OAuth), checkout pago e pedido de reembolso.
 2. Check-in (PWA) lendo o QR `FF1.<codigo>.<hmac>` e participantes no painel.
 3. Confirmação de e-mail no cadastro e lembretes do evento.

@@ -72,7 +72,7 @@ const salvar = async (p) => { await p.evaluate(() => { document.querySelector('f
   await nav(P, P.click('button:has-text("Criar tipo")'));
   await P.click('summary:has-text("Adicionar lote")');
   const f = P.locator('form:has(input[name=_form][value^="lote-"])').last();
-  await f.locator('[name=preco]').fill('0'); await f.locator('[name=quantidade]').fill('50');
+  await f.locator('input[name=cobranca][value=gratuito]').check({ force: true }); await f.locator('[name=quantidade]').fill('50');
   await nav(P, f.locator('button:has-text("Adicionar lote")').click());
   await nav(P, P.click('button:has-text("Publicar evento")'));
   const V = await (await b.newContext()).newPage();

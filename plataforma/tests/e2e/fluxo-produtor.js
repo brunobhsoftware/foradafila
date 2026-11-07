@@ -65,13 +65,13 @@ async function cadastrar(page, { nome, email, tipo, doc, razao, fantasia }) {
   ok((await A.content()).includes('Tipo de ingresso “Ingresso” criado'), 'tipo de ingresso criado');
   await A.click('summary:has-text("Adicionar lote")');
   const f = A.locator('form:has(input[name=_form][value^="lote-"])').last();
-  await f.locator('[name=preco]').fill('0');
+  await f.locator('input[name=cobranca][value=gratuito]').check({ force: true });
   await f.locator('[name=quantidade]').fill('600');
   await Promise.all([A.waitForNavigation(), f.locator('button:has-text("Adicionar lote")').click()]);
   ok((await A.content()).includes('passa da capacidade'), 'lote acima da capacidade é recusado');
   if (!(await A.locator('details:has(summary:has-text("Adicionar lote"))').getAttribute('open') !== null)) await A.click('summary:has-text("Adicionar lote")');
   const f2 = A.locator('form:has(input[name=_form][value^="lote-"])').last();
-  await f2.locator('[name=preco]').fill('0');
+  await f2.locator('input[name=cobranca][value=gratuito]').check({ force: true });
   await f2.locator('[name=quantidade]').fill('300');
   await Promise.all([A.waitForNavigation(), f2.locator('button:has-text("Adicionar lote")').click()]);
   ok((await A.content()).includes('Lote “1º lote” criado'), 'lote gratuito criado');

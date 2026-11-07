@@ -53,7 +53,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   await nav(P, P.click('button:has-text("Criar tipo")'));
   await P.click('summary:has-text("Adicionar lote")');
   let f = P.locator('form:has(input[name=_form][value^="lote-"])').last();
-  await f.locator('[name=preco]').fill('0'); await f.locator('[name=quantidade]').fill('5000');
+  await f.locator('input[name=cobranca][value=gratuito]').check({ force: true }); await f.locator('[name=quantidade]').fill('5000');
   await nav(P, f.locator('button:has-text("Adicionar lote")').click());
   ok((await P.content()).includes('Lote “1º lote” criado'), 'sem capacidade, aceita lote de 5.000 ingressos');
   ok((await P.content()).includes('Sem capacidade máxima definida'), 'lista "Para publicar" explica a falta de capacidade');
@@ -73,7 +73,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   await nav(P, P.click('button:has-text("Criar tipo")'));
   await P.click('summary:has-text("Adicionar lote")');
   f = P.locator('form:has(input[name=_form][value^="lote-"])').last();
-  await f.locator('[name=preco]').fill('0'); await f.locator('[name=quantidade]').fill('150');
+  await f.locator('input[name=cobranca][value=gratuito]').check({ force: true }); await f.locator('[name=quantidade]').fill('150');
   await nav(P, f.locator('button:has-text("Adicionar lote")').click());
   ok((await P.content()).includes('passa da capacidade'), 'com capacidade 100, lote de 150 é recusado');
 

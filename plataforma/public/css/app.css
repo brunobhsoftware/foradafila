@@ -293,3 +293,29 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 }
 .atalhos-org__id small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .atalhos-org__botoes form { margin: 0; }
+
+/* ---------- Formulário de lote ---------- */
+[hidden] { display: none !important; }
+.interruptor { display: inline-flex; align-items: center; gap: 10px; margin-top: 6px; font-weight: 600; color: var(--tinta); cursor: pointer; position: relative; }
+.interruptor input[type=checkbox] { position: absolute; opacity: 0; width: 42px; height: 24px; margin: 0; cursor: pointer; }
+.interruptor span { width: 42px; height: 24px; border-radius: 99px; background: var(--borda-forte); position: relative; transition: background .15s; flex: none; }
+.interruptor span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 3px rgba(16,24,40,.2); }
+.interruptor input:checked + span { background: #12B76A; }
+.interruptor input:checked + span::after { transform: translateX(18px); }
+.interruptor input:focus-visible + span { outline: 3px solid rgba(242,92,5,.35); }
+.opcoes-lote { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.opcao-cartao { position: relative; margin: 0; cursor: pointer; }
+.opcao-cartao input { position: absolute; top: 14px; left: 14px; margin: 0; accent-color: var(--laranja); }
+.opcao-cartao span { display: grid; gap: 2px; height: 100%; padding: 12px 14px 12px 38px; border: 1px solid var(--borda-forte); border-radius: var(--raio-p); background: #fff; }
+.opcao-cartao b { color: var(--tinta); font-size: .92rem; }
+.opcao-cartao small { color: var(--suave); font-size: .8rem; line-height: 1.35; }
+.opcao-cartao input:checked + span { border-color: var(--laranja); background: #FFF8F3; box-shadow: 0 0 0 1px var(--laranja); }
+.lote-form__mais summary { cursor: pointer; color: var(--laranja); font-weight: 600; font-size: .9rem; }
+.selo--cinza { background: #F2F4F7; color: #475467; }
+@media (max-width: 900px) { .opcoes-lote { grid-template-columns: 1fr; } }
+.campo label.interruptor { display: inline-flex; margin-bottom: 0; }
+.campo .interruptor input[type=checkbox] { position: absolute; left: 0; top: 0; width: 42px; height: 24px; padding: 0; border: 0; opacity: 0; }
+.campo label.opcao-cartao { display: block; margin: 0; font-weight: 400; }
+.campo .opcao-cartao input[type=radio] { position: absolute; top: 14px; left: 14px; width: 16px; height: 16px; padding: 0; margin: 0; }
+.tabela td.num form, .tabela td.num details { vertical-align: middle; }
+.tabela td.num { white-space: nowrap; }

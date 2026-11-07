@@ -111,11 +111,14 @@
                                 <td>{{ \App\Models\Lote::MODALIDADES[$lote->modalidade] }}</td>
                                 <td class="num">{{ $lote->preco > 0 ? moeda($lote->preco) : 'Grátis' }}</td>
                                 <td style="min-width:140px"><small>{{ numero($lote->vendido) }} / {{ numero($lote->quantidade) }}</small><div class="barra"><span style="width:{{ min(100, $pct) }}%"></span></div></td>
-                                <td><small>{{ data_local($lote->venda_inicio, 'd/m H:i') }} → {{ data_local($lote->venda_fim, 'd/m H:i') }}</small></td>
-                                <td><span class="selo {{ ['ativo' => 'selo--verde', 'esgotado' => 'selo--laranja', 'pausado' => 'selo--amarelo', 'encerrado' => 'selo--azul'][$lote->status] ?? '' }}">{{ \App\Models\Lote::STATUS[$lote->status] }}</span></td>
+                                <td><small>@if ($lote->lote_anterior_id)Após “{{ $lotesOpcoes[$lote->lote_anterior_id] ?? 'lote anterior' }}”@else{{ data_local($lote->venda_inicio, 'd/m H:i') }}@endif → {{ data_local($lote->venda_fim, 'd/m H:i') }}</small></td>
+                                <td><span class="selo {{ ['ativo' => 'selo--verde', 'esgotado' => 'selo--laranja', 'pausado' => 'selo--cinza', 'encerrado' => 'selo--azul'][$lote->status] ?? '' }}">{{ \App\Models\Lote::STATUS[$lote->status] }}</span></td>
                                 <td class="num">
                                     @if ($podeLotes)
-                                        <details class="painel-recolhivel"><summary class="botao botao--contorno botao--pequeno">Editar</summary>
+                                        <form method="post" action="{{ route('lotes.alternar', $lote) }}" style="display:inline">@csrf
+                                            <button class="botao botao--contorno botao--pequeno" title="{{ $lote->status === 'pausado' ? 'Volta a aparecer e a ser vendido' : 'Deixa de aparecer e de ser vendido' }}">{{ $lote->status === 'pausado' ? 'Ativar' : 'Desativar' }}</button>
+                                        </form>
+                                        <details class="painel-recolhivel" style="display:inline-block" @if (old('_form') === 'lote-'.$lote->id) open @endif><summary class="botao botao--contorno botao--pequeno">Editar</summary>
                                             <div style="text-align:left;min-width:min(680px,84vw)">
                                                 @include('painel.eventos.lote-form', ['lote' => $lote, 'acao' => route('lotes.update', $lote), 'metodo' => 'PUT'])
                                                 @unless ($lote->temMovimento())
@@ -137,7 +140,7 @@
             @if ($podeLotes)
                 <details class="painel-recolhivel" style="margin-top:12px" @if (old('_form') === 'lote-'.$tipo->id) open @endif>
                     <summary><x-icone nome="mais" /> Adicionar lote em {{ $tipo->nome }}</summary>
-                    @include('painel.eventos.lote-form', ['lote' => new \App\Models\Lote(['ingresso_tipo_id' => $tipo->id, 'nome' => ($tipo->lotes->count() + 1).'º lote', 'modalidade' => 'inteira', 'min_por_pedido' => 1, 'max_por_pedido' => $evento->max_ingressos_pedido, 'virada' => 'esgotar_ou_data', 'visibilidade' => 'publico', 'lote_anterior_id' => $tipo->lotes->last()?->id]), 'acao' => route('lotes.store', $evento), 'metodo' => 'POST', 'formId' => 'lote-'.$tipo->id])
+                    @include('painel.eventos.lote-form', ['lote' => new \App\Models\Lote(['ingresso_tipo_id' => $tipo->id, 'nome' => ($tipo->lotes->count() + 1).'º lote', 'modalidade' => 'inteira', 'status' => 'ativo', 'min_por_pedido' => 1, 'max_por_pedido' => $evento->max_ingressos_pedido, 'virada' => 'esgotar_ou_data', 'visibilidade' => 'publico', 'lote_anterior_id' => $tipo->lotes->last()?->id]), 'acao' => route('lotes.store', $evento), 'metodo' => 'POST', 'formId' => 'lote-'.$tipo->id])
                 </details>
             @endif
         </div>

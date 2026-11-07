@@ -33,14 +33,14 @@ const nav = (p, acao) => Promise.all([p.waitForNavigation(), acao]);
   await nav(P, P.click('button:has-text("Criar tipo")'));
   await P.click('summary:has-text("Adicionar lote")');
   let f = P.locator('form:has(input[name=_form][value^="lote-"])').last();
-  await f.locator('[name=preco]').fill('0'); await f.locator('[name=quantidade]').fill('50');
+  await f.locator('input[name=cobranca][value=gratuito]').check({ force: true }); await f.locator('[name=quantidade]').fill('50');
   await nav(P, f.locator('button:has-text("Adicionar lote")').click());
   await nav(P, P.click('button:has-text("Publicar evento")'));
   ok((await P.content()).includes('Evento publicado'), 'produtor publica evento gratuito');
   // lote pago depois de publicado (a venda paga ainda não existe: só mostra o preço)
   await P.click('summary:has-text("Adicionar lote")');
   f = P.locator('form:has(input[name=_form][value^="lote-"])').last();
-  await f.locator('[name=nome]').fill('Lote VIP'); await f.locator('[name=lote_anterior_id]').selectOption(''); await f.locator('[name=preco]').fill('50'); await f.locator('[name=quantidade]').fill('20');
+  await f.locator('[name=nome]').fill('Lote VIP'); await f.locator('input[name=liberacao][value=por_data]').check({ force: true }); await f.locator('input[name=cobranca][value=pago]').check({ force: true }); await f.locator('[name=preco]').fill('50'); await f.locator('[name=quantidade]').fill('20');
   await nav(P, f.locator('button:has-text("Adicionar lote")').click());
   ok((await P.content()).includes('Lote “Lote VIP” criado'), 'lote pago criado');
   const linkPublico = await P.getAttribute('a:has-text("Ver página pública")', 'href');

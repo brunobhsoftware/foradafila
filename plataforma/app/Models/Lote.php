@@ -34,14 +34,22 @@ class Lote extends Model
         'manual' => 'Manual',
     ];
 
+    // "oculto" é o ingresso emitido manualmente pela equipe (não aparece na página do evento);
+    // "convidados" é vendido só por link enviado por e-mail ou WhatsApp.
     public const VISIBILIDADES = [
-        'publico' => 'Público',
-        'oculto' => 'Oculto (só com link de acesso privado)',
-        'convidados' => 'Só para listas de convidados',
+        'publico' => 'Para todo o público',
+        'convidados' => 'Restrito a convidados',
+        'oculto' => 'Para ser adicionado manualmente',
+    ];
+
+    public const VISIBILIDADES_AJUDA = [
+        'publico' => 'Aparece na página do evento para qualquer pessoa.',
+        'convidados' => 'Não aparece na página: o link é enviado por e-mail ou WhatsApp.',
+        'oculto' => 'Não é vendido: a equipe adiciona o participante pelo painel.',
     ];
 
     public const STATUS = [
-        'agendado' => 'Agendado', 'ativo' => 'À venda', 'pausado' => 'Pausado',
+        'agendado' => 'Agendado', 'ativo' => 'À venda', 'pausado' => 'Desativado',
         'esgotado' => 'Esgotado', 'encerrado' => 'Encerrado',
     ];
 
