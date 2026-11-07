@@ -537,6 +537,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'App\\Support\\Logomarca' => __DIR__ . '/../..' . '/app/Support/Logomarca.php',
         'App\\Support\\ModeloMensagem' => __DIR__ . '/../..' . '/app/Support/ModeloMensagem.php',
         'App\\Support\\Notificacoes' => __DIR__ . '/../..' . '/app/Support/Notificacoes.php',
+        'App\\Support\\PoliticaCancelamento' => __DIR__ . '/../..' . '/app/Support/PoliticaCancelamento.php',
         'App\\Support\\RegraDoBanco' => __DIR__ . '/../..' . '/app/Support/RegraDoBanco.php',
         'App\\Support\\Tenant' => __DIR__ . '/../..' . '/app/Support/Tenant.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
