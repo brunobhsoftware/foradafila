@@ -15,6 +15,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V001__criacao_foradafila.sql` | Script de criação do banco (revisão 2, 1.462 linhas): 54 tabelas, 3 views, 4 triggers, dados iniciais |
 | `banco/V002__termos_iniciais.sql` | Termos provisórios 0.1 (uso, responsabilidade, compra, privacidade). Idempotente |
 | `banco/V003__ajuste_modelo_confirmacao.sql` | Só dados: tira "em anexo" do modelo padrão de confirmação. Idempotente |
+| `banco/V005__evento_capacidade_opcional.sql` | `evento.capacidade` aceita NULL (capacidade máxima opcional). Idempotente |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
 O documento vivo (editável e comentável) continua em
@@ -51,6 +52,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   multi-tenant por `organizador_id` em toda tabela de negócio, exclusão lógica para dados financeiros.
 - Triggers: `trg_conta_bu`, `trg_evento_bi`, `trg_evento_bu`, `trg_lote_bu`.
 - **V003 e V004 importados em produção** em 07/11/2026 (conferido: "V004 ok" e "preferencias ok").
+- **V005 ainda não importado em produção**: até lá a capacidade continua obrigatória (`Esquema::capacidadeOpcional()`).
   O código continua tolerando banco sem o V004 (`App\\Support\\Esquema::temV004()`).
 - **phpMyAdmin da Hostinger:** nunca misturar consultas a `information_schema` com comandos no mesmo envio — a
   sessão passa a usar esse banco e tudo dá `#1044 acesso negado`. Se acontecer, reabrir o phpMyAdmin e começar o
@@ -95,6 +97,14 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   menu do painel, na página do evento e na do organizador. Opção "Mostrar eventos passados" na página pública.
   **Chave de acesso da API: campo bloqueado** (decisão do Bruno); colunas `api_chave_*` reservadas para o futuro
   botão "gerar token de integração" (guardar só o hash SHA-256).
+- **Capacidade máxima do evento é opcional** (com o V005): em branco, a quantidade de ingressos é livre e a lotação é
+  responsabilidade da empresa; com capacidade, a soma dos lotes continua limitada (app e trigger).
+- **Política de cancelamento:** ao criar/editar evento o produtor marca a declaração
+  `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
+  (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores
+  é responsabilidade do produtor, sob as leis de defesa do consumidor. Termos gerais (0.1) não foram alterados.
+- **"Mostrar eventos passados"** aparece em Organização e em Preferências (mesmo campo da organização; só quem tem
+  `organizador.editar` altera).
 - **Perfil "Dono" aparece como "Produtor"** em todas as telas (accessor em `PerfilAcesso`); o código interno continua
   `dono` e o banco não foi alterado. Mensagens falam em "Produtor".
 - **Trocar senha e trocar e-mail** (`/painel/minha-conta/senha` e `/email`, botões em Organização e "Trocar senha" no
@@ -108,7 +118,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (24) — os dois últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (24) e `fluxo-evento-regras.js` (18, simula antes/depois do V005) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.
@@ -177,7 +187,9 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - [ ] Canal de suporte da plataforma (e-mail/WhatsApp) — o FAQ hoje direciona ao organizador
 - [ ] Validação jurídica de qualquer menção a responsabilidade civil e criminal do organizador (não publicada)
 - [ ] Confirmar se o comprador pode cancelar sozinho a inscrição gratuita (ligado no piloto)
+- [ ] Importar `banco/V005` em produção
 - [ ] Token de integração (API) — campo hoje bloqueado
+- [ ] Validação jurídica do texto da declaração de cancelamento
 - [ ] Trocar as senhas das caixas fique@ e noreply@ (foram enviadas no chat) e usar senhas diferentes entre elas
 - [ ] Confirmação de e-mail no cadastro e acesso por link para o comprador (o envio já existe)
 - [ ] Lembrete do evento (`lembrete_evento`) depende do cron do agendador

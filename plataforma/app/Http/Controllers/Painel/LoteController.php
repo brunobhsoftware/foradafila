@@ -150,7 +150,7 @@ class LoteController extends Controller
             $erros['venda_fim'] = 'As vendas do lote precisam terminar até o início do evento ('.data_local($evento->data_inicio).').';
         }
         $outros = (int) $evento->lotes()->when($lote, fn ($q) => $q->where('id', '<>', $lote->id))->sum('quantidade');
-        if ($outros + $dados['quantidade'] > $evento->capacidade) {
+        if ($evento->capacidade !== null && $outros + $dados['quantidade'] > $evento->capacidade) {
             $erros['quantidade'] = 'A soma dos lotes ('.numero($outros + $dados['quantidade']).') passa da capacidade do evento ('.numero($evento->capacidade).').';
         }
         if ($lote && $dados['quantidade'] < $lote->vendido + $lote->reservado) {

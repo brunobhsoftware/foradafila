@@ -122,7 +122,9 @@ class Evento extends Model
             ['ok' => $org->situacao === 'ativo', 'texto' => 'Organização ativa (sem débito em aberto)'],
             ['ok' => $termoAceito, 'texto' => 'Termo de responsabilidade aceito'],
             ['ok' => $this->lotes()->exists(), 'texto' => 'Pelo menos um lote de ingressos'],
-            ['ok' => $somaLotes <= $this->capacidade, 'texto' => 'Soma dos lotes ('.numero($somaLotes).') dentro da capacidade ('.numero($this->capacidade).')'],
+            $this->capacidade === null
+                ? ['ok' => true, 'texto' => 'Sem capacidade máxima definida: '.numero($somaLotes).' ingressos nos lotes (responsabilidade da organização)']
+                : ['ok' => $somaLotes <= $this->capacidade, 'texto' => 'Soma dos lotes ('.numero($somaLotes).') dentro da capacidade ('.numero($this->capacidade).')'],
             ['ok' => $this->data_inicio?->isFuture() ?? false, 'texto' => 'Data de início no futuro'],
         ];
         if ($temPago) {
@@ -130,6 +132,11 @@ class Evento extends Model
         }
 
         return $itens;
+    }
+
+    public function capacidadeTexto(): string
+    {
+        return $this->capacidade === null ? 'sem limite definido' : numero($this->capacidade);
     }
 
     public function podePublicar(): bool

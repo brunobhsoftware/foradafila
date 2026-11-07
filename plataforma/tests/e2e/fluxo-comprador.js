@@ -28,6 +28,7 @@ const nav = (p, acao) => Promise.all([p.waitForNavigation(), acao]);
   await P.fill('[name=capacidade]', '100');
   await P.fill('[name=data_inicio]', local(20)); await P.fill('[name=data_fim]', local(21, '02:00'));
   await P.fill('[name="local[nome]"]', 'Choperia X'); await P.fill('[name="local[cidade]"]', 'Belo Horizonte'); await P.fill('[name="local[uf]"]', 'MG');
+  await P.check('[name=aceite_cancelamento]'); // declaração de cancelamento (obrigatória)
   await nav(P, P.click('.acoes-form button[type=submit]'));
   await nav(P, P.click('button:has-text("Criar tipo")'));
   await P.click('summary:has-text("Adicionar lote")');

@@ -20,4 +20,15 @@ class Esquema
             && Schema::hasColumn('organizador', 'mostrar_eventos_passados')
             && Schema::hasColumn('organizador_usuario', 'notificar_compra');
     }
+
+    /** V005: evento.capacidade aceita NULL (capacidade máxima opcional). */
+    public static function capacidadeOpcional(): bool
+    {
+        if (! isset(self::$cache['v005'])) {
+            $coluna = collect(Schema::getColumns('evento'))->firstWhere('name', 'capacidade');
+            self::$cache['v005'] = (bool) ($coluna['nullable'] ?? false);
+        }
+
+        return self::$cache['v005'];
+    }
 }

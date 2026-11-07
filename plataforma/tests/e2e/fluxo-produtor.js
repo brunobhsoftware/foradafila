@@ -54,6 +54,7 @@ async function cadastrar(page, { nome, email, tipo, doc, razao, fantasia }) {
   await A.fill('[name="local[nome]"]', 'Arena Central');
   await A.fill('[name="local[cidade]"]', 'São Paulo');
   await A.fill('[name="local[uf]"]', 'SP');
+  await A.check('[name=aceite_cancelamento]'); // declaração de cancelamento (obrigatória)
   await Promise.all([A.waitForNavigation(), A.click('.acoes-form button[type=submit]')]);
   ok((await A.content()).includes('Evento criado como rascunho'), 'evento criado como rascunho');
   const urlEvento = A.url();

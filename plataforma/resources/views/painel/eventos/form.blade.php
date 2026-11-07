@@ -25,7 +25,13 @@
             <x-campo nome="descricao" rotulo="Descrição completa" tipo="textarea" :valor="$evento->descricao" rows="6" ajuda="Atrações, programação, o que está incluso, regras do local." />
             <x-upload-imagem nome="imagem" rotulo="Imagem de divulgação do evento" :atual="$evento->imagem_capa_url" />
             <x-campo nome="classificacao" rotulo="Classificação etária" tipo="select" :opcoes="\App\Models\Evento::CLASSIFICACOES" :valor="$evento->classificacao" obrigatorio classe="col-4" />
-            <x-campo nome="capacidade" rotulo="Capacidade total" tipo="number" min="1" :valor="$evento->capacidade" obrigatorio classe="col-4" ajuda="Lotação máxima. A soma dos lotes não pode passar disso." />
+            @if (\App\Support\Esquema::capacidadeOpcional())
+                <x-campo nome="capacidade" rotulo="Capacidade máxima" tipo="number" min="1" :valor="$evento->capacidade" classe="col-4"
+                    ajuda="Opcional. Em branco, você cadastra quantos ingressos quiser; a lotação passa a ser responsabilidade da empresa." />
+            @else
+                <x-campo nome="capacidade" rotulo="Capacidade máxima" tipo="number" min="1" :valor="$evento->capacidade" obrigatorio classe="col-4"
+                    ajuda="Lotação máxima. A soma dos lotes não pode passar disso. (Ficará opcional após a atualização V005 do banco.)" />
+            @endif
             <x-campo nome="visibilidade" rotulo="Visibilidade" tipo="select" :opcoes="\App\Models\Evento::VISIBILIDADES" :valor="$evento->visibilidade" obrigatorio classe="col-4" />
         </div>
     </section>
@@ -82,6 +88,17 @@
                 </div>
             </div>
             <x-campo nome="politica_cancelamento" rotulo="Política de cancelamento e reembolso" tipo="textarea" :valor="$evento->politica_cancelamento" rows="3" ajuda="Aparece na página do evento. O direito de arrependimento (7 dias, CDC) vale sempre." />
+            <div class="col-12 alerta alerta--info" style="margin:0">
+                <div>
+                    <b>Política de cancelamento de eventos</b>
+                    <p style="margin:6px 0 10px">Em caso de cancelamento do evento, é responsabilidade do produtor (organizador) devolver todos os valores pagos aos clientes,
+                    sob as penas das leis de defesa do consumidor. Este aviso aparece também na página pública do evento.</p>
+                    @php $errAceite = $errors->first('aceite_cancelamento'); @endphp
+                    <label class="opcao"><input type="checkbox" name="aceite_cancelamento" value="1" required @checked(old('aceite_cancelamento'))>
+                        <span><b>{{ \App\Http\Controllers\Painel\EventoController::DECLARACAO_CANCELAMENTO }}</b></span></label>
+                    @if ($errAceite)<span class="erro" style="display:block;margin-top:6px;color:var(--vermelho)">{{ $errAceite }}</span>@endif
+                </div>
+            </div>
             @if ($contas->isNotEmpty())
                 <x-campo nome="conta_pagamento_id" rotulo="Conta que recebe as vendas" tipo="select" :opcoes="$contas" :valor="$evento->conta_pagamento_id" vazio="Escolha" classe="col-6" />
             @else

@@ -67,6 +67,7 @@ const salvar = async (p) => { await p.evaluate(() => { document.querySelector('f
   await P.fill('[name=titulo]', 'Roda na Estação'); await P.fill('[name=capacidade]', '50');
   await P.fill('[name=data_inicio]', local(10)); await P.fill('[name=data_fim]', local(11, '01:00'));
   await P.fill('[name="local[nome]"]', 'Estação Slod'); await P.fill('[name="local[cidade]"]', 'Belo Horizonte'); await P.fill('[name="local[uf]"]', 'MG');
+  await P.check('[name=aceite_cancelamento]'); // declaração de cancelamento (obrigatória)
   await nav(P, P.click('.acoes-form button[type=submit]'));
   await nav(P, P.click('button:has-text("Criar tipo")'));
   await P.click('summary:has-text("Adicionar lote")');

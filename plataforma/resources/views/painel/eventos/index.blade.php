@@ -35,7 +35,7 @@
                         <td>{{ data_local($evento->data_inicio, 'd/m/Y') }}<br><small>{{ data_local($evento->data_inicio, 'H:i') }}</small></td>
                         <td><x-status-evento :status="$evento->status" /></td>
                         <td class="num">{{ numero($ind->ingressos_vendidos ?? 0) }}</td>
-                        <td class="num">{{ numero($evento->capacidade) }}</td>
+                        <td class="num">{{ $evento->capacidade === null ? '—' : numero($evento->capacidade) }}</td>
                         <td class="num"><a href="{{ route('eventos.show', $evento) }}" class="botao botao--contorno botao--pequeno">Abrir</a></td>
                     </tr>
                 @endforeach

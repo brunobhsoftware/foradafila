@@ -31,6 +31,7 @@ const arquivos = () => (fs.existsSync(MIDIA) ? fs.readdirSync(MIDIA) : []);
   await P.setInputFiles('input[name=imagem]', IMG + '/capa.png');
   await P.waitForFunction(() => !document.querySelector('.upload__previa').hidden);
   ok((await P.locator('[data-upload-status]').innerText()).includes('1600 x 838'), 'pré-visualização mostra as dimensões');
+  await P.check('[name=aceite_cancelamento]'); // declaração de cancelamento (obrigatória)
   await nav(P, P.click('.acoes-form button[type=submit]'));
   ok((await P.content()).includes('Evento criado'), 'evento criado com imagem');
   const src = await P.getAttribute('img.capa-evento', 'src');
@@ -49,6 +50,7 @@ const arquivos = () => (fs.existsSync(MIDIA) ? fs.readdirSync(MIDIA) : []);
     // envia direto, sem a conferência do navegador, para testar a do servidor
     await P.evaluate(() => { const i = document.querySelector('input[name=imagem]'); i.parentNode.replaceChild(i.cloneNode(), i); });
     await P.setInputFiles('input[name=imagem]', IMG + '/' + arq);
+    await P.check('[name=aceite_cancelamento]'); // declaração de cancelamento (obrigatória)
     await nav(P, P.click('.acoes-form button[type=submit]'));
     ok((await P.content()).includes(msg), `servidor recusa ${arq}`);
   }
@@ -59,6 +61,7 @@ const arquivos = () => (fs.existsSync(MIDIA) ? fs.readdirSync(MIDIA) : []);
   await P.setInputFiles('input[name=imagem]', IMG + '/quadrada.jpg');
   await P.waitForFunction(() => document.querySelector('[data-upload-status]').textContent.includes('900 x 900'));
   ok((await P.locator('[data-upload-status]').innerText()).includes('proporção recomendada'), 'aviso de proporção diferente');
+  await P.check('[name=aceite_cancelamento]'); // declaração de cancelamento (obrigatória)
   await nav(P, P.click('.acoes-form button[type=submit]'));
   const src2 = await P.getAttribute('img.capa-evento', 'src');
   ok(src2.includes('.jpg') && !arquivos().includes(nomeArquivo) && arquivos().some((f) => f.endsWith('.jpg')), 'troca por JPEG apaga o PNG antigo');
@@ -81,6 +84,7 @@ const arquivos = () => (fs.existsSync(MIDIA) ? fs.readdirSync(MIDIA) : []);
   // remover
   await P.goto(urlShow + '/editar');
   await P.check('[name=remover_imagem]');
+  await P.check('[name=aceite_cancelamento]'); // declaração de cancelamento (obrigatória)
   await nav(P, P.click('.acoes-form button[type=submit]'));
   ok(await P.locator('img.capa-evento').count() === 0 && arquivos().length === 0, 'remover apaga a imagem e o arquivo');
 
