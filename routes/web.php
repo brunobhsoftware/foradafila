@@ -177,6 +177,11 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::get('/checkin/{evento}/buscar', [\App\Http\Controllers\Painel\CheckinController::class, 'buscar'])->name('checkin.buscar')->middleware('throttle:240,1,checkin-busca');
     Route::post('/checkin/{evento}/desfazer', [\App\Http\Controllers\Painel\CheckinController::class, 'desfazer'])->name('checkin.desfazer');
 
+    Route::get('/cupons', [\App\Http\Controllers\Painel\CuponsController::class, 'index'])->name('cupons.index');
+    Route::post('/cupons', [\App\Http\Controllers\Painel\CuponsController::class, 'store'])->name('cupons.store');
+    Route::put('/cupons/{cupom}', [\App\Http\Controllers\Painel\CuponsController::class, 'update'])->name('cupons.update');
+    Route::post('/cupons/{cupom}/alternar', [\App\Http\Controllers\Painel\CuponsController::class, 'alternar'])->name('cupons.alternar');
+
     // Módulos das próximas fases: a tela explica o que vem e o menu já fica no lugar certo.
     Route::get('/{modulo}', EmBreveController::class)->name('em-breve')
         ->whereIn('modulo', array_keys(EmBreveController::MODULOS));
