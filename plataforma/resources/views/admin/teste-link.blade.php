@@ -19,6 +19,10 @@
             <li>Depois de pagar, o Mercado Pago volta para a tela de retorno com o ID do pagamento e do pedido.</li>
         </ol>
         <div class="copiar"><input id="link-teste" value="{{ $link }}" readonly><button type="button" class="botao botao--escuro botao--pequeno" data-copiar="link-teste">Copiar link</button></div>
+        @if ($linkSandbox)
+            <p style="margin:14px 0 4px"><small class="suave">Se o link acima mostrar "Ops, ocorreu um erro", tente o link do checkout de testes (sandbox):</small></p>
+            <div class="copiar"><input id="link-sandbox" value="{{ $linkSandbox }}" readonly><button type="button" class="botao botao--contorno botao--pequeno" data-copiar="link-sandbox">Copiar link sandbox</button></div>
+        @endif
         <p style="margin-top:14px">
             <a href="{{ $link }}" target="_blank" rel="noopener" class="botao botao--contorno botao--pequeno">Abrir nesta janela mesmo ↗</a>
             <a href="{{ route('admin.mercadopago') }}" class="botao botao--link">Voltar</a>
