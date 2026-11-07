@@ -23,9 +23,55 @@ class AdminController extends Controller
         ]);
     }
 
+    /** Pagamento de teste (Checkout Pro) na conta da própria aplicação, para validar a integração de ponta a ponta. */
+    public function testarPagamento(Request $request)
+    {
+        $valor = (float) $request->validate(['valor' => ['required', 'numeric', 'min:1', 'max:100']], [], ['valor' => 'valor'])['valor'];
+        if (! MercadoPago::configurado()) {
+            return back()->withErrors(['valor' => 'Cadastre primeiro o Client ID e o Client Secret.']);
+        }
+        $referencia = 'teste-'.\Illuminate\Support\Str::uuid();
+        try {
+            $pref = MercadoPago::criarPreferencia(MercadoPago::tokenAplicacao(), [
+                'items' => [['id' => 'teste-ff', 'title' => 'Teste de integração Fora da Fila', 'quantity' => 1, 'unit_price' => round($valor, 2), 'currency_id' => 'BRL']],
+                'external_reference' => $referencia,
+                'back_urls' => array_fill_keys(['success', 'failure', 'pending'], route('admin.mercadopago.teste.retorno')),
+                'auto_return' => 'approved',
+                'notification_url' => url(config('pagamentos.mercadopago.webhook')),
+                'statement_descriptor' => 'FORADAFILA',
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Cache::forget('mp_token_aplicacao_'.md5((string) MercadoPago::credencial('client_id')));
+
+            return back()->withErrors(['valor' => $e->getMessage()]);
+        }
+        Auditoria::registrar('plataforma.mercadopago_teste', $request->user(), null,
+            ['valor' => $valor, 'referencia' => $referencia, 'preferencia' => $pref['id']]);
+
+        return redirect()->away($pref['init_point']);
+    }
+
+    /** Volta do Checkout Pro: mostra os IDs do pagamento e do pedido (order) e confere o pagamento na API. */
+    public function retornoTeste(Request $request)
+    {
+        $q = $request->only(['payment_id', 'collection_id', 'status', 'collection_status', 'merchant_order_id', 'preference_id', 'external_reference', 'payment_type']);
+        $id = $q['payment_id'] ?? $q['collection_id'] ?? null;
+        $pagamento = [];
+        if ($id && $id !== 'null') {
+            try {
+                $pagamento = MercadoPago::pagamento(MercadoPago::tokenAplicacao(), (string) $id);
+            } catch (\Throwable $e) {
+                $pagamento = [];
+            }
+        }
+
+        return view('admin.teste-retorno', ['q' => $q, 'pagamento' => $pagamento]);
+    }
+
     public function mercadoPago()
     {
-        return view('admin.mercadopago', ['credenciais' => MercadoPago::situacaoCredenciais(), 'configurado' => MercadoPago::configurado(), 'pkce' => MercadoPago::usaPkce()]);
+        return view('admin.mercadopago', ['credenciais' => MercadoPago::situacaoCredenciais(), 'configurado' => MercadoPago::configurado(), 'pkce' => MercadoPago::usaPkce(),
+            'avisos' => DB::table('webhook_evento')->orderByDesc('id')->limit(10)->get()]);
     }
 
     public function salvarMercadoPago(Request $request)
