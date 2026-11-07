@@ -15,6 +15,7 @@ use App\Models\TermoAceite;
 use App\Rules\DocumentoValido;
 use App\Support\Auditoria;
 use App\Support\Documento;
+use App\Support\Notificacoes;
 use App\Support\Tenant;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -168,10 +169,15 @@ class InscricaoController extends Controller
             throw $e;
         }
 
+        $compradorFinal = $pedido->getRelation('comprador_modelo');
         if (! Auth::guard('comprador')->check()) {
-            Auth::guard('comprador')->login($pedido->getRelation('comprador_modelo'));
+            Auth::guard('comprador')->login($compradorFinal);
             $request->session()->regenerate();
         }
+
+        // E-mail com a confirmação e a lista de ingressos (conta fique@, depois da resposta).
+        $pedido->load(['ingressos.participante', 'ingressos.tipo', 'ingressos.lote']);
+        Notificacoes::ingressosConfirmados($pedido, $compradorFinal, $evento->loadMissing('local'), $evento->organizador, $pedido->ingressos);
 
         return redirect()->route('comprador.ingressos')
             ->with('ok', "Pronto! Pedido {$pedido->codigo} confirmado. Seus ingressos estão abaixo.");

@@ -15,8 +15,8 @@
       <button class="botao botao--amarelo botao--largo">Entrar</button>
     </form>
     <p style="margin-top:16px">Ainda não tem conta? <a href="{{ route('comprador.criar') }}">Criar conta</a>. Você também pode criar a conta ao garantir um ingresso.</p>
-    <p><small>Esqueceu a senha? A recuperação por e-mail ainda não está disponível; fale com o organizador do seu evento.
-      É produtor? Use a <a href="{{ route('entrar') }}">Área do produtor</a>.</small></p>
+    <p><a href="{{ route('senha.pedir', 'comprador') }}">Esqueci a senha</a></p>
+    <p><small>É produtor? Use a <a href="{{ route('entrar') }}">Área do produtor</a>.</small></p>
   </div>
 </section>
 @endsection
