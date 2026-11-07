@@ -3,9 +3,11 @@
 @php
     $menuAdmin = [
         ['rota' => 'admin.inicio', 'icone' => 'painel', 'texto' => 'Início'],
+        ['rota' => 'admin.empresas', 'icone' => 'organizacao', 'texto' => 'Empresas'],
+        ['rota' => 'admin.taxas', 'icone' => 'financeiro', 'texto' => 'Taxas e isenções'],
         ['rota' => 'admin.mercadopago', 'icone' => 'dinheiro', 'texto' => 'Mercado Pago'],
     ];
-    $emBreve = [['icone' => 'organizacao', 'texto' => 'Empresas'], ['icone' => 'financeiro', 'texto' => 'Taxas e isenções']];
+    $emBreve = [];
 @endphp
 
 @section('corpo')

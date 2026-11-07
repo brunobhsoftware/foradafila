@@ -59,6 +59,12 @@
             <a href="{{ route('painel') }}" class="topo-painel__marca"><img src="{{ asset('assets/img/simbolo-branco.svg') }}" alt="" width="36" height="21"> fora da fila<span class="ponto">.</span></a>
             @include('layouts.conta-menu')
         </header>
+        @isset($impersonacao)
+            <div class="faixa-impersonacao" role="status">
+                <span>Você está navegando como a empresa <b>{{ $impersonacao['nome'] }}</b>. Tudo o que fizer fica registrado em seu nome.</span>
+                <form method="post" action="{{ route('admin.sair-da-conta') }}">@csrf<button class="botao botao--pequeno">Sair do modo "assumir conta"</button></form>
+            </div>
+        @endisset
         <main class="conteudo" id="conteudo">
             @include('layouts.alertas')
             @yield('conteudo')

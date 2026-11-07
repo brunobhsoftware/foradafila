@@ -482,6 +482,8 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
 
     public static $classMap = array (
         'App\\Http\\Controllers\\Admin\\AdminController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/AdminController.php',
+        'App\\Http\\Controllers\\Admin\\EmpresasController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/EmpresasController.php',
+        'App\\Http\\Controllers\\Admin\\TaxasController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/TaxasController.php',
         'App\\Http\\Controllers\\Auth\\CadastroController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/CadastroController.php',
         'App\\Http\\Controllers\\Auth\\ConviteController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/ConviteController.php',
         'App\\Http\\Controllers\\Auth\\LoginController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/LoginController.php',
@@ -539,8 +541,10 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'App\\Support\\Email' => __DIR__ . '/../..' . '/app/Support/Email.php',
         'App\\Support\\Esquema' => __DIR__ . '/../..' . '/app/Support/Esquema.php',
         'App\\Support\\ImagemEvento' => __DIR__ . '/../..' . '/app/Support/ImagemEvento.php',
+        'App\\Support\\Impersonacao' => __DIR__ . '/../..' . '/app/Support/Impersonacao.php',
         'App\\Support\\Logomarca' => __DIR__ . '/../..' . '/app/Support/Logomarca.php',
         'App\\Support\\ModeloMensagem' => __DIR__ . '/../..' . '/app/Support/ModeloMensagem.php',
+        'App\\Support\\MotorTaxas' => __DIR__ . '/../..' . '/app/Support/MotorTaxas.php',
         'App\\Support\\Notificacoes' => __DIR__ . '/../..' . '/app/Support/Notificacoes.php',
         'App\\Support\\PoliticaCancelamento' => __DIR__ . '/../..' . '/app/Support/PoliticaCancelamento.php',
         'App\\Support\\RegraDoBanco' => __DIR__ . '/../..' . '/app/Support/RegraDoBanco.php',

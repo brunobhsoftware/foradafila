@@ -10,7 +10,7 @@ class Auditoria extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['organizador_id', 'usuario_id', 'acao', 'tabela', 'registro_id', 'antes', 'depois', 'ip'];
+    protected $fillable = ['organizador_id', 'usuario_id', 'admin_impersonando_id', 'impersonacao_id', 'acao', 'tabela', 'registro_id', 'antes', 'depois', 'ip'];
 
     protected function casts(): array
     {

@@ -7,6 +7,8 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'App\\Http\\Controllers\\Admin\\AdminController' => $baseDir . '/app/Http/Controllers/Admin/AdminController.php',
+    'App\\Http\\Controllers\\Admin\\EmpresasController' => $baseDir . '/app/Http/Controllers/Admin/EmpresasController.php',
+    'App\\Http\\Controllers\\Admin\\TaxasController' => $baseDir . '/app/Http/Controllers/Admin/TaxasController.php',
     'App\\Http\\Controllers\\Auth\\CadastroController' => $baseDir . '/app/Http/Controllers/Auth/CadastroController.php',
     'App\\Http\\Controllers\\Auth\\ConviteController' => $baseDir . '/app/Http/Controllers/Auth/ConviteController.php',
     'App\\Http\\Controllers\\Auth\\LoginController' => $baseDir . '/app/Http/Controllers/Auth/LoginController.php',
@@ -64,8 +66,10 @@ return array(
     'App\\Support\\Email' => $baseDir . '/app/Support/Email.php',
     'App\\Support\\Esquema' => $baseDir . '/app/Support/Esquema.php',
     'App\\Support\\ImagemEvento' => $baseDir . '/app/Support/ImagemEvento.php',
+    'App\\Support\\Impersonacao' => $baseDir . '/app/Support/Impersonacao.php',
     'App\\Support\\Logomarca' => $baseDir . '/app/Support/Logomarca.php',
     'App\\Support\\ModeloMensagem' => $baseDir . '/app/Support/ModeloMensagem.php',
+    'App\\Support\\MotorTaxas' => $baseDir . '/app/Support/MotorTaxas.php',
     'App\\Support\\Notificacoes' => $baseDir . '/app/Support/Notificacoes.php',
     'App\\Support\\PoliticaCancelamento' => $baseDir . '/app/Support/PoliticaCancelamento.php',
     'App\\Support\\RegraDoBanco' => $baseDir . '/app/Support/RegraDoBanco.php',

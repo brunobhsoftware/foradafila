@@ -372,3 +372,14 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 .chaves--producao { border-top: 4px solid #12B76A; }
 .chaves--teste { border-top: 4px solid #2E90FA; }
 .verificacao { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .9rem; }
+
+/* ---------- Administração: assumir conta, empresas e taxas ---------- */
+.faixa-impersonacao { position: sticky; top: 64px; z-index: 39; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 10px 32px; background: var(--laranja); color: #fff; font-size: .92rem; }
+.faixa-impersonacao form { margin: 0; }
+.faixa-impersonacao .botao { background: #fff; color: var(--tinta); }
+.filtros { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.filtros .campo { margin: 0; }
+.acoes-linha { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.acoes-linha form { margin: 0; }
+@media (max-width: 900px) { .faixa-impersonacao { top: 52px; padding: 10px 16px; } }

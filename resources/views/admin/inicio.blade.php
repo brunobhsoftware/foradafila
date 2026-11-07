@@ -11,6 +11,12 @@
 </div>
 
 <section class="cartao" style="margin-top:18px;padding:20px">
+    <h2 style="margin-top:0">Atalhos</h2>
+    <p><a href="{{ route('admin.empresas') }}" class="botao botao--escuro botao--pequeno">Empresas</a>
+       <a href="{{ route('admin.taxas') }}" class="botao botao--contorno botao--pequeno">Taxas e isenções</a></p>
+</section>
+
+<section class="cartao" style="margin-top:18px;padding:20px">
     <h2 style="margin-top:0">Integração com o Mercado Pago</h2>
     @if ($mpConfigurado)
         <p><span class="selo selo--verde">Configurada</span> Os produtores já podem conectar as contas em Financeiro.</p>
