@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 410" role="img" aria-label="fora da fila">
+  <circle cx="72" cy="290" r="33" fill="#101828"/>
+  <path d="M8 400a64 64 0 0 1 128 0z" fill="#101828"/>
+  <circle cx="203" cy="290" r="33" fill="#101828"/>
+  <path d="M139 400a64 64 0 0 1 128 0z" fill="#101828"/>
+  <circle cx="490" cy="290" r="33" fill="#101828"/>
+  <path d="M426 400a64 64 0 0 1 128 0z" fill="#101828"/>
+  <circle cx="620" cy="290" r="33" fill="#101828"/>
+  <path d="M556 400a64 64 0 0 1 128 0z" fill="#101828"/>
+  <circle cx="348" cy="352" r="50" fill="none" stroke="#101828" stroke-width="9" stroke-dasharray="18 14"/>
+  <circle cx="348" cy="145" r="36" fill="#F25C05"/>
+  <path d="M278 265a70 70 0 0 1 140 0z" fill="#F25C05"/>
+  <line x1="412" y1="20" x2="398" y2="73" stroke="#FFD60A" stroke-width="18" stroke-linecap="round"/>
+  <line x1="482" y1="57" x2="442" y2="103" stroke="#FFD60A" stroke-width="18" stroke-linecap="round"/>
+  <line x1="516" y1="123" x2="464" y2="141" stroke="#FFD60A" stroke-width="18" stroke-linecap="round"/>
+</svg>

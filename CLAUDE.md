@@ -10,11 +10,20 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | --- | --- |
 | `docs/regras-de-negocio.md` | Regras de negócio completas (17 seções). **Fonte da verdade** para modelagem e implementação. |
 | `docs/requisitos-originais.md` | Orientação original do Bruno, na íntegra |
+| `site/` | Página inicial estática (fase 1): HTML/CSS puros, sem links funcionais |
+| `docs/identidade-visual/` | Logos, manual de marca e layout de referência da página inicial |
 | `banco/V001__criacao_foradafila.sql` | Script de criação do banco (revisão 2, 1.462 linhas): 54 tabelas, 3 views, 4 triggers, dados iniciais |
 
 O documento vivo (editável e comentável) continua em
 https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` é uma exportação de 07/11/2026
 (o diagrama dos 12 módulos não foi exportado).
+
+## Identidade visual
+
+- Cores: Tinta `#101828`, Laranja `#F25C05`, Amarelo `#FFD60A`, Branco `#FFFFFF`.
+- Fontes: Space Grotesk Bold (títulos) e Inter Regular (textos).
+- Logo: símbolo de 4 pessoas na fila + um espaço tracejado + pessoa laranja que saiu da fila, com 3 raios amarelos;
+  nome "fora da fila" minúsculo com ponto laranja. Logo alternativa (pessoa com ingresso) em `docs/identidade-visual/`.
 
 ## Modelo de negócio (resumo)
 
