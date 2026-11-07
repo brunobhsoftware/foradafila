@@ -27,7 +27,20 @@ const entrar = async (p, email, senha) => {
   await nav(P, P.click('button[type=submit]'));
 
   // "Dono" aparece como "Produtor"
-  ok((await P.locator('.menu-lateral__org').innerText()).includes('Produtor'), 'menu mostra o perfil "Produtor"');
+  ok((await P.locator('.conta-menu__quem').textContent()).includes('Produtor'), 'menu da conta mostra o perfil "Produtor"');
+
+  // menu lateral enxuto: empresa, e-mail e atalhos ficam no alto do painel e no Dashboard
+  ok(await P.locator('.menu-lateral').getByText('Sair').count() === 0 && await P.locator('.menu-lateral').getByText('Trocar senha').count() === 0, 'menu lateral sem os atalhos da conta');
+  const topo = await P.locator('.conta-menu summary').innerText();
+  ok(topo.includes('Estação Slod') && topo.includes('sac@slod.test'), 'alto do painel mostra nome e e-mail da empresa');
+  ok(!(await P.isVisible('.conta-menu__painel a:has-text("Trocar senha")')), 'menu da conta começa fechado');
+  await P.click('.conta-menu summary');
+  for (const t of ['Minhas preferências', 'Trocar senha', 'Minha página de eventos', 'Ir para o site', 'Sair']) ok(await P.isVisible(`.conta-menu__painel :text("${t}")`), 'menu da conta: ' + t);
+  await P.click('h1');
+  ok(!(await P.isVisible('.conta-menu__painel a:has-text("Trocar senha")')), 'clicar fora fecha o menu da conta');
+  const atalhos = P.locator('.atalhos-org');
+  ok(await atalhos.locator('a:has-text("Minha página de eventos")').getAttribute('href') === BASE + '/p/estacao-slod', 'Dashboard: "Minha página de eventos" abre /p/estacao-slod');
+  for (const t of ['Minhas preferências', 'Trocar senha', 'Ir para o site', 'Sair']) ok(await atalhos.locator(`:text("${t}")`).count() === 1, 'Dashboard: atalho ' + t);
   await P.goto(BASE + '/painel/perfis');
   const perfis = await P.content();
   ok(perfis.includes('<th>Produtor</th>') && !/>Dono</.test(perfis), 'níveis de acesso: "Produtor" no lugar de "Dono"');
@@ -62,7 +75,7 @@ const entrar = async (p, email, senha) => {
 
   // trocar senha
   await P.goto(BASE + '/painel/organizacao');
-  await nav(P, P.click('a:has-text("Trocar senha")'));
+  await nav(P, P.click('#conteudo a:has-text("Trocar senha")'));
   ok(P.url().endsWith('/painel/minha-conta/senha'), 'botão "Trocar senha" abre a página');
   await nav(P, P.click('button:has-text("Enviar código por e-mail")'));
   await P.waitForTimeout(300);

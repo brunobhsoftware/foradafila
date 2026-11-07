@@ -48,7 +48,7 @@ const salvar = async (p) => { await p.evaluate(() => { document.querySelector('f
   const nomeLogo = linha[6].split('/').pop().split('?')[0];
   ok(nomeLogo === `estacao-slod_${linha[7]}.png` && fs.readdirSync(MIDIA).includes(nomeLogo), 'logo gravada como logomarcas/' + nomeLogo);
   ok((await P.request.get(BASE + linha[6])).headers()['content-type'] === 'image/png', 'logo servida em /midia/logomarcas');
-  ok(await P.locator('.menu-lateral__logo').count() === 1, 'logo aparece no menu do painel');
+  ok(await P.locator('img.conta-menu__logo').count() === 1, 'logo aparece no alto do painel');
   ok(!(await P.content()).includes('Completar os campos obrigatórios'), 'aviso de obrigatórios some depois de completar');
 
   // chave da API: bloqueada por enquanto (o token de integração vem depois)

@@ -82,6 +82,7 @@
 .pub-evento-card__corpo { padding: 18px 20px 20px; display: grid; gap: 6px; }
 .pub-evento-card__corpo h3 { font-size: 1.15rem; }
 .pub-evento-card__corpo small { color: var(--texto-suave); }
+.pub-evento-card__preco { justify-self: start; margin-top: 4px; padding: 3px 10px; border-radius: 999px; background: #FFF3E8; color: #B43F00; font-weight: 600; font-size: .85rem; }
 .pub-vazio { text-align: center; padding: 48px 20px; background: #fff; border: 1px dashed var(--borda); border-radius: var(--raio); }
 
 /* Página do evento */

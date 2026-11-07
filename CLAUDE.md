@@ -118,6 +118,11 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   menu): código de 6 dígitos por e-mail (fique@), só o hash no cache, 15 min, 5 tentativas, uso único, reenvio a cada
   60 s (`App\\Support\\CodigoVerificacao`). O e-mail só troca depois de validar o código no e-mail **atual**; avisos de
   segurança (noreply@) vão para o e-mail antigo e o novo. O código não fica em `mensagem_envio`.
+- **Menu lateral enxuto:** só os módulos. Empresa (logo, nome, e-mail de contato), Minhas preferências, Trocar senha,
+  Minha página de eventos (`/p/{slug}`, nova aba), Trocar de organização, Ir para o site e Sair ficam no **menu da conta**
+  no alto de todo o painel (`layouts/conta-menu.blade.php`, `<details>`; fecha ao clicar fora/Esc) e no cartão
+  "Sua organização" do Dashboard. Cartões da vitrine e de `/p/{slug}` mostram "A partir de R$ ..." ou "Gratuito"
+  (menor preço dos lotes públicos ativos/agendados, `EventoPublicoController::precosMinimos`).
 - **Equipe:** botão "Reenviar convite" na linha de cada convite pendente (novo link, o anterior deixa de valer).
 - **Limites de tentativas (throttle):** sempre com nome próprio (`throttle:5,15,codigo-senha`), senão rotas diferentes
   dividem o mesmo contador.
@@ -125,7 +130,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (24) e `fluxo-evento-regras.js` (18, simula antes/depois do V005), `fluxo-endereco.js` (10), `fluxo-politica.js` (9) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (10), `fluxo-politica.js` (9) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.

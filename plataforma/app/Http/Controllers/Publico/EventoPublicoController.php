@@ -24,6 +24,8 @@ class EventoPublicoController extends Controller
             ->where('data_fim', '>=', now())
             ->orderBy('data_inicio')->paginate(24);
 
+        self::precosMinimos($eventos->getCollection());
+
         return view('publico.vitrine', compact('eventos'));
     }
 
@@ -56,7 +58,18 @@ class EventoPublicoController extends Controller
                 ->where('data_fim', '<', now())->orderByDesc('data_inicio')->limit(24)->get();
         }
 
+        self::precosMinimos($eventos);
+
         return view('publico.organizador', compact('org', 'eventos', 'passados'));
+    }
+
+    /** Menor preço entre os lotes públicos à venda ou agendados de cada evento ("A partir de R$ ..." / "Gratuito"). */
+    private static function precosMinimos($eventos): void
+    {
+        $precos = $eventos->isEmpty() ? collect() : \App\Models\Lote::withoutGlobalScope('organizador')->whereIn('evento_id', $eventos->pluck('id'))
+            ->where('visibilidade', 'publico')->whereIn('status', ['ativo', 'agendado'])
+            ->groupBy('evento_id')->selectRaw('evento_id, MIN(preco) AS menor')->pluck('menor', 'evento_id');
+        $eventos->each(fn ($e) => $e->setAttribute('preco_minimo', $precos[$e->id] ?? null));
     }
 
     /** Evento pela URL pública. Privados exigem link de acesso privado, que ainda não existe: 404. */

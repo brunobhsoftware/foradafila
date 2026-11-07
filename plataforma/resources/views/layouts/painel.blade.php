@@ -33,12 +33,6 @@
             <img src="{{ asset('assets/img/simbolo-branco.svg') }}" alt="" width="42" height="25">
             <span>fora da fila<span class="ponto">.</span></span>
         </a>
-        <div class="menu-lateral__org">
-            @if ($organizadorAtual->logo_url)<img src="{{ $organizadorAtual->logo_url }}" alt="" class="menu-lateral__logo" width="36" height="36">@endif
-            <b title="{{ $organizadorAtual->nomeExibicao() }}">{{ $organizadorAtual->nomeExibicao() }}</b>
-            {{ $tenant->vinculo()->perfil->nome }}
-            @if ($temOutrasOrganizacoes) · <a href="{{ route('organizacoes') }}">trocar</a>@endif
-        </div>
         <nav>
             @foreach ($menu as $grupo => $itens)
                 @php $visiveis = array_filter($itens, fn ($i) => $tenant->pode(...$i['pode'])); @endphp
@@ -57,23 +51,13 @@
                 @endforeach
             @endforeach
         </nav>
-        <div class="menu-lateral__rodape">
-            <b>{{ auth()->user()->nome }}</b>
-            <span>{{ auth()->user()->email }}</span>
-            <a href="{{ route('preferencias.edit') }}" style="display:block;margin-top:8px;color:#D0D5DD">Minhas preferências</a>
-            <a href="{{ route('conta.senha') }}" style="display:block;margin-top:4px;color:#D0D5DD">Trocar senha</a>
-            <a href="{{ route('inicio') }}" style="display:block;margin-top:4px;color:#D0D5DD">Ir para o site</a>
-            <form method="post" action="{{ route('sair') }}" style="margin-top:8px">
-                @csrf
-                <button type="submit">Sair</button>
-            </form>
-        </div>
     </aside>
 
     <div class="principal">
         <header class="topo-painel">
-            <a href="{{ route('painel') }}"><img src="{{ asset('assets/img/simbolo-branco.svg') }}" alt="" width="36" height="21"> fora da fila<span class="ponto">.</span></a>
-            <button type="button" data-menu-alternar aria-controls="menu-lateral" aria-expanded="false" aria-label="Abrir menu"><x-icone nome="menu" /></button>
+            <button type="button" class="topo-painel__menu" data-menu-alternar aria-controls="menu-lateral" aria-expanded="false" aria-label="Abrir menu"><x-icone nome="menu" /></button>
+            <a href="{{ route('painel') }}" class="topo-painel__marca"><img src="{{ asset('assets/img/simbolo-branco.svg') }}" alt="" width="36" height="21"> fora da fila<span class="ponto">.</span></a>
+            @include('layouts.conta-menu')
         </header>
         <main class="conteudo" id="conteudo">
             @include('layouts.alertas')

@@ -63,6 +63,10 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   const V = await (await b.newContext()).newPage();
   await V.goto(BASE + '/e/festa-livre');
   ok((await V.content()).includes('é responsabilidade do produtor (Estacao Slod Ltda) devolver todos os valores pagos aos clientes'), 'página pública mostra a política de cancelamento');
+  const slugOrg = sql("SELECT slug FROM organizador WHERE documento='41902878000108'");
+  await V.goto(BASE + '/p/' + slugOrg);
+  const card = V.locator('.pub-evento-card:has-text("Festa Livre")');
+  ok(await card.count() === 1 && (await card.locator('.pub-evento-card__preco').innerText()) === 'Gratuito', 'página de eventos da empresa: cartão com preço "Gratuito"');
 
   // com capacidade, a soma dos lotes continua limitada
   await novoEvento('Com Limite', 100, true);

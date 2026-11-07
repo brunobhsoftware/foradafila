@@ -10,5 +10,9 @@
     <h3>{{ $evento->titulo }}</h3>
     @if ($evento->resumo)<p style="margin:0;color:var(--texto-suave)">{{ \Illuminate\Support\Str::limit($evento->resumo, 110) }}</p>@endif
     <small>{{ $evento->local?->enderecoCurto() ?? \App\Models\Evento::FORMATOS[$evento->formato] }}</small>
+    @php $preco = $evento->getAttributes()['preco_minimo'] ?? null; @endphp
+    @if (! is_null($preco))
+      <span class="pub-evento-card__preco">{{ (float) $preco > 0 ? 'A partir de '.moeda($preco) : 'Gratuito' }}</span>
+    @endif
   </div>
 </a>

@@ -15,6 +15,14 @@
     }
   });
 
+  // Menu da conta (alto do painel): fecha ao clicar fora ou com Esc
+  document.addEventListener('click', (e) => {
+    $$('details.conta-menu[open]').forEach((d) => { if (!d.contains(e.target)) d.open = false; });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') $$('details.conta-menu[open]').forEach((d) => { d.open = false; d.querySelector('summary').focus(); });
+  });
+
   // Máscaras
   const mascaras = {
     cpf: (d) => d.slice(0, 11).replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'),
