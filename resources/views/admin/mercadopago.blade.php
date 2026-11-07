@@ -43,29 +43,40 @@
     <p style="margin-top:14px"><a href="https://www.mercadopago.com.br/developers/panel/app" target="_blank" rel="noopener" class="botao botao--escuro botao--pequeno">Abrir painel de desenvolvedores do Mercado Pago ↗</a></p>
 </section>
 
-<form method="post" action="{{ route('admin.mercadopago.salvar') }}" class="cartao" style="padding:20px;margin-top:18px" autocomplete="off">
+@php
+    $blocos = [
+        'producao' => ['titulo' => '2. Chaves de PRODUÇÃO', 'classe' => 'chaves--producao', 'selo' => ['selo--verde', 'Vendas reais'],
+            'ajuda' => 'No painel do Mercado Pago: Credenciais com o seletor em "Produção" e Webhooks no modo produção. Usadas no "Conectar Mercado Pago" dos produtores e nas vendas.',
+            'campos' => ['client_id' => ['Client ID', 'text'], 'client_secret' => ['Client Secret', 'password'], 'webhook_secret' => ['Assinatura secreta dos webhooks', 'password']]],
+        'teste' => ['titulo' => '3. Chaves de TESTE', 'classe' => 'chaves--teste', 'selo' => ['selo--azul', 'Sem dinheiro real'],
+            'ajuda' => 'No painel do Mercado Pago: Credenciais com o seletor em "Teste" e Webhooks no modo teste. Usadas só no pagamento de teste (Qualidade da integração).',
+            'campos' => ['teste_client_id' => ['Client ID de teste', 'text'], 'teste_client_secret' => ['Client Secret de teste', 'password'],
+                'teste_access_token' => ['Access Token de teste (opcional se informar o Client ID/Secret de teste)', 'password'], 'teste_webhook_secret' => ['Assinatura secreta dos webhooks de teste (se for diferente da de produção)', 'password']]],
+    ];
+@endphp
+@foreach ($blocos as $bloco)
+<form method="post" action="{{ route('admin.mercadopago.salvar') }}" class="cartao chaves {{ $bloco['classe'] }}" style="padding:20px;margin-top:18px" autocomplete="off">
     @csrf @method('PUT')
-    <h2 style="margin-top:0">2. Informar as chaves</h2>
-    <h3 style="margin:0">Ambiente de PRODUÇÃO</h3>
-    <p class="suave">Os segredos são guardados criptografados e nunca aparecem de novo na tela (só os 4 últimos caracteres). Campo em branco mantém o valor atual.</p>
+    <div class="chaves__topo"><h2 style="margin:0">{{ $bloco['titulo'] }}</h2><span class="selo {{ $bloco['selo'][0] }}">{{ $bloco['selo'][1] }}</span></div>
+    <p class="suave">{{ $bloco['ajuda'] }} Os segredos ficam criptografados e só mostram os 4 últimos caracteres. Campo em branco mantém o valor atual.</p>
     <div class="form-grade">
-        @foreach (['client_id' => ['MP_CLIENT_ID', 'Client ID', 'text'], 'client_secret' => ['MP_CLIENT_SECRET', 'Client Secret', 'password'], 'webhook_secret' => ['MP_WEBHOOK_SECRET', 'Assinatura secreta dos webhooks', 'password'], 'teste_client_id' => ['Credenciais > Teste > Client ID', 'Client ID de TESTE', 'text'], 'teste_client_secret' => ['Credenciais > Teste > Client Secret', 'Client Secret de TESTE', 'password'], 'teste_access_token' => ['Credenciais > Teste > Access Token', 'Access Token de TESTE (opcional se informar o Client ID/Secret de teste)', 'password'], 'teste_webhook_secret' => ['Webhooks > modo teste', 'Assinatura secreta dos webhooks de TESTE (se for diferente da de produção)', 'password']] as $campo => [$env, $rotulo, $tipo])
-            @if ($campo === 'teste_client_id')<div class="col-12"><h3 style="margin:10px 0 0">Ambiente de TESTE</h3><small class="suave">No painel do Mercado Pago, Credenciais com o seletor em "Teste".</small></div>@endif
+        @foreach ($bloco['campos'] as $campo => [$rotulo, $tipo])
             <div class="campo col-12">
-                <label for="adm-{{ $campo }}">{{ $rotulo }} <small class="suave">({{ $env }})</small></label>
+                <label for="adm-{{ $campo }}">{{ $rotulo }}</label>
                 <input id="adm-{{ $campo }}" name="{{ $campo }}" type="{{ $tipo }}" autocomplete="off" spellcheck="false"
                     placeholder="{{ $credenciais[$campo]['definida'] ? 'Atual: '.$credenciais[$campo]['dica'].' — deixe em branco para manter' : 'Cole aqui' }}">
                 @error($campo)<small class="erro">{{ $message }}</small>@enderror
             </div>
         @endforeach
     </div>
-    <div class="acoes-form"><button class="botao botao--primario">Salvar chaves</button></div>
+    <div class="acoes-form"><button class="botao botao--primario">Salvar chaves de {{ $loop->first ? 'produção' : 'teste' }}</button></div>
 </form>
+@endforeach
 
 <form method="post" action="{{ route('admin.mercadopago.salvar') }}" class="cartao" style="padding:20px;margin-top:18px">
     @csrf @method('PUT')
     <input type="hidden" name="so_pkce" value="1">
-    <h2 style="margin-top:0">3. Segurança da conexão (PKCE)</h2>
+    <h2 style="margin-top:0">4. Segurança da conexão (PKCE)</h2>
     <p class="suave">O PKCE é opcional no Mercado Pago. Ele precisa estar <b>igual nos dois lados</b>: se você ativar aqui, ative também na aplicação
         (Suas integrações → aplicação → Detalhes da aplicação → Editar → "fluxo de código de autorização com o PKCE"). Se estiver diferente,
         o Mercado Pago pode recusar a conexão.</p>
@@ -74,7 +85,7 @@
 </form>
 
 <section class="cartao" style="padding:20px;margin-top:18px">
-    <h2 style="margin-top:0">4. Pagamento de teste</h2>
+    <h2 style="margin-top:0">5. Pagamento de teste</h2>
     <p class="suave">Cria uma cobrança pelo Checkout Pro na conta da própria aplicação (BH Software) e devolve o ID do pagamento e do pedido (order).
         <b>Teste</b> usa o Access Token de teste: pague entrando com a <b>conta de teste compradora</b> (Contas de teste, no painel) ou com os cartões de teste —
         é o que a "Qualidade da integração" pede. <b>Produção</b> cobra de verdade.</p>
