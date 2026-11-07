@@ -54,7 +54,8 @@ class AdminController extends Controller
         Auditoria::registrar('plataforma.mercadopago_teste', $request->user(), null,
             ['valor' => $valor, 'ambiente' => $d['ambiente'], 'referencia' => $referencia, 'preferencia' => $pref['id']]);
 
-        return redirect()->away($pref['init_point']);
+        // No ambiente de teste, o checkout de testes (sandbox) do Mercado Pago, quando existir.
+        return redirect()->away($teste && ! empty($pref['sandbox_init_point']) ? $pref['sandbox_init_point'] : $pref['init_point']);
     }
 
     /** Volta do Checkout Pro: mostra os IDs do pagamento e do pedido (order) e confere o pagamento na API. */
