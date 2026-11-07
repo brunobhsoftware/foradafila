@@ -23,6 +23,30 @@
     if (e.key === 'Escape') $$('details.conta-menu[open]').forEach((d) => { d.open = false; d.querySelector('summary').focus(); });
   });
 
+  // Cadastro de evento: ao escolher a data de início, término e abertura dos portões
+  // acompanham a data (mantendo a diferença de dias que já tinham); o produtor só ajusta o horário.
+  const inicio = document.querySelector('input[type=datetime-local][name=data_inicio]');
+  if (inicio) {
+    const dia = (v) => (v || '').slice(0, 10);
+    const hora = (v) => (v || '').slice(11, 16);
+    const somaDias = (d, n) => { const x = new Date(d + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+    const difDias = (a, b) => Math.round((new Date(a + 'T12:00:00Z') - new Date(b + 'T12:00:00Z')) / 864e5);
+    let anterior = inicio.value;
+    inicio.addEventListener('change', () => {
+      const novo = inicio.value;
+      if (!dia(novo)) return;
+      ['data_fim', 'abertura_portoes'].forEach((nome) => {
+        const campo = document.querySelector(`input[type=datetime-local][name=${nome}]`);
+        if (!campo) return;
+        const atual = campo.value;
+        const desloc = atual && dia(anterior) ? difDias(dia(atual), dia(anterior)) : 0;
+        const horario = hora(atual) || hora(novo);
+        campo.value = somaDias(dia(novo), desloc) + 'T' + horario;
+      });
+      anterior = novo;
+    });
+  }
+
   // Máscaras
   const mascaras = {
     cpf: (d) => d.slice(0, 11).replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'),

@@ -110,6 +110,9 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - **Cadastro de evento:** ao lado do formato (presencial/híbrido) há o botão "Usar endereço da organização", que
   preenche nome do local e endereço com os dados de Organização (pergunta antes de substituir; desativado se a
   organização não tiver endereço). Só no navegador: o endereço continua editável e é gravado no `local` do evento.
+- **Datas do evento:** ao escolher o início, término e abertura dos portões recebem a mesma data (vazios: mesmo horário
+  do início; preenchidos: mantêm horário e a diferença de dias, ex. virada para o dia seguinte) — só no navegador
+  (`public/js/app.js`). "Exigir CPF do participante" vem **desmarcado** em evento novo (decisão do Bruno, 07/11/2026).
 - **"Mostrar eventos passados"** aparece em Organização e em Preferências (mesmo campo da organização; só quem tem
   `organizador.editar` altera).
 - **Perfil "Dono" aparece como "Produtor"** em todas as telas (accessor em `PerfilAcesso`); o código interno continua
@@ -130,7 +133,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (10), `fluxo-politica.js` (9) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.

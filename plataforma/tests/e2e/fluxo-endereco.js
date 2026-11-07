@@ -46,6 +46,14 @@ const BOTAO = 'button:has-text("Usar endereço da organização")';
   await P.click(BOTAO);
   ok(await v('nome') === 'Estação Slod', 'confirmar substitui pelo endereço da organização');
 
+  // término e abertura dos portões acompanham a data do início; CPF do participante começa desmarcado
+  ok(!(await P.isChecked('input[type=checkbox][name=exige_cpf_participante]')), 'novo evento: "Exigir CPF do participante" desmarcado');
+  await P.fill('[name=data_inicio]', '2027-03-20T21:00');
+  ok(await P.inputValue('[name=data_fim]') === '2027-03-20T21:00' && await P.inputValue('[name=abertura_portoes]') === '2027-03-20T21:00', 'término e portões recebem a data do início');
+  await P.fill('[name=data_fim]', '2027-03-21T03:00'); await P.fill('[name=abertura_portoes]', '2027-03-20T19:30');
+  await P.fill('[name=data_inicio]', '2027-04-10T21:00');
+  ok(await P.inputValue('[name=data_fim]') === '2027-04-11T03:00' && await P.inputValue('[name=abertura_portoes]') === '2027-04-10T19:30', 'trocar a data do início mantém os horários e a virada do dia');
+
   await P.fill('[name=titulo]', 'Samba no Endereco'); await P.fill('[name=capacidade]', '80');
   await P.fill('[name=data_inicio]', local(9)); await P.fill('[name=data_fim]', local(10, '01:00'));
   await P.check('[name=aceite_cancelamento]');

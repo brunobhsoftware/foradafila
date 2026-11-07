@@ -40,7 +40,7 @@ class EventoController extends Controller
 
         return view('painel.eventos.form', $this->dadosFormulario(new Evento([
             'formato' => 'presencial', 'classificacao' => 'livre', 'visibilidade' => 'publico',
-            'max_ingressos_pedido' => 10, 'exige_cpf_participante' => true, 'nominal' => true,
+            'max_ingressos_pedido' => 10, 'exige_cpf_participante' => false, 'nominal' => true,
             'permite_transferencia' => true, 'transferencia_ate_h' => 24, 'permite_reentrada' => false,
             // Já vem com o modelo sugerido, com os dados da organização (editável).
             'politica_cancelamento' => PoliticaCancelamento::modelo(app(\App\Support\Tenant::class)->organizador()),
