@@ -13,7 +13,7 @@
             ['rota' => 'checkin.index', 'ativo' => 'checkin.*', 'icone' => 'checkin', 'texto' => 'Check-in', 'pode' => ['checkin.realizar']],
         ],
         'Divulgação' => [
-            ['modulo' => 'cupons', 'icone' => 'cupom', 'texto' => 'Cupons', 'pode' => ['cupom.gerenciar', 'promoter.gerenciar']],
+            ['rota' => 'cupons.index', 'ativo' => 'cupons.*', 'icone' => 'cupom', 'texto' => 'Cupons', 'pode' => ['cupom.gerenciar']],
             ['modulo' => 'convidados', 'icone' => 'convidados', 'texto' => 'Convidados', 'pode' => ['convidado.gerenciar', 'acesso_privado.gerenciar']],
             ['modulo' => 'mensagens', 'icone' => 'mensagem', 'texto' => 'Mensagens', 'pode' => ['mensagem.gerenciar']],
         ],

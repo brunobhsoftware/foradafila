@@ -407,3 +407,4 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 .checkin__item small { color: var(--suave); }
 @media (max-width: 900px) { .checkin { grid-template-columns: 1fr; } }
 .checkin > section:last-child { grid-column: 1 / -1; }
+.opcoes-lotes { display: grid; gap: 6px; }

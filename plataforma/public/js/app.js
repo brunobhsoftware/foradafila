@@ -148,6 +148,20 @@
     });
   });
 
+  // Cupom: lotes do evento escolhido
+  $$('[data-cupom-form]').forEach((form) => {
+    const sel = form.querySelector('[data-cupom-evento]');
+    const atualizar = () => {
+      form.querySelectorAll('[data-lotes-evento]').forEach((g) => {
+        const ativo = g.dataset.lotesEvento === sel.value;
+        g.hidden = !ativo;
+        g.querySelectorAll('input').forEach((i) => { i.disabled = !ativo; });
+      });
+      const aviso = form.querySelector('[data-sem-evento]'); if (aviso) aviso.hidden = !!sel.value;
+    };
+    sel.addEventListener('change', atualizar);
+  });
+
   // Máscaras
   const mascaras = {
     cpf: (d) => d.slice(0, 11).replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'),
