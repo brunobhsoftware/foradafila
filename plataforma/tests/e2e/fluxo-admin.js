@@ -96,7 +96,7 @@ const falso = http.createServer((req, res) => {
   ok(await P.locator('.link-teste__qr svg').count() === 1 && (await P.inputValue('#link-teste')).includes('/admin/mercadopago/teste/retorno'), 'mostra o link para copiar e o QR Code');
   await P.goto(await P.inputValue('#link-teste'));
   ok(autorizacaoPref === 'Bearer APP_USR-teste-123' && preferencia.items[0].unit_price === 5 && preferencia.items[0].currency_id === 'BRL'
-    && preferencia.notification_url.endsWith('/webhooks/mercadopago') && preferencia.external_reference.startsWith('teste-'), 'Teste: preferência de R$ 5 com o Access Token de teste e o webhook');
+    && !('notification_url' in preferencia) && preferencia.external_reference.startsWith('teste-'), 'Teste: preferência de R$ 5 com o Access Token de teste, sem notification_url (usa o webhook do painel)');
   let ret = await P.content();
   ok(ret.includes('123456') && ret.includes('987654') && ret.includes('Aprovado') && ret.includes('Credenciais de teste') && ret.includes('conferido na API'), 'retorno mostra IDs, status e "Credenciais de teste"');
 
@@ -113,7 +113,7 @@ const falso = http.createServer((req, res) => {
   await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
   await P.goto(await P.inputValue('#link-teste'));
   ret = await P.content();
-  ok(autorizacaoPref === 'Bearer APP-TOKEN-BH' && ret.includes('Produção') && ret.includes('Aprovado'), 'Produção: usa o token da aplicação');
+  ok(autorizacaoPref === 'Bearer APP-TOKEN-BH' && preferencia.notification_url.endsWith('/webhooks/mercadopago') && ret.includes('Produção') && ret.includes('Aprovado'), 'Produção: usa o token da aplicação e manda o webhook');
 
   // assinatura secreta de teste dos webhooks (mesma URL)
   await P.goto(BASE + '/admin/mercadopago');
