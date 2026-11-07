@@ -16,16 +16,60 @@ use Illuminate\Support\Str;
 /** Financeiro: contas de recebimento (Mercado Pago primeiro). */
 class FinanceiroController extends Controller
 {
+    /** Painel financeiro dos eventos. */
     public function index()
     {
         Gate::authorize('financeiro.ver');
+        $eventos = DB::table('vw_dashboard_evento')->where('organizador_id', app(Tenant::class)->id())
+            ->whereIn('evento_id', \App\Models\Evento::visiveis()->select('id'))
+            ->orderByDesc('data_inicio')->get();
+        $totais = (object) [
+            'receita' => $eventos->sum('receita_bruta'), 'pedidos' => $eventos->sum('pedidos_pagos'),
+            'ingressos' => $eventos->sum('ingressos_vendidos'), 'comissao' => $eventos->sum('comissao_plataforma'),
+        ];
         $conta = $this->contaMercadoPago();
 
-        return view('painel.financeiro.index', [
-            'conta' => $conta,
+        return view('painel.financeiro.index', compact('eventos', 'totais', 'conta'));
+    }
+
+    /** Operadoras disponíveis para receber as vendas. */
+    public function recebimentos()
+    {
+        Gate::authorize('financeiro.ver');
+
+        return view('painel.financeiro.recebimentos', ['conta' => $this->contaMercadoPago()]);
+    }
+
+    /** Gerenciador de recebimentos do Mercado Pago. */
+    public function mercadoPago()
+    {
+        Gate::authorize('financeiro.ver');
+
+        return view('painel.financeiro.mercadopago', [
+            'conta' => $this->contaMercadoPago(),
             'configurado' => MercadoPago::configurado(),
-            'ambiente' => config('pagamentos.mercadopago.ambiente'),
+            'admin' => (bool) auth()->user()->admin_plataforma,
+            'credenciais' => auth()->user()->admin_plataforma ? MercadoPago::situacaoCredenciais() : [],
         ]);
+    }
+
+    /** Chaves da aplicação do Fora da Fila no Mercado Pago: só administrador da plataforma (equipe BH Software). */
+    public function credenciais(Request $request)
+    {
+        abort_unless(auth()->user()->admin_plataforma, 403);
+        $dados = $request->validate([
+            'client_id' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'client_secret' => ['nullable', 'string', 'max:200'],
+            'webhook_secret' => ['nullable', 'string', 'max:200'],
+        ], ['client_id.regex' => 'O Client ID tem só letras, números, "-" e "_".'], [
+            'client_id' => 'Client ID', 'client_secret' => 'Client Secret', 'webhook_secret' => 'assinatura secreta',
+        ]);
+        MercadoPago::salvarCredenciais($dados);
+        \App\Models\Auditoria::query(); // noop para manter o import de auditoria simples
+        Auditoria::registrar('plataforma.mercadopago_credenciais', auth()->user(), null,
+            ['alteradas' => array_keys(array_filter($dados))]);
+
+        return redirect()->route('financeiro.mp')->with('ok', 'Chaves do Mercado Pago salvas (os segredos ficam criptografados).');
     }
 
     /** Vai para a tela de autorização do Mercado Pago. */
@@ -49,10 +93,10 @@ class FinanceiroController extends Controller
         $sessao = $request->session()->pull('mp_oauth');
         $tenant = app(Tenant::class);
         if (! $sessao || ! hash_equals($sessao['state'], (string) $request->query('state')) || $sessao['organizador_id'] !== $tenant->id()) {
-            return redirect()->route('financeiro')->withErrors(['mercadopago' => 'Autorização inválida ou expirada. Clique em "Conectar Mercado Pago" de novo.']);
+            return redirect()->route('financeiro.mp')->withErrors(['mercadopago' => 'Autorização inválida ou expirada. Clique em "Conectar Mercado Pago" de novo.']);
         }
         if ($request->filled('error') || ! $request->filled('code')) {
-            return redirect()->route('financeiro')->withErrors(['mercadopago' => 'A conexão foi cancelada no Mercado Pago.']);
+            return redirect()->route('financeiro.mp')->withErrors(['mercadopago' => 'A conexão foi cancelada no Mercado Pago.']);
         }
 
         try {
@@ -60,7 +104,7 @@ class FinanceiroController extends Controller
         } catch (\Throwable $e) {
             Log::warning('Mercado Pago OAuth: '.$e->getMessage());
 
-            return redirect()->route('financeiro')->withErrors(['mercadopago' => $e->getMessage()]);
+            return redirect()->route('financeiro.mp')->withErrors(['mercadopago' => $e->getMessage()]);
         }
         $u = MercadoPago::usuario($t['access_token']);
 
@@ -88,7 +132,7 @@ class FinanceiroController extends Controller
         $conta->save();
         Auditoria::registrar('conta_pagamento.conectar', $conta, $antes);
 
-        return redirect()->route('financeiro')->with('ok', 'Conta do Mercado Pago conectada'.($conta->email_conta ? " ({$conta->email_conta})" : '').'.');
+        return redirect()->route('financeiro.mp')->with('ok', 'Conta do Mercado Pago conectada'.($conta->email_conta ? " ({$conta->email_conta})" : '').'.');
     }
 
     public function desconectar()
@@ -103,7 +147,7 @@ class FinanceiroController extends Controller
         ]);
         Auditoria::registrar('conta_pagamento.desconectar', $conta, $antes);
 
-        return redirect()->route('financeiro')->with('ok', 'Conta do Mercado Pago desconectada. Os eventos pagos não poderão vender até conectar de novo.');
+        return redirect()->route('financeiro.mp')->with('ok', 'Conta do Mercado Pago desconectada. Os eventos pagos não poderão vender até conectar de novo.');
     }
 
     private function gatewayId(): int
