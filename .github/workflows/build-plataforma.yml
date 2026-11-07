@@ -1,0 +1,57 @@
+# Monta a aplicação Laravel (pasta plataforma/) pronta para a Hostinger:
+# instala as dependências PHP sem as de desenvolvimento e grava o resultado
+# na branch `plataforma-build` (código + vendor/), sem banco/, docs/ nem CLAUDE.md.
+name: Build da plataforma
+
+on:
+  push:
+    branches: [main]
+    paths: ["plataforma/**", ".github/workflows/build-plataforma.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-plataforma
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: mbstring, pdo_mysql, intl, bcmath, zip
+          coverage: none
+
+      - name: Instalar dependências (produção)
+        working-directory: plataforma
+        run: composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader --no-scripts
+
+      - name: Descobrir pacotes
+        working-directory: plataforma
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          php artisan package:discover --ansi
+          rm .env
+
+      - name: Gravar branch plataforma-build
+        run: |
+          SRC="$GITHUB_WORKSPACE/plataforma"
+          OUT="$(mktemp -d)"
+          rsync -a --exclude node_modules --exclude tests --exclude .env --exclude 'storage/logs/*.log' "$SRC"/ "$OUT"/
+          # O .gitignore do Laravel ignora vendor/; na branch de build ele precisa ir junto.
+          rm -f "$OUT/.gitignore"
+          printf '/node_modules\n/storage/*.key\n/storage/logs/*.log\n/storage/framework/sessions/*\n!/storage/framework/sessions/.gitignore\n/storage/framework/views/*\n!/storage/framework/views/.gitignore\n/storage/framework/cache/data/*\n.env\n' > "$OUT/.gitignore"
+          cd "$OUT"
+          git init -q -b plataforma-build
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Build da plataforma a partir de ${GITHUB_SHA::7}"
+          git push --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" plataforma-build
