@@ -46,6 +46,19 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   multi-tenant por `organizador_id` em toda tabela de negócio, exclusão lógica para dados financeiros.
 - Triggers: `trg_conta_bu`, `trg_evento_bi`, `trg_evento_bu`, `trg_lote_bu`.
 
+## Publicação do site (Hostinger)
+
+- Autorizado pelo Bruno (07/11/2026): **toda imagem e todo recurso novo do site pode ser publicado direto** em
+  foradafila.com.br, sem pedir confirmação a cada vez.
+- Alvo em `.hostinger/site.json` (conta `u839930205`, site estático, pasta `site/`).
+- Como publicar: zipar o *conteúdo* de `site/` (com `index.html` na raiz do zip, sem o `README.md`) →
+  `hosting_files_generate-upload-url` → envio TUS como `site.zip` → `hosting_websites_deploy-static-site-archive`
+  com `archive_path: "site.zip"`. O deploy substitui todo o `public_html`.
+- O ambiente da nuvem precisa ter liberados `srv1193-files.hstgr.io`, `foradafila.com.br` e `www.foradafila.com.br`.
+- DNS: domínio no Registro.br, com nameservers da Hostinger (`aurora`/`nebula.dns-parking.com`). Zona DNS na Hostinger,
+  com CDN ativa.
+- Primeira publicação: 07/11/2026. Pendente: certificado SSL (estava em `waiting_for_retry`) e redirecionamento para HTTPS.
+
 ## Decisões tomadas
 
 - **Backend recomendado: Laravel (PHP 8.3+)** servindo site público, painel do produtor (Filament) e API.
