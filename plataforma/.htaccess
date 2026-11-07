@@ -1,0 +1,21 @@
+# Fora da Fila — raiz da aplicação na Hostinger (public_html).
+# O Laravel é publicado inteiro em public_html; só a pasta public/ pode ser
+# acessada pela web. Todo o resto (app/, vendor/, storage/...) fica inacessível.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Validação do certificado SSL (Let's Encrypt/Hostinger) precisa de /.well-known.
+    RewriteRule ^\.well-known/ - [L]
+
+    # Arquivos ocultos (.env, .git...) nunca são servidos.
+    RewriteRule (^|/)\. - [F,L]
+
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+Options -Indexes

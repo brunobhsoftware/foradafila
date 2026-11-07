@@ -1,6 +1,8 @@
 {
   "domain": "foradafila.com.br",
   "username": "u839930205",
-  "type": "static",
-  "source_dir": "site"
+  "type": "php",
+  "source_dir": "plataforma",
+  "deploy_branch": "publicacao",
+  "env_file": "/home/u839930205/domains/foradafila.com.br/.env.foradafila"
 }

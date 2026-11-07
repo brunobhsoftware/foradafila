@@ -65,7 +65,10 @@ return [
     |
     */
 
+    // O banco grava tudo em UTC (regra do projeto). A tela mostra no fuso de exibição.
     'timezone' => 'UTC',
+
+    'display_timezone' => env('APP_DISPLAY_TIMEZONE', 'America/Sao_Paulo'),
 
     /*
     |--------------------------------------------------------------------------

@@ -1,7 +1,12 @@
-# Monta a aplicação Laravel (pasta plataforma/) pronta para a Hostinger:
-# instala as dependências PHP sem as de desenvolvimento e grava o resultado
-# na branch `plataforma-build` (código + vendor/), sem banco/, docs/ nem CLAUDE.md.
-name: Build da plataforma
+# Publica a plataforma (pasta plataforma/) em foradafila.com.br.
+#
+# A cada push na main que mexa em plataforma/: instala as dependências PHP sem as de
+# desenvolvimento e grava o resultado na branch `publicacao`. A Hostinger acompanha essa
+# branch e atualiza o public_html sozinha.
+#
+# A branch `publicacao` NUNCA recebe banco/, docs/ nem CLAUDE.md, e não deve ser editada à mão.
+# O .env de produção fica fora do public_html (ver bootstrap/app.php) e não passa por aqui.
+name: Publicar plataforma
 
 on:
   push:
@@ -13,11 +18,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: build-plataforma
-  cancel-in-progress: true
+  group: publicar-plataforma
+  cancel-in-progress: false
 
 jobs:
-  build:
+  publicar:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,26 +37,34 @@ jobs:
         working-directory: plataforma
         run: composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader --no-scripts
 
-      - name: Descobrir pacotes
+      - name: Conferir a aplicação
         working-directory: plataforma
         run: |
           cp .env.example .env
           php artisan key:generate --force
           php artisan package:discover --ansi
+          php artisan route:list > /dev/null
+          php artisan view:cache && php artisan view:clear
           rm .env
 
-      - name: Gravar branch plataforma-build
+      - name: Gravar na branch publicacao
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           SRC="$GITHUB_WORKSPACE/plataforma"
           OUT="$(mktemp -d)"
-          rsync -a --exclude node_modules --exclude tests --exclude .env --exclude 'storage/logs/*.log' "$SRC"/ "$OUT"/
-          # O .gitignore do Laravel ignora vendor/; na branch de build ele precisa ir junto.
-          rm -f "$OUT/.gitignore"
-          printf '/node_modules\n/storage/*.key\n/storage/logs/*.log\n/storage/framework/sessions/*\n!/storage/framework/sessions/.gitignore\n/storage/framework/views/*\n!/storage/framework/views/.gitignore\n/storage/framework/cache/data/*\n.env\n' > "$OUT/.gitignore"
+          REPO="https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          # Continua o histórico da branch (sem force push), para o pull da Hostinger sempre funcionar.
+          git clone --quiet --depth 1 --branch publicacao "$REPO" "$OUT"
+          find "$OUT" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          rsync -a --exclude node_modules --exclude tests --exclude .env --exclude 'storage/logs/*.log' \
+            --exclude phpunit.xml --exclude .editorconfig --exclude README.md "$SRC"/ "$OUT"/
+          # O .gitignore do Laravel ignora vendor/; aqui ele precisa ir junto.
+          printf '/node_modules\n/storage/*.key\n/storage/logs/*.log\n.env\n' > "$OUT/.gitignore"
           cd "$OUT"
-          git init -q -b plataforma-build
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -q -m "Build da plataforma a partir de ${GITHUB_SHA::7}"
-          git push --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" plataforma-build
+          if git diff --cached --quiet; then echo "Nada mudou."; exit 0; fi
+          git commit -q -m "Publica plataforma a partir de ${GITHUB_SHA::7}"
+          git push --quiet origin publicacao
