@@ -76,6 +76,32 @@
     <p class="suave">Cria uma cobrança pelo Checkout Pro na conta da própria aplicação (BH Software) e devolve o ID do pagamento e do pedido (order).
         <b>Teste</b> usa o Access Token de teste: pague entrando com a <b>conta de teste compradora</b> (Contas de teste, no painel) ou com os cartões de teste —
         é o que a "Qualidade da integração" pede. <b>Produção</b> cobra de verdade.</p>
+    <form method="post" action="{{ route('admin.mercadopago.verificar') }}" style="margin-bottom:14px">
+        @csrf <button class="botao botao--contorno botao--pequeno">Verificar de quem são os tokens</button>
+        <small class="suave">Para o teste funcionar, o token de <b>teste</b> precisa ser de uma conta de teste (ou da credencial de teste da aplicação), nunca o de produção.</small>
+    </form>
+    @if ($v = session('verificacao'))
+        <div class="tabela-rolagem" style="margin-bottom:16px"><table class="tabela">
+            <thead><tr><th>Token</th><th>Conta (User ID)</th><th>Apelido / e-mail</th><th>Tipo de conta</th></tr></thead>
+            <tbody>
+            @foreach (['producao' => 'Produção (Client ID/Secret)', 'teste' => 'Access Token de TESTE'] as $k => $rot)
+                @php $i = $v[$k]; @endphp
+                <tr><td>{{ $rot }}</td>
+                    @if (! $i)<td colspan="3" class="suave">não cadastrado</td>
+                    @elseif (isset($i['erro']))<td colspan="3">{{ $i['erro'] }}</td>
+                    @else
+                        <td>{{ $i['id'] }}</td><td>{{ $i['apelido'] }}<br><small>{{ $i['email'] }}</small></td>
+                        <td>@if ($i['teste'])<span class="selo selo--azul">Conta de teste</span>@else<span class="selo selo--cinza">Conta real</span>@endif</td>
+                    @endif
+                </tr>
+            @endforeach
+            </tbody>
+        </table></div>
+        @if (($v['producao']['id'] ?? 1) === ($v['teste']['id'] ?? 2))
+            <p class="alerta alerta--info" style="padding:10px 12px">Os dois tokens são <b>da mesma conta</b>. Se o "Access Token de TESTE" for o de produção, o pagamento com cartão de teste dá
+                "uma das partes é de teste". Copie o Access Token com o seletor <b>Teste</b> em Credenciais, ou o de produção de uma <b>conta vendedora de teste</b>.</p>
+        @endif
+    @endif
     <form method="post" action="{{ route('admin.mercadopago.teste') }}" class="teste-pagamento">
         @csrf
         <div class="campo"><label>Ambiente</label>

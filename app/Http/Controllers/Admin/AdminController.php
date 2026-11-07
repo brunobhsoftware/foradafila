@@ -83,6 +83,34 @@ class AdminController extends Controller
         return view('admin.teste-retorno', ['q' => $q, 'pagamento' => $pagamento, 'ambiente' => session('mp_teste_ambiente'), 'admin' => $admin]);
     }
 
+    /** De quem é cada token (conta, apelido, se é usuário de teste), para diagnosticar "uma das partes é de teste". */
+    public function verificarTokens()
+    {
+        $info = function (?string $token) {
+            if (! $token) {
+                return null;
+            }
+            $u = MercadoPago::usuario($token);
+            if (! $u) {
+                return ['erro' => 'O Mercado Pago não aceitou este token.'];
+            }
+            $tags = (array) ($u['tags'] ?? []);
+
+            return [
+                'id' => $u['id'] ?? null, 'apelido' => $u['nickname'] ?? null, 'email' => $u['email'] ?? null,
+                'teste' => in_array('test_user', $tags, true) || str_contains((string) ($u['email'] ?? ''), '@testuser.com')
+                    || str_starts_with(strtoupper((string) ($u['nickname'] ?? '')), 'TEST'),
+            ];
+        };
+        try {
+            $producao = MercadoPago::configurado() ? $info(MercadoPago::tokenAplicacao()) : null;
+        } catch (\Throwable $e) {
+            $producao = ['erro' => $e->getMessage()];
+        }
+
+        return back()->with('verificacao', ['producao' => $producao, 'teste' => $info(MercadoPago::credencial('teste_access_token'))]);
+    }
+
     public function mercadoPago()
     {
         return view('admin.mercadopago', ['credenciais' => MercadoPago::situacaoCredenciais(), 'configurado' => MercadoPago::configurado(), 'pkce' => MercadoPago::usaPkce(),
