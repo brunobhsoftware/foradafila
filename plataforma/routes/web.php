@@ -85,6 +85,10 @@ Route::post('/webhooks/mercadopago', [WebhookController::class, 'mercadoPago'])-
     ->middleware('throttle:120,1,webhook-mp');
 
 // ---------- Administração da plataforma (equipe BH Software) ----------
+// Retorno do pagamento de teste: aberto (o pagamento costuma ser feito numa janela anônima, sem login).
+// Sem login mostra só os IDs que vieram na URL; a conferência na API do Mercado Pago é só para administrador.
+Route::get('/admin/mercadopago/teste/retorno', [\App\Http\Controllers\Admin\AdminController::class, 'retornoTeste'])
+    ->name('admin.mercadopago.teste.retorno')->middleware('throttle:30,1,admin-mp-retorno');
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Admin\AdminController::class, 'inicio'])->name('inicio');
     Route::get('/mercadopago', [\App\Http\Controllers\Admin\AdminController::class, 'mercadoPago'])->name('mercadopago');
@@ -92,7 +96,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         ->middleware('throttle:20,10,admin-mp');
     Route::post('/mercadopago/teste', [\App\Http\Controllers\Admin\AdminController::class, 'testarPagamento'])->name('mercadopago.teste')
         ->middleware('throttle:10,10,admin-mp-teste');
-    Route::get('/mercadopago/teste/retorno', [\App\Http\Controllers\Admin\AdminController::class, 'retornoTeste'])->name('mercadopago.teste.retorno');
 });
 
 // ---------- Área do produtor ----------

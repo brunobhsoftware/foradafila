@@ -93,15 +93,25 @@ const falso = http.createServer((req, res) => {
   await nav(P, P.click('button:has-text("Salvar chaves")'));
   ok(sql("SELECT valor NOT LIKE '%APP_USR%' FROM parametro_sistema WHERE chave='mp_teste_access_token'") === '1', 'Access Token de teste gravado criptografado');
   await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
+  ok(await P.locator('.link-teste__qr svg').count() === 1 && (await P.inputValue('#link-teste')).includes('/admin/mercadopago/teste/retorno'), 'mostra o link para copiar e o QR Code');
+  await P.goto(await P.inputValue('#link-teste'));
   ok(autorizacaoPref === 'Bearer APP_USR-teste-123' && preferencia.items[0].unit_price === 5 && preferencia.items[0].currency_id === 'BRL'
     && preferencia.notification_url.endsWith('/webhooks/mercadopago') && preferencia.external_reference.startsWith('teste-'), 'Teste: preferência de R$ 5 com o Access Token de teste e o webhook');
   let ret = await P.content();
   ok(ret.includes('123456') && ret.includes('987654') && ret.includes('Aprovado') && ret.includes('Credenciais de teste') && ret.includes('conferido na API'), 'retorno mostra IDs, status e "Credenciais de teste"');
 
+  // retorno aberto numa janela sem login: mostra os IDs, sem consultar a API
+  const anon = await (await b.newContext()).newPage();
+  const r = await anon.goto(BASE + '/admin/mercadopago/teste/retorno?payment_id=555&merchant_order_id=666&status=approved');
+  const txt = await anon.content();
+  ok(r.status() === 200 && txt.includes('555') && txt.includes('666') && !txt.includes('conferido na API') && txt.includes('anote os IDs'), 'retorno sem login mostra os IDs (sem consultar a API)');
+  ok((await anon.goto(BASE + '/admin/mercadopago')).status() !== 200 || anon.url().endsWith('/entrar'), 'o resto da Administração continua fechado');
+
   // Produção usa o token da aplicação (client_credentials)
   await P.goto(BASE + '/admin/mercadopago');
   await P.check('input[name=ambiente][value=producao]', { force: true });
   await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
+  await P.goto(await P.inputValue('#link-teste'));
   ret = await P.content();
   ok(autorizacaoPref === 'Bearer APP-TOKEN-BH' && ret.includes('Produção') && ret.includes('Aprovado'), 'Produção: usa o token da aplicação');
 
