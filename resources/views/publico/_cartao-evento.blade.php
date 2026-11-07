@@ -1,4 +1,7 @@
 <a href="{{ route('evento.publico', $evento->slug) }}" class="pub-evento-card">
+  @if ($evento->imagem_capa_url)
+    <img class="pub-evento-card__img" src="{{ $evento->imagem_capa_url }}" alt="" width="1600" height="838" loading="lazy">
+  @endif
   <div class="pub-evento-card__data">
     <b>{{ data_local($evento->data_inicio, 'd') }}</b>
     <span>{{ \Illuminate\Support\Carbon::parse($evento->data_inicio)->setTimezone(fuso_exibicao())->locale('pt_BR')->translatedFormat('M Y') }}<br>{{ data_local($evento->data_inicio, 'H:i') }}</span>

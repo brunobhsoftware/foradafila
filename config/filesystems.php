@@ -30,6 +30,19 @@ return [
 
     'disks' => [
 
+        /*
+        | Mídia enviada pelos produtores (imagens de divulgação dos eventos).
+        | Em produção fica FORA do public_html (FF_ARMAZENAMENTO no .env do servidor), porque a
+        | publicação automática reescreve o public_html. É servida pela rota /midia/{pasta}/{arquivo}.
+        */
+        'midia' => [
+            'driver' => 'local',
+            'root' => env('FF_ARMAZENAMENTO', storage_path('app/midia')),
+            'visibility' => 'private',
+            'throw' => true,
+            'report' => false,
+        ],
+
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),

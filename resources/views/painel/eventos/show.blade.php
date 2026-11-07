@@ -51,6 +51,10 @@
     </div>
 @endif
 
+@if ($evento->imagem_capa_url)
+    <img class="capa-evento" src="{{ $evento->imagem_capa_url }}" alt="Imagem de divulgação" width="1600" height="838" style="max-height:280px;margin-bottom:18px">
+@endif
+
 <div class="grade grade-4">
     <div class="cartao kpi"><small>Ingressos vendidos</small><b>{{ numero($indicadores->ingressos_vendidos) }}</b><small>{{ numero($indicadores->ingressos_reservados) }} reservados agora</small></div>
     <div class="cartao kpi"><small>Ofertados nos lotes</small><b>{{ numero($indicadores->ingressos_ofertados) }}</b><small>capacidade {{ numero($evento->capacidade) }}</small></div>

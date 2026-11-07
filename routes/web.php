@@ -16,6 +16,7 @@ use App\Http\Controllers\Publico\CompradorAuthController;
 use App\Http\Controllers\Publico\EventoPublicoController;
 use App\Http\Controllers\Publico\InscricaoController;
 use App\Http\Controllers\Publico\MeusIngressosController;
+use App\Http\Controllers\MidiaController;
 use App\Http\Controllers\SiteController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [SiteController::class, 'inicio'])->name('inicio');
 Route::get('/termos/{tipo}', [SiteController::class, 'termo'])->name('termo')
     ->whereIn('tipo', ['uso_organizador', 'responsabilidade_organizador', 'compra_comprador', 'privacidade']);
+Route::get('/midia/{pasta}/{arquivo}', MidiaController::class)->name('midia')
+    ->where(['pasta' => 'eventos', 'arquivo' => '[0-9]+_[0-9a-f-]{36}\.(jpg|png|gif)']);
 Route::view('/solucao', 'site.solucao')->name('solucao');
 Route::view('/precos', 'site.precos')->name('precos');
 Route::view('/ajuda', 'site.ajuda')->name('ajuda');
