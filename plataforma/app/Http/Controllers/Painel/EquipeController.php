@@ -8,6 +8,7 @@ use App\Models\OrganizadorUsuario;
 use App\Models\PerfilAcesso;
 use App\Models\Usuario;
 use App\Support\Auditoria;
+use App\Support\Notificacoes;
 use App\Support\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -65,8 +66,11 @@ class EquipeController extends Controller
             return $vinculo;
         });
 
-        return back()->with('ok', "Convite criado para {$usuario->nome}.")
-            ->with('link_convite', ['nome' => $usuario->nome, 'url' => route('convite', $token)]);
+        $url = route('convite', $token);
+        Notificacoes::conviteEquipe($usuario, $tenant->organizador(), $vinculo->perfil->nome, $url, $request->user()->nome);
+
+        return back()->with('ok', "Convite enviado por e-mail para {$usuario->nome} ({$usuario->email}).")
+            ->with('link_convite', ['nome' => $usuario->nome, 'url' => $url]);
     }
 
     public function update(Request $request, OrganizadorUsuario $vinculo, Tenant $tenant)
@@ -93,7 +97,7 @@ class EquipeController extends Controller
         return back()->with('ok', 'Acesso de '.$vinculo->usuario->nome.' atualizado.');
     }
 
-    public function reenviar(OrganizadorUsuario $vinculo)
+    public function reenviar(Request $request, OrganizadorUsuario $vinculo, Tenant $tenant)
     {
         Gate::authorize('equipe.gerenciar');
         abort_unless($vinculo->status === 'convidado', 422);
@@ -102,8 +106,11 @@ class EquipeController extends Controller
         $vinculo->update(['convite_token_hash' => hash('sha256', $token), 'convite_expira_em' => now()->addHours(72)]);
         Auditoria::registrar('equipe.reenviar_convite', $vinculo);
 
-        return back()->with('ok', 'Novo link de convite gerado (o anterior deixou de valer).')
-            ->with('link_convite', ['nome' => $vinculo->usuario->nome, 'url' => route('convite', $token)]);
+        $url = route('convite', $token);
+        Notificacoes::conviteEquipe($vinculo->usuario, $tenant->organizador(), $vinculo->perfil->nome, $url, $request->user()->nome);
+
+        return back()->with('ok', 'Novo convite enviado por e-mail (o link anterior deixou de valer).')
+            ->with('link_convite', ['nome' => $vinculo->usuario->nome, 'url' => $url]);
     }
 
     public function destroy(OrganizadorUsuario $vinculo)

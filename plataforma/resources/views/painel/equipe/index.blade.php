@@ -10,7 +10,7 @@
 @if ($convite = session('link_convite'))
     <div class="alerta alerta--info">
         <div style="width:100%">
-            <b>Envie este link para {{ $convite['nome'] }}</b> (WhatsApp ou e-mail). Ele vale por 72 horas e só pode ser usado uma vez.
+            <b>O convite foi enviado por e-mail para {{ $convite['nome'] }}.</b> Se preferir, mande também este link por WhatsApp. Ele vale por 72 horas e só pode ser usado uma vez.
             <div class="copiar"><input id="link-convite" value="{{ $convite['url'] }}" readonly><button type="button" class="botao botao--escuro botao--pequeno" data-copiar="link-convite">Copiar link</button></div>
         </div>
     </div>

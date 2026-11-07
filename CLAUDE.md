@@ -14,6 +14,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `docs/identidade-visual/` | Logos, manual de marca e layout de referência da página inicial |
 | `banco/V001__criacao_foradafila.sql` | Script de criação do banco (revisão 2, 1.462 linhas): 54 tabelas, 3 views, 4 triggers, dados iniciais |
 | `banco/V002__termos_iniciais.sql` | Termos provisórios 0.1 (uso, responsabilidade, compra, privacidade). Idempotente |
+| `banco/V003__ajuste_modelo_confirmacao.sql` | Só dados: tira "em anexo" do modelo padrão de confirmação. Idempotente |
 
 O documento vivo (editável e comentável) continua em
 https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` é uma exportação de 07/11/2026
@@ -48,6 +49,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - Convenções: InnoDB, utf8mb4, datas em UTC, dinheiro `DECIMAL(12,2)`, `id BIGINT` interno + `uuid` público,
   multi-tenant por `organizador_id` em toda tabela de negócio, exclusão lógica para dados financeiros.
 - Triggers: `trg_conta_bu`, `trg_evento_bi`, `trg_evento_bu`, `trg_lote_bu`.
+- **V003 ainda não importado em produção** (até lá o código corrige o texto ao renderizar).
 
 ## Plataforma (Laravel)
 
@@ -81,6 +83,25 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.
+
+## E-mail (definido pelo Bruno em 07/11/2026)
+
+- **Todo envio de e-mail usa as contas SMTP da Hostinger do domínio** (smtp.hostinger.com, SSL, porta 465):
+  - `fique@foradafila.com.br` — confirmações de cadastro, envio de ingressos, convites, senha e todas as demais
+    operações com o usuário. Mailer `fique` (padrão). Use `App\Support\Email::operacao(...)`.
+  - `noreply@foradafila.com.br` — mensagens sem resposta (avisos automáticos). Mailer `noreply`.
+    Use `App\Support\Email::aviso(...)`. A caixa tem resposta automática configurada.
+  - Existe também `atendimento@foradafila.com.br` (caixa que pega tudo do domínio) — ainda não usada pela plataforma.
+- As senhas estão **só** no `.env.foradafila` do servidor (`MAIL_FIQUE_PASSWORD`, `MAIL_NOREPLY_PASSWORD`, entre
+  aspas simples porque começam com `$`). Nunca no Git, no código, no CLAUDE.md ou em respostas.
+- Todo envio passa pela tabela `mensagem_envio` (corpo renderizado, status `enviado`/`erro`, motivo do erro) e
+  sai depois da resposta HTTP. Links com token (convite, senha) não ficam gravados no corpo.
+- Textos em `App\Support\Notificacoes`; layout em `resources/views/emails/layout.blade.php`; modelos editáveis
+  do banco (`modelo_mensagem`) via `App\Support\ModeloMensagem` (evento → organizador → padrão).
+- Enviados hoje: boas-vindas ao produtor, convite da equipe, ingressos confirmados, recuperação de senha
+  (fique@) e aviso de cancelamento de inscrição (noreply@).
+- Recuperação de senha sem tabela: URL assinada (60 min, só o caminho) com HMAC da senha atual (`SenhaController`).
+- Localmente, sem senha no `.env`, os e-mails vão para `storage/logs/laravel.log`.
 
 ## Publicação (Hostinger)
 
@@ -126,16 +147,18 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - [ ] Canal de suporte da plataforma (e-mail/WhatsApp) — o FAQ hoje direciona ao organizador
 - [ ] Validação jurídica de qualquer menção a responsabilidade civil e criminal do organizador (não publicada)
 - [ ] Confirmar se o comprador pode cancelar sozinho a inscrição gratuita (ligado no piloto)
-- [ ] E-mail transacional: confirmação de e-mail, recuperação de senha e acesso por link (comprador e produtor)
+- [ ] Importar `banco/V003__ajuste_modelo_confirmacao.sql` em produção
+- [ ] Trocar as senhas das caixas fique@ e noreply@ (foram enviadas no chat) e usar senhas diferentes entre elas
+- [ ] Confirmação de e-mail no cadastro e acesso por link para o comprador (o envio já existe)
+- [ ] Lembrete do evento (`lembrete_evento`) depende do cron do agendador
 - [ ] Cancelamento/reembolso de pedido pago: tabela `reembolso` exige `valor > 0`; entra com a integração de pagamento
 - [ ] Confirmar com o Mercado Pago se dá para reter a comissão na venda (split / marketplace)
 - [ ] Redigir com advogado os 4 termos (uso, responsabilidade do organizador, compra, privacidade)
 - [ ] Validar a política de cancelamento, o direito de arrependimento e a cota de meia-entrada
-- [ ] Escolher o provedor de e-mail transacional (fila `mensagem_envio`)
 - [ ] Criar um banco de homologação
 
 ## Próximos passos
 
 1. Financeiro: conectar e homologar a conta do Mercado Pago (OAuth), checkout pago e pedido de reembolso.
 2. Check-in (PWA) lendo o QR `FF1.<codigo>.<hmac>` e participantes no painel.
-3. E-mail transacional (confirmação de pedido, recuperação de senha).
+3. Confirmação de e-mail no cadastro e lembretes do evento.

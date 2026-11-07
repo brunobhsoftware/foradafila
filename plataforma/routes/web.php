@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\CadastroController;
 use App\Http\Controllers\Auth\ConviteController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\OrganizacaoSelecaoController;
+use App\Http\Controllers\Auth\SenhaController;
 use App\Http\Controllers\Painel\DashboardController;
 use App\Http\Controllers\Painel\EmBreveController;
 use App\Http\Controllers\Painel\EquipeController;
@@ -56,6 +57,12 @@ Route::middleware('guest')->group(function () {
     Route::get('/entrar', [LoginController::class, 'create'])->name('entrar');
     Route::post('/entrar', [LoginController::class, 'store'])->middleware('throttle:20,1');
 });
+
+// ---------- Esqueci a senha (produtor e comprador) ----------
+Route::get('/esqueci-a-senha/{area}', [SenhaController::class, 'pedir'])->name('senha.pedir')->whereIn('area', ['produtor', 'comprador']);
+Route::post('/esqueci-a-senha/{area}', [SenhaController::class, 'enviar'])->whereIn('area', ['produtor', 'comprador'])->middleware('throttle:5,10');
+Route::get('/nova-senha/{area}/{uuid}', [SenhaController::class, 'nova'])->name('senha.nova')->whereIn('area', ['produtor', 'comprador']);
+Route::post('/nova-senha/{area}/{uuid}', [SenhaController::class, 'salvar'])->whereIn('area', ['produtor', 'comprador'])->middleware('throttle:10,10');
 
 Route::get('/convite/{token}', [ConviteController::class, 'show'])->name('convite');
 Route::post('/convite/{token}', [ConviteController::class, 'store'])->middleware('throttle:10,1');

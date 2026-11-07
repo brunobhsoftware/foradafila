@@ -37,6 +37,36 @@ return [
 
     'mailers' => [
 
+        /*
+        | Fora da Fila — duas contas SMTP da Hostinger (smtp.hostinger.com, SSL 465):
+        |  - fique:   fique@foradafila.com.br   → confirmações de cadastro, ingressos e demais
+        |             operações com o usuário (mailer padrão).
+        |  - noreply: noreply@foradafila.com.br → avisos que não esperam resposta.
+        | Senhas só no .env do servidor (fora do public_html), nunca no Git.
+        | Envio: App\Support\Email::operacao(...) / App\Support\Email::aviso(...).
+        */
+        'fique' => [
+            'transport' => 'smtp',
+            'scheme' => env('MAIL_SCHEME', 'smtps'),
+            'host' => env('MAIL_HOST', 'smtp.hostinger.com'),
+            'port' => env('MAIL_PORT', 465),
+            'username' => env('MAIL_FIQUE_USERNAME', 'fique@foradafila.com.br'),
+            'password' => env('MAIL_FIQUE_PASSWORD'),
+            'timeout' => 15,
+            'local_domain' => 'foradafila.com.br',
+        ],
+
+        'noreply' => [
+            'transport' => 'smtp',
+            'scheme' => env('MAIL_SCHEME', 'smtps'),
+            'host' => env('MAIL_HOST', 'smtp.hostinger.com'),
+            'port' => env('MAIL_PORT', 465),
+            'username' => env('MAIL_NOREPLY_USERNAME', 'noreply@foradafila.com.br'),
+            'password' => env('MAIL_NOREPLY_PASSWORD'),
+            'timeout' => 15,
+            'local_domain' => 'foradafila.com.br',
+        ],
+
         'smtp' => [
             'transport' => 'smtp',
             'scheme' => env('MAIL_SCHEME'),

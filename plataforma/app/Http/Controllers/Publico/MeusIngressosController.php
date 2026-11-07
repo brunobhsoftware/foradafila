@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Ingresso;
 use App\Models\Pedido;
 use App\Support\Auditoria;
+use App\Support\Notificacoes;
 use App\Support\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -63,6 +64,8 @@ class MeusIngressosController extends Controller
             $pedido->forceFill(['status' => 'cancelado', 'cancelado_em' => now()])->save();
             Auditoria::registrar('pedido.gratuito.cancelar_pelo_comprador', $pedido, $antes);
         });
+
+        Notificacoes::inscricaoCancelada($pedido, $request->user('comprador'), $pedido->evento, $pedido->organizadorPublico);
 
         return redirect()->route('comprador.ingressos')->with('ok', "Inscrição do pedido {$pedido->codigo} cancelada. Os ingressos deixaram de valer.");
     }

@@ -14,6 +14,7 @@ use App\Models\Usuario;
 use App\Rules\DocumentoValido;
 use App\Support\Auditoria;
 use App\Support\Documento;
+use App\Support\Notificacoes;
 use App\Support\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -122,6 +123,7 @@ class CadastroController extends Controller
         Auth::login($usuario);
         $request->session()->regenerate();
         $request->session()->put('organizador_id', app(Tenant::class)->id());
+        Notificacoes::boasVindasProdutor($usuario, app(Tenant::class)->organizador());
 
         return redirect()->route('painel')->with('ok', 'Conta criada! Bem-vindo ao Fora da Fila.');
     }
