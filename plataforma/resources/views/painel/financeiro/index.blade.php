@@ -42,6 +42,20 @@
         <summary><b>1. Criar a aplicação no Mercado Pago</b>
             <small>{{ $configurado ? 'Concluído: a aplicação já está configurada na plataforma.' : 'Gera o Client ID e o Client Secret.' }}</small></summary>
         <div class="mp__conteudo">
+            <div class="mp__ia">
+                <div class="mp__ia-topo"><span class="selo selo--verde">Mais simples</span><b>Com ajuda de IA, em 2 passos</b></div>
+                <div class="mp__ia-passo">
+                    <b>1. Conecte seu agente de IA ao Mercado Pago</b>
+                    <small>No Claude Code (terminal), instale o plugin oficial do Mercado Pago:</small>
+                    <div class="copiar"><input id="mp-ia-plugin" value="claude plugin install mercadopago" readonly class="mono"><button type="button" class="botao botao--contorno botao--pequeno" data-copiar="mp-ia-plugin">Copiar</button></div>
+                </div>
+                <div class="mp__ia-passo">
+                    <b>2. Use o prompt para criar a aplicação</b>
+                    <div class="copiar"><textarea id="mp-ia-prompt" readonly rows="4">Quero integrar com o Mercado Pago. Recomende a solução de pagamentos ideal para o meu projeto, crie a aplicação e me guie na integração. O projeto é o Fora da Fila (venda de ingressos): use OAuth para conectar a conta de cada organizador, com o endereço de retorno {{ \App\Pagamentos\MercadoPago::retornoUrl() }} e webhooks de Pagamentos em {{ url(config('pagamentos.mercadopago.webhook')) }}.</textarea><button type="button" class="botao botao--contorno botao--pequeno" data-copiar="mp-ia-prompt">Copiar</button></div>
+                    <small>Finalize a integração com apoio da IA. Se precisar de ajuda, veja o <a href="https://www.mercadopago.com.br/developers/pt/docs/ai-resources" target="_blank" rel="noopener">guia de uso</a>.</small>
+                </div>
+            </div>
+            <p class="mp__ou"><span>ou faça manualmente</span></p>
             <ol class="mp__passos">
                 <li>Abra o painel de desenvolvedores e clique em <b>Criar aplicação</b> (nome "Fora da Fila", pagamentos on-line).</li>
                 <li>Em <b>Configurações de OAuth</b>, cadastre o endereço de retorno abaixo.</li>

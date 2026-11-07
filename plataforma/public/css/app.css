@@ -349,3 +349,12 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 .mp__dados dt { font-size: .8rem; color: var(--suave); }
 .mp__dados dd { margin: 0; color: var(--tinta); font-weight: 600; overflow-wrap: anywhere; }
 @media (max-width: 900px) { .mp__etapas, .mp__campos { grid-template-columns: 1fr; } }
+.mp__ia { width: 100%; display: grid; gap: 14px; padding: 16px; border-radius: var(--raio); background: #F6FEF9; border: 1px solid #ABEFC6; }
+.mp__ia-topo { display: flex; align-items: center; gap: 10px; color: var(--tinta); }
+.mp__ia-passo { display: grid; gap: 4px; }
+.mp__ia-passo b { color: var(--tinta); }
+.mp__ia .copiar { margin-top: 4px; align-items: flex-start; }
+.mp__ia textarea { flex: 1; min-width: 0; padding: 9px 12px; border: 1px solid var(--borda-forte); border-radius: var(--raio-p); font: .88rem/1.45 var(--fonte-texto); background: #fff; resize: vertical; }
+.copiar input.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.mp__ou { width: 100%; display: flex; align-items: center; gap: 10px; margin: 0; color: var(--suave); font-size: .85rem; }
+.mp__ou::before, .mp__ou::after { content: ""; flex: 1; border-top: 1px solid var(--borda); }

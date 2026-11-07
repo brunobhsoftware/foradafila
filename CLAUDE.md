@@ -116,7 +116,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   (sem CSRF, throttle `webhook-mp`): confere `x-signature` com `MP_WEBHOOK_SECRET`, grava em `webhook_evento`
   (`recebido` ou `ignorado`), não duplica, sempre 200; o processamento entra com o checkout. Homologação, checkout,
   renovação de token e reembolso: ainda não feitos. A tela mostra 3 etapas (criar a aplicação — com os endereços para copiar e o botão
-  para https://www.mercadopago.com.br/developers/panel/app —, conectar a conta, homologar).
+  para https://www.mercadopago.com.br/developers/panel/app —, conectar a conta, homologar). A etapa 1 tem antes o caminho
+  "Com ajuda de IA, em 2 passos" (`claude plugin install mercadopago` + prompt com os endereços, para copiar).
 - **Política de cancelamento:** ao criar/editar evento o produtor marca a declaração
   `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
   (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores
