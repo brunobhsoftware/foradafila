@@ -58,6 +58,14 @@
     atualizar();
   });
 
+  // Botões que mostram/escondem um bloco (ex.: ações do participante)
+  $$('[data-alternar]').forEach((b) => b.addEventListener('click', () => {
+    const alvo = document.getElementById(b.dataset.alternar);
+    if (!alvo) return;
+    alvo.hidden = !alvo.hidden;
+    b.setAttribute('aria-expanded', String(!alvo.hidden));
+  }));
+
   // Máscaras
   const mascaras = {
     cpf: (d) => d.slice(0, 11).replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'),

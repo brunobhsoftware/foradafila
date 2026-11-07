@@ -8,8 +8,8 @@
             ['rota' => 'eventos.index', 'ativo' => 'eventos.*', 'icone' => 'evento', 'texto' => 'Meus eventos', 'pode' => ['evento.ver']],
         ],
         'Vendas' => [
-            ['modulo' => 'vendas', 'icone' => 'vendas', 'texto' => 'Pedidos', 'pode' => ['pedido.ver']],
-            ['modulo' => 'participantes', 'icone' => 'participantes', 'texto' => 'Participantes', 'pode' => ['participante.ver']],
+            ['rota' => 'pedidos.index', 'ativo' => 'pedidos.*', 'icone' => 'vendas', 'texto' => 'Pedidos', 'pode' => ['pedido.ver']],
+            ['rota' => 'participantes.index', 'ativo' => 'participantes.*', 'icone' => 'participantes', 'texto' => 'Participantes', 'pode' => ['participante.ver']],
             ['modulo' => 'checkin', 'icone' => 'checkin', 'texto' => 'Check-in', 'pode' => ['checkin.realizar', 'checkin.acompanhar']],
         ],
         'Divulgação' => [
