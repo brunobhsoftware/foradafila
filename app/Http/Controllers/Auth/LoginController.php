@@ -57,7 +57,10 @@ class LoginController extends Controller
         Auth::login($usuario);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('painel'));
+        // Administrador da plataforma sem empresa vinculada vai direto para a Administração.
+        $destino = $usuario->admin_plataforma && ! $usuario->vinculosAtivos()->exists() ? route('admin.inicio') : route('painel');
+
+        return redirect()->intended($destino);
     }
 
     public function destroy(Request $request)

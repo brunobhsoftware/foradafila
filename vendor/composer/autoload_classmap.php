@@ -6,6 +6,7 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'App\\Http\\Controllers\\Admin\\AdminController' => $baseDir . '/app/Http/Controllers/Admin/AdminController.php',
     'App\\Http\\Controllers\\Auth\\CadastroController' => $baseDir . '/app/Http/Controllers/Auth/CadastroController.php',
     'App\\Http\\Controllers\\Auth\\ConviteController' => $baseDir . '/app/Http/Controllers/Auth/ConviteController.php',
     'App\\Http\\Controllers\\Auth\\LoginController' => $baseDir . '/app/Http/Controllers/Auth/LoginController.php',
@@ -29,6 +30,7 @@ return array(
     'App\\Http\\Controllers\\Publico\\MeusIngressosController' => $baseDir . '/app/Http/Controllers/Publico/MeusIngressosController.php',
     'App\\Http\\Controllers\\SiteController' => $baseDir . '/app/Http/Controllers/SiteController.php',
     'App\\Http\\Controllers\\WebhookController' => $baseDir . '/app/Http/Controllers/WebhookController.php',
+    'App\\Http\\Middleware\\AdministradorPlataforma' => $baseDir . '/app/Http/Middleware/AdministradorPlataforma.php',
     'App\\Http\\Middleware\\IdentificarOrganizador' => $baseDir . '/app/Http/Middleware/IdentificarOrganizador.php',
     'App\\Models\\Auditoria' => $baseDir . '/app/Models/Auditoria.php',
     'App\\Models\\Comprador' => $baseDir . '/app/Models/Comprador.php',

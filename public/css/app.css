@@ -358,3 +358,7 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 .copiar input.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .mp__ou { width: 100%; display: flex; align-items: center; gap: 10px; margin: 0; color: var(--suave); font-size: .85rem; }
 .mp__ou::before, .mp__ou::after { content: ""; flex: 1; border-top: 1px solid var(--borda); }
+.topo-admin__selo { margin-right: auto; font: 700 .9rem var(--fonte-titulo); color: var(--laranja); }
+.topo-admin__quem { color: var(--suave); font-size: .9rem; }
+.topo-painel form { margin: 0; }
+@media (max-width: 900px) { .topo-admin__selo { color: var(--amarelo); } .topo-admin__quem { display: none; } }

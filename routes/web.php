@@ -84,6 +84,14 @@ Route::middleware('auth')->group(function () {
 Route::post('/webhooks/mercadopago', [WebhookController::class, 'mercadoPago'])->name('webhook.mercadopago')
     ->middleware('throttle:120,1,webhook-mp');
 
+// ---------- Administração da plataforma (equipe BH Software) ----------
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Admin\AdminController::class, 'inicio'])->name('inicio');
+    Route::get('/mercadopago', [\App\Http\Controllers\Admin\AdminController::class, 'mercadoPago'])->name('mercadopago');
+    Route::put('/mercadopago', [\App\Http\Controllers\Admin\AdminController::class, 'salvarMercadoPago'])->name('mercadopago.salvar')
+        ->middleware('throttle:20,10,admin-mp');
+});
+
 // ---------- Área do produtor ----------
 Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () {
     Route::get('/', DashboardController::class)->name('painel');

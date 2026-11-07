@@ -15,6 +15,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: ['webhooks/*']);
         $middleware->alias([
             'organizador' => IdentificarOrganizador::class,
+            'admin' => \App\Http\Middleware\AdministradorPlataforma::class,
         ]);
         // O organizador precisa estar definido ANTES de resolver {evento}, {lote} etc. pela URL:
         // assim o filtro por organizador_id vale também para o route model binding.

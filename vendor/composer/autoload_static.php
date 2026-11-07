@@ -481,6 +481,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
     );
 
     public static $classMap = array (
+        'App\\Http\\Controllers\\Admin\\AdminController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/AdminController.php',
         'App\\Http\\Controllers\\Auth\\CadastroController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/CadastroController.php',
         'App\\Http\\Controllers\\Auth\\ConviteController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/ConviteController.php',
         'App\\Http\\Controllers\\Auth\\LoginController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/LoginController.php',
@@ -504,6 +505,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'App\\Http\\Controllers\\Publico\\MeusIngressosController' => __DIR__ . '/../..' . '/app/Http/Controllers/Publico/MeusIngressosController.php',
         'App\\Http\\Controllers\\SiteController' => __DIR__ . '/../..' . '/app/Http/Controllers/SiteController.php',
         'App\\Http\\Controllers\\WebhookController' => __DIR__ . '/../..' . '/app/Http/Controllers/WebhookController.php',
+        'App\\Http\\Middleware\\AdministradorPlataforma' => __DIR__ . '/../..' . '/app/Http/Middleware/AdministradorPlataforma.php',
         'App\\Http\\Middleware\\IdentificarOrganizador' => __DIR__ . '/../..' . '/app/Http/Middleware/IdentificarOrganizador.php',
         'App\\Models\\Auditoria' => __DIR__ . '/../..' . '/app/Models/Auditoria.php',
         'App\\Models\\Comprador' => __DIR__ . '/../..' . '/app/Models/Comprador.php',
