@@ -3,9 +3,9 @@
 
 @section('conteudo')
 <div class="cabecalho">
-    <div><h1>Eventos</h1><p>Todos os eventos da organização.</p></div>
+    <div><h1>Meus eventos</h1><p>Os eventos da organização que você pode acessar.</p></div>
     @can('evento.criar')
-        <div class="cabecalho__acoes"><a href="{{ route('eventos.create') }}" class="botao botao--primario"><x-icone nome="mais" /> Criar evento</a></div>
+        <div class="cabecalho__acoes"><a href="{{ route('eventos.create') }}" class="botao botao--primario"><x-icone nome="mais" /> Novo evento</a></div>
     @endcan
 </div>
 

@@ -38,9 +38,15 @@ return [
     */
 
     'guards' => [
+        // Produtor e equipe (tabela usuario).
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
+        ],
+        // Comprador (tabela comprador): área "Meus ingressos", separada da área do produtor.
+        'comprador' => [
+            'driver' => 'session',
+            'provider' => 'compradores',
         ],
     ],
 
@@ -65,6 +71,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', Usuario::class),
+        ],
+
+        'compradores' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Comprador::class,
         ],
 
         // 'users' => [

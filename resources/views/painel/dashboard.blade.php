@@ -8,7 +8,7 @@
         <p>Resumo de {{ $organizadorAtual->nomeExibicao() }}</p>
     </div>
     @can('evento.criar')
-        <div class="cabecalho__acoes"><a href="{{ route('eventos.create') }}" class="botao botao--primario"><x-icone nome="mais" /> Criar evento</a></div>
+        <div class="cabecalho__acoes"><a href="{{ route('eventos.create') }}" class="botao botao--primario"><x-icone nome="mais" /> Novo evento</a></div>
     @endcan
 </div>
 

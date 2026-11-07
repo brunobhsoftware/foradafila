@@ -5,7 +5,7 @@
     $menu = [
         null => [
             ['rota' => 'painel', 'ativo' => 'painel', 'icone' => 'painel', 'texto' => 'Painel', 'pode' => ['dashboard.ver']],
-            ['rota' => 'eventos.index', 'ativo' => 'eventos.*', 'icone' => 'evento', 'texto' => 'Eventos', 'pode' => ['evento.ver']],
+            ['rota' => 'eventos.index', 'ativo' => 'eventos.*', 'icone' => 'evento', 'texto' => 'Meus eventos', 'pode' => ['evento.ver']],
         ],
         'Vendas' => [
             ['modulo' => 'vendas', 'icone' => 'vendas', 'texto' => 'Pedidos', 'pode' => ['pedido.ver']],
@@ -59,6 +59,7 @@
         <div class="menu-lateral__rodape">
             <b>{{ auth()->user()->nome }}</b>
             <span>{{ auth()->user()->email }}</span>
+            <a href="{{ route('inicio') }}" style="display:block;margin-top:8px;color:#D0D5DD">Ir para o site</a>
             <form method="post" action="{{ route('sair') }}" style="margin-top:8px">
                 @csrf
                 <button type="submit">Sair</button>
