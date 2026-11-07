@@ -1,2 +1,9 @@
-# foradafila
-Fora da Fila de Ingressos
+# Fora da Fila
+
+Plataforma de venda de ingressos e check-in para eventos — foradafila.com.br.
+
+- `docs/regras-de-negocio.md` — regras de negócio do banco e do sistema
+- `docs/requisitos-originais.md` — requisitos originais
+- `banco/` — scripts de migração versionados (`V001__...`, `V002__...`)
+
+Contexto completo, decisões e pendências: [CLAUDE.md](CLAUDE.md).
