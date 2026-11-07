@@ -29,8 +29,15 @@ class AdminController extends Controller
         $d = $request->validate(['valor' => ['required', 'numeric', 'min:1', 'max:100'], 'ambiente' => ['required', 'in:teste,producao']], [], ['valor' => 'valor']);
         $valor = (float) $d['valor'];
         $teste = $d['ambiente'] === 'teste';
-        if ($teste && ! MercadoPago::credencial('teste_access_token')) {
-            return back()->withErrors(['valor' => 'Cadastre primeiro o Access Token de teste (Credenciais > Teste, no painel do Mercado Pago).']);
+        if ($teste) {
+            try {
+                $tokenTeste = MercadoPago::tokenTeste();
+            } catch (\Throwable $e) {
+                return back()->withErrors(['valor' => $e->getMessage()]);
+            }
+            if (! $tokenTeste) {
+                return back()->withErrors(['valor' => 'Cadastre primeiro as credenciais de teste: Access Token de teste, ou Client ID e Client Secret de teste (Credenciais > Teste).']);
+            }
         }
         if (! $teste && ! MercadoPago::configurado()) {
             return back()->withErrors(['valor' => 'Cadastre primeiro o Client ID e o Client Secret.']);
@@ -38,7 +45,7 @@ class AdminController extends Controller
         session(['mp_teste_ambiente' => $d['ambiente']]);
         $referencia = 'teste-'.\Illuminate\Support\Str::uuid();
         try {
-            $pref = MercadoPago::criarPreferencia($teste ? MercadoPago::credencial('teste_access_token') : MercadoPago::tokenAplicacao(), [
+            $pref = MercadoPago::criarPreferencia($teste ? $tokenTeste : MercadoPago::tokenAplicacao(), [
                 'items' => [['id' => 'teste-ff', 'title' => 'Teste de integração Fora da Fila', 'quantity' => 1, 'unit_price' => round($valor, 2), 'currency_id' => 'BRL']],
                 'external_reference' => $referencia,
                 'back_urls' => array_fill_keys(['success', 'failure', 'pending'], route('admin.mercadopago.teste.retorno')),
@@ -73,7 +80,7 @@ class AdminController extends Controller
         $admin = (bool) $request->user()?->admin_plataforma;
         if ($admin && $id && $id !== 'null') {
             try {
-                $token = session('mp_teste_ambiente') === 'teste' ? MercadoPago::credencial('teste_access_token') : MercadoPago::tokenAplicacao();
+                $token = session('mp_teste_ambiente') === 'teste' ? MercadoPago::tokenTeste() : MercadoPago::tokenAplicacao();
                 $pagamento = MercadoPago::pagamento($token, (string) $id);
             } catch (\Throwable $e) {
                 $pagamento = [];
@@ -108,7 +115,13 @@ class AdminController extends Controller
             $producao = ['erro' => $e->getMessage()];
         }
 
-        return back()->with('verificacao', ['producao' => $producao, 'teste' => $info(MercadoPago::credencial('teste_access_token'))]);
+        try {
+            $teste = $info(MercadoPago::tokenTeste());
+        } catch (\Throwable $e) {
+            $teste = ['erro' => $e->getMessage()];
+        }
+
+        return back()->with('verificacao', ['producao' => $producao, 'teste' => $teste]);
     }
 
     public function mercadoPago()
@@ -125,12 +138,14 @@ class AdminController extends Controller
             'webhook_secret' => ['nullable', 'string', 'max:200', 'regex:/^\S+$/'],
             'teste_access_token' => ['nullable', 'string', 'max:300', 'regex:/^(APP_USR|TEST)-\S+$/'],
             'teste_webhook_secret' => ['nullable', 'string', 'max:200', 'regex:/^\S+$/'],
+            'teste_client_id' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'teste_client_secret' => ['nullable', 'string', 'max:200', 'regex:/^\S+$/'],
         ], [
             'teste_access_token.regex' => 'O Access Token de teste começa com APP_USR- (ou TEST-) e não tem espaços.',
             'client_id.regex' => 'O Client ID tem só letras, números, "-" e "_".',
             'client_secret.regex' => 'O Client Secret não pode ter espaços.',
             'webhook_secret.regex' => 'A assinatura secreta não pode ter espaços.',
-        ], ['client_id' => 'Client ID', 'client_secret' => 'Client Secret', 'webhook_secret' => 'assinatura secreta', 'teste_access_token' => 'Access Token de teste', 'teste_webhook_secret' => 'assinatura secreta de teste']);
+        ], ['client_id' => 'Client ID', 'client_secret' => 'Client Secret', 'webhook_secret' => 'assinatura secreta', 'teste_access_token' => 'Access Token de teste', 'teste_webhook_secret' => 'assinatura secreta de teste', 'teste_client_id' => 'Client ID de teste', 'teste_client_secret' => 'Client Secret de teste']);
 
         $pkce = $request->boolean('pkce');
         if ($pkce !== MercadoPago::usaPkce()) {

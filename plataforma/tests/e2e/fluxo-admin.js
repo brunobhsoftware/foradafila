@@ -20,7 +20,7 @@ const falso = http.createServer((req, res) => {
     return res.end(JSON.stringify(a === 'Bearer APP_USR-teste-123' ? { id: 2001, nickname: 'TESTUSER123', email: 'test_user_1@testuser.com', tags: ['test_user'] } : { id: 1001, nickname: 'BHSOFTWARE', email: 'bh@bh.test', tags: ['normal'] }));
   }
   if (u.pathname === '/v1/payments/123456') {
-    res.writeHead(['Bearer APP-TOKEN-BH', 'Bearer APP_USR-teste-123'].includes(req.headers.authorization) ? 200 : 401, { 'Content-Type': 'application/json' });
+    res.writeHead(['Bearer APP-TOKEN-BH', 'Bearer APP_USR-teste-123', 'Bearer APP_USR-teste-cc'].includes(req.headers.authorization) ? 200 : 401, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ id: 123456, status: 'approved', status_detail: 'accredited', transaction_amount: 5, payment_method_id: 'pix', payment_type_id: 'bank_transfer' }));
   }
   let corpo = ''; req.on('data', (d) => { corpo += d; }); req.on('end', () => {
@@ -30,6 +30,7 @@ const falso = http.createServer((req, res) => {
       res.writeHead(201, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ id: 'PREF-1', init_point: volta }));
     }
     const f = new URLSearchParams(corpo); segredoUsado = f.get('client_secret');
+    if (f.get('grant_type') === 'client_credentials' && f.get('client_id') === 'teste-id') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ access_token: 'APP_USR-teste-cc', expires_in: 21600 })); }
     if (f.get('grant_type') === 'client_credentials') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ access_token: 'APP-TOKEN-BH', expires_in: 21600 })); }
     res.writeHead(400); res.end('{}');
   });
@@ -89,7 +90,14 @@ const falso = http.createServer((req, res) => {
   await P.goto(BASE + '/admin/mercadopago');
   ok(await P.inputValue('[name=valor]') === '5.00' && await P.isChecked('input[name=ambiente][value=teste]'), 'pagamento de teste vem com R$ 5,00 e ambiente Teste');
   await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
-  ok((await P.content()).includes('Cadastre primeiro o Access Token de teste'), 'sem Access Token de teste, avisa');
+  ok((await P.content()).includes('Cadastre primeiro as credenciais de teste'), 'sem credenciais de teste, avisa');
+  await P.fill('[name=teste_client_id]', 'teste-id'); await P.fill('[name=teste_client_secret]', 'teste-segredo');
+  await nav(P, P.click('button:has-text("Salvar chaves")'));
+  ok(sql("SELECT COUNT(*) FROM parametro_sistema WHERE chave='mp_teste_client_secret' AND valor NOT LIKE '%teste-segredo%'") === '1', 'Client Secret de teste gravado criptografado');
+  await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
+  await P.goto(await P.inputValue('#link-teste'));
+  ok(autorizacaoPref === 'Bearer APP_USR-teste-cc', 'Teste com Client ID/Secret de teste: gera o token de teste e cria a preferência com ele');
+  await P.goto(BASE + '/admin/mercadopago');
   await P.fill('[name=teste_access_token]', 'token-errado');
   await nav(P, P.click('button:has-text("Salvar chaves")'));
   ok((await P.content()).includes('começa com APP_USR-'), 'Access Token de teste em formato errado é recusado');
