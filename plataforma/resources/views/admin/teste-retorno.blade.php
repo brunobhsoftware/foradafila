@@ -12,6 +12,7 @@
 <section class="cartao" style="padding:20px">
     <p>Situação:
         <span class="selo {{ $status === 'approved' ? 'selo--verde' : ($status === 'rejected' ? 'selo--laranja' : 'selo--amarelo') }}">{{ $nomes[$status] ?? ($status ?: 'desconhecida') }}</span>
+        <span class="selo {{ $ambiente === 'teste' ? 'selo--azul' : 'selo--cinza' }}">{{ $ambiente === 'teste' ? 'Credenciais de teste' : 'Produção' }}</span>
         @if ($pagamento)<small class="suave">(conferido na API do Mercado Pago)</small>@endif
     </p>
     <dl class="mp__dados">

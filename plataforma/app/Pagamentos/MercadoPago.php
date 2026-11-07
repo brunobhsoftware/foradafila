@@ -17,6 +17,8 @@ class MercadoPago
         'client_id' => ['parametro' => 'mp_client_id', 'secreto' => false, 'env' => 'MP_CLIENT_ID'],
         'client_secret' => ['parametro' => 'mp_client_secret', 'secreto' => true, 'env' => 'MP_CLIENT_SECRET'],
         'webhook_secret' => ['parametro' => 'mp_webhook_secret', 'secreto' => true, 'env' => 'MP_WEBHOOK_SECRET'],
+        // Credencial de TESTE da aplicação (Credenciais > Teste > Access Token): usada só no pagamento de teste.
+        'teste_access_token' => ['parametro' => 'mp_teste_access_token', 'secreto' => true, 'env' => 'MP_TESTE_ACCESS_TOKEN'],
     ];
 
     private static array $cache = [];
@@ -34,7 +36,7 @@ class MercadoPago
             } catch (\Throwable $e) {
                 $valor = null; // tabela indisponível ou APP_KEY trocada: cai no .env
             }
-            self::$cache[$nome] = $valor ?: config('pagamentos.mercadopago.'.$nome);
+            self::$cache[$nome] = $valor ?: (config('pagamentos.mercadopago.'.$nome) ?: env($def['env']));
         }
 
         return self::$cache[$nome];

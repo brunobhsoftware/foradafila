@@ -128,7 +128,9 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   na aplicação do Mercado Pago (Detalhes da aplicação → Editar). **Pagamento de teste** (cartão 4, padrão R$ 5): token da própria
   aplicação (client_credentials, cache 5 h) + preferência do Checkout Pro com webhook; retorno `admin/mercadopago/teste/retorno` mostra
   payment_id, merchant_order_id e status conferido na API; a página lista os 10 últimos webhooks. **Validado em produção em
-  07/11/2026:** pagamento de R$ 5 por Pix aprovado (payment_id 187277190645, merchant_order_id 45909646019). Empresas e taxas/isenções: em breve. Administrador sem empresa entra direto em `/admin`.
+  07/11/2026:** pagamento de R$ 5 por Pix aprovado (payment_id 187277190645, merchant_order_id 45909646019). O pagamento de teste
+  tem ambiente **Teste** (padrão; usa o Access Token de teste `mp_teste_access_token`, criptografado — exigido pela Qualidade da
+  integração; pagar com a conta de teste compradora) ou **Produção** (token client_credentials). Empresas e taxas/isenções: em breve. Administrador sem empresa entra direto em `/admin`.
   **Primeiro acesso:** administrador criado sem senha usa "Esqueci a senha" (link de 60 min, `SenhaController::podeRedefinir`).
   Modelo decidido pelo Bruno (07/11/2026): **aplicação única da BH Software + "Conectar" de cada produtor**; o dinheiro
   cai direto na conta do produtor. O Financeiro do produtor mostra a etapa 1 só como "Liberação pela plataforma".
@@ -166,7 +168,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-admin.js` (18, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-admin.js` (22, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.

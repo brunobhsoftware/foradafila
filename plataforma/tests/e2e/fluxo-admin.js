@@ -15,7 +15,7 @@ const falso = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
   if (u.pathname === '/authorization') { clientIdUsado = u.searchParams.get('client_id'); res.writeHead(302, { Location: u.searchParams.get('redirect_uri') + '?error=cancelado&state=' + u.searchParams.get('state') }); return res.end(); }
   if (u.pathname === '/v1/payments/123456') {
-    res.writeHead(req.headers.authorization === 'Bearer APP-TOKEN-BH' ? 200 : 401, { 'Content-Type': 'application/json' });
+    res.writeHead(['Bearer APP-TOKEN-BH', 'Bearer APP_USR-teste-123'].includes(req.headers.authorization) ? 200 : 401, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ id: 123456, status: 'approved', status_detail: 'accredited', transaction_amount: 5, payment_method_id: 'pix', payment_type_id: 'bank_transfer' }));
   }
   let corpo = ''; req.on('data', (d) => { corpo += d; }); req.on('end', () => {
@@ -80,14 +80,29 @@ const falso = http.createServer((req, res) => {
   await nav(P, P.click('button:has-text("Conectar Mercado Pago")'));
   ok(clientIdUsado === '9999999999999999', 'Conectar usa o Client ID cadastrado na Administração');
 
-  // pagamento de teste (Checkout Pro na conta da aplicação)
+  // pagamento de teste: Teste (padrão) exige o Access Token de teste
   await P.goto(BASE + '/admin/mercadopago');
-  ok(await P.inputValue('[name=valor]') === '5.00', 'pagamento de teste vem com R$ 5,00');
+  ok(await P.inputValue('[name=valor]') === '5.00' && await P.isChecked('input[name=ambiente][value=teste]'), 'pagamento de teste vem com R$ 5,00 e ambiente Teste');
   await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
-  ok(autorizacaoPref === 'Bearer APP-TOKEN-BH' && preferencia.items[0].unit_price === 5 && preferencia.items[0].currency_id === 'BRL'
-    && preferencia.notification_url.endsWith('/webhooks/mercadopago') && preferencia.external_reference.startsWith('teste-'), 'cria a preferência de R$ 5 com o token da aplicação e o webhook');
-  const ret = await P.content();
-  ok(ret.includes('123456') && ret.includes('987654') && ret.includes('Aprovado') && ret.includes('conferido na API'), 'retorno mostra ID do pagamento, do pedido e status conferido');
+  ok((await P.content()).includes('Cadastre primeiro o Access Token de teste'), 'sem Access Token de teste, avisa');
+  await P.fill('[name=teste_access_token]', 'token-errado');
+  await nav(P, P.click('button:has-text("Salvar chaves")'));
+  ok((await P.content()).includes('começa com APP_USR-'), 'Access Token de teste em formato errado é recusado');
+  await P.fill('[name=teste_access_token]', 'APP_USR-teste-123');
+  await nav(P, P.click('button:has-text("Salvar chaves")'));
+  ok(sql("SELECT valor NOT LIKE '%APP_USR%' FROM parametro_sistema WHERE chave='mp_teste_access_token'") === '1', 'Access Token de teste gravado criptografado');
+  await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
+  ok(autorizacaoPref === 'Bearer APP_USR-teste-123' && preferencia.items[0].unit_price === 5 && preferencia.items[0].currency_id === 'BRL'
+    && preferencia.notification_url.endsWith('/webhooks/mercadopago') && preferencia.external_reference.startsWith('teste-'), 'Teste: preferência de R$ 5 com o Access Token de teste e o webhook');
+  let ret = await P.content();
+  ok(ret.includes('123456') && ret.includes('987654') && ret.includes('Aprovado') && ret.includes('Credenciais de teste') && ret.includes('conferido na API'), 'retorno mostra IDs, status e "Credenciais de teste"');
+
+  // Produção usa o token da aplicação (client_credentials)
+  await P.goto(BASE + '/admin/mercadopago');
+  await P.check('input[name=ambiente][value=producao]', { force: true });
+  await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
+  ret = await P.content();
+  ok(autorizacaoPref === 'Bearer APP-TOKEN-BH' && ret.includes('Produção') && ret.includes('Aprovado'), 'Produção: usa o token da aplicação');
 
   ok(erros.length === 0, 'sem erros de JavaScript ' + erros.join(' | '));
   sql("DELETE FROM parametro_sistema WHERE chave LIKE 'mp\\_%'");
