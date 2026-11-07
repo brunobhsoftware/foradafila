@@ -58,7 +58,8 @@ class AdminController extends Controller
         // Mostra o link (copiar / QR Code) para abrir numa janela anônima, outro navegador ou no celular,
         // sem a conta da BH Software logada (o Mercado Pago recusa misturar conta real com teste).
         return view('admin.teste-link', [
-            'link' => $teste && ! empty($pref['sandbox_init_point']) ? $pref['sandbox_init_point'] : $pref['init_point'],
+            'link' => $pref['init_point'],
+            'linkSandbox' => $teste && ! empty($pref['sandbox_init_point']) && $pref['sandbox_init_point'] !== $pref['init_point'] ? $pref['sandbox_init_point'] : null,
             'valor' => $valor, 'teste' => $teste, 'referencia' => $referencia,
         ]);
     }
