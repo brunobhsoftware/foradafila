@@ -178,6 +178,7 @@ class InscricaoController extends Controller
         // E-mail com a confirmação e a lista de ingressos (conta fique@, depois da resposta).
         $pedido->load(['ingressos.participante', 'ingressos.tipo', 'ingressos.lote']);
         Notificacoes::ingressosConfirmados($pedido, $compradorFinal, $evento->loadMissing('local'), $evento->organizador, $pedido->ingressos);
+        Notificacoes::novaCompraParaEquipe($pedido, $compradorFinal, $evento, $evento->organizador, $pedido->ingressos->count());
 
         return redirect()->route('comprador.ingressos')
             ->with('ok', "Pronto! Pedido {$pedido->codigo} confirmado. Seus ingressos estão abaixo.");

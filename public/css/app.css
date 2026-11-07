@@ -251,3 +251,6 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 .upload--com-imagem { gap: 10px; }
 .upload--com-imagem .upload__texto { position: static; background: none; padding: 0; }
 .upload--com-imagem .upload__texto .i { display: none; }
+
+.menu-lateral__logo { float: left; width: 36px; height: 36px; border-radius: 8px; object-fit: contain; background: #fff; margin: 0 10px 0 0; }
+.menu-lateral__org::after { content: ""; display: block; clear: both; }

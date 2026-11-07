@@ -193,3 +193,4 @@ button.botao { cursor: pointer; font-family: var(--fonte-texto); }
 .lista-breve li::before { content: ""; position: absolute; left: 4px; top: 8px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--texto-suave); }
 .pub-evento__capa { width: 100%; aspect-ratio: 1600 / 838; object-fit: cover; border-radius: var(--raio); border: 1px solid var(--borda); box-shadow: var(--sombra); }
 .pub-evento-card__img { width: 100%; aspect-ratio: 1600 / 838; object-fit: cover; display: block; }
+.pub-eventos--passados .pub-evento-card { opacity: .78; } .pub-eventos--passados .pub-evento-card:hover { opacity: 1; }

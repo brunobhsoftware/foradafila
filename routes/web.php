@@ -12,6 +12,7 @@ use App\Http\Controllers\Painel\EventoController;
 use App\Http\Controllers\Painel\LoteController;
 use App\Http\Controllers\Painel\OrganizacaoController;
 use App\Http\Controllers\Painel\PerfilController;
+use App\Http\Controllers\Painel\PreferenciasController;
 use App\Http\Controllers\Publico\CompradorAuthController;
 use App\Http\Controllers\Publico\EventoPublicoController;
 use App\Http\Controllers\Publico\InscricaoController;
@@ -25,7 +26,7 @@ Route::get('/', [SiteController::class, 'inicio'])->name('inicio');
 Route::get('/termos/{tipo}', [SiteController::class, 'termo'])->name('termo')
     ->whereIn('tipo', ['uso_organizador', 'responsabilidade_organizador', 'compra_comprador', 'privacidade']);
 Route::get('/midia/{pasta}/{arquivo}', MidiaController::class)->name('midia')
-    ->where(['pasta' => 'eventos', 'arquivo' => '[0-9]+_[0-9a-f-]{36}\.(jpg|png|gif)']);
+    ->where(['pasta' => 'eventos|logomarcas', 'arquivo' => '[a-z0-9-]+_[0-9a-f-]{36}\.(jpg|png|gif)']);
 Route::view('/solucao', 'site.solucao')->name('solucao');
 Route::view('/precos', 'site.precos')->name('precos');
 Route::view('/ajuda', 'site.ajuda')->name('ajuda');
@@ -109,6 +110,9 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
 
     Route::get('/organizacao', [OrganizacaoController::class, 'edit'])->name('organizacao.edit');
     Route::put('/organizacao', [OrganizacaoController::class, 'update'])->name('organizacao.update');
+
+    Route::get('/preferencias', [PreferenciasController::class, 'edit'])->name('preferencias.edit');
+    Route::put('/preferencias', [PreferenciasController::class, 'update'])->name('preferencias.update');
 
     // Módulos das próximas fases: a tela explica o que vem e o menu já fica no lugar certo.
     Route::get('/{modulo}', EmBreveController::class)->name('em-breve')

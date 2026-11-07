@@ -64,7 +64,9 @@
 
       <div class="pub-cartao pub-organizador">
         <small>Organizado e realizado por</small>
-        <h3 style="margin-top:4px">{{ $org->nomeExibicao() }}</h3>
+        <h3 style="margin-top:4px;display:flex;align-items:center;gap:12px">
+          @if ($org->logo_url)<img src="{{ $org->logo_url }}" alt="Logo de {{ $org->nomeExibicao() }}" width="48" height="48" style="width:48px;height:48px;object-fit:contain;border-radius:10px;border:1px solid var(--borda)">@endif
+          {{ $org->nomeExibicao() }}</h3>
         <p style="margin:0 0 6px">{{ $org->razao_social }} · {{ $org->tipo_pessoa === 'PJ' ? 'CNPJ' : 'CPF' }} {{ $org->tipo_pessoa === 'PJ' ? $org->documentoFormatado() : '***.'.substr($org->documento, 3, 3).'.'.substr($org->documento, 6, 3).'-**' }}</p>
         <p style="margin:0 0 10px">Atendimento: <a href="mailto:{{ $org->email_contato }}">{{ $org->email_contato }}</a></p>
         <p style="margin:0"><small>O organizador é o responsável pela realização do evento e pelo atendimento ao comprador.
