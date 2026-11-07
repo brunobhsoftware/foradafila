@@ -46,9 +46,11 @@
 <form method="post" action="{{ route('admin.mercadopago.salvar') }}" class="cartao" style="padding:20px;margin-top:18px" autocomplete="off">
     @csrf @method('PUT')
     <h2 style="margin-top:0">2. Informar as chaves</h2>
+    <h3 style="margin:0">Ambiente de PRODUÇÃO</h3>
     <p class="suave">Os segredos são guardados criptografados e nunca aparecem de novo na tela (só os 4 últimos caracteres). Campo em branco mantém o valor atual.</p>
     <div class="form-grade">
-        @foreach (['client_id' => ['MP_CLIENT_ID', 'Client ID', 'text'], 'client_secret' => ['MP_CLIENT_SECRET', 'Client Secret', 'password'], 'webhook_secret' => ['MP_WEBHOOK_SECRET', 'Assinatura secreta dos webhooks', 'password'], 'teste_access_token' => ['Credenciais > Teste > Access Token', 'Access Token de TESTE (só para o pagamento de teste)', 'password'], 'teste_webhook_secret' => ['Webhooks > modo teste', 'Assinatura secreta dos webhooks de TESTE (se for diferente da de produção)', 'password']] as $campo => [$env, $rotulo, $tipo])
+        @foreach (['client_id' => ['MP_CLIENT_ID', 'Client ID', 'text'], 'client_secret' => ['MP_CLIENT_SECRET', 'Client Secret', 'password'], 'webhook_secret' => ['MP_WEBHOOK_SECRET', 'Assinatura secreta dos webhooks', 'password'], 'teste_client_id' => ['Credenciais > Teste > Client ID', 'Client ID de TESTE', 'text'], 'teste_client_secret' => ['Credenciais > Teste > Client Secret', 'Client Secret de TESTE', 'password'], 'teste_access_token' => ['Credenciais > Teste > Access Token', 'Access Token de TESTE (opcional se informar o Client ID/Secret de teste)', 'password'], 'teste_webhook_secret' => ['Webhooks > modo teste', 'Assinatura secreta dos webhooks de TESTE (se for diferente da de produção)', 'password']] as $campo => [$env, $rotulo, $tipo])
+            @if ($campo === 'teste_client_id')<div class="col-12"><h3 style="margin:10px 0 0">Ambiente de TESTE</h3><small class="suave">No painel do Mercado Pago, Credenciais com o seletor em "Teste".</small></div>@endif
             <div class="campo col-12">
                 <label for="adm-{{ $campo }}">{{ $rotulo }} <small class="suave">({{ $env }})</small></label>
                 <input id="adm-{{ $campo }}" name="{{ $campo }}" type="{{ $tipo }}" autocomplete="off" spellcheck="false"

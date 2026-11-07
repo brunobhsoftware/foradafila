@@ -20,6 +20,8 @@ class MercadoPago
         // Credencial de TESTE da aplicação (Credenciais > Teste > Access Token): usada só no pagamento de teste.
         'teste_access_token' => ['parametro' => 'mp_teste_access_token', 'secreto' => true, 'env' => 'MP_TESTE_ACCESS_TOKEN'],
         'teste_webhook_secret' => ['parametro' => 'mp_teste_webhook_secret', 'secreto' => true, 'env' => 'MP_TESTE_WEBHOOK_SECRET'],
+        'teste_client_id' => ['parametro' => 'mp_teste_client_id', 'secreto' => false, 'env' => 'MP_TESTE_CLIENT_ID'],
+        'teste_client_secret' => ['parametro' => 'mp_teste_client_secret', 'secreto' => true, 'env' => 'MP_TESTE_CLIENT_SECRET'],
     ];
 
     private static array $cache = [];
@@ -135,6 +137,29 @@ class MercadoPago
     {
         return \Illuminate\Support\Facades\Cache::remember('mp_token_aplicacao_'.md5((string) self::credencial('client_id')), now()->addHours(5),
             fn () => self::token(['grant_type' => 'client_credentials'])['access_token']);
+    }
+
+    /** Token do ambiente de TESTE: o Access Token de teste cadastrado ou, sem ele, client_credentials com o Client ID/Secret de teste. */
+    public static function tokenTeste(): ?string
+    {
+        if ($t = self::credencial('teste_access_token')) {
+            return $t;
+        }
+        $id = self::credencial('teste_client_id');
+        $segredo = self::credencial('teste_client_secret');
+        if (! $id || ! $segredo) {
+            return null;
+        }
+
+        return \Illuminate\Support\Facades\Cache::remember('mp_token_teste_'.md5($id), now()->addHours(5), function () use ($id, $segredo) {
+            $r = Http::asForm()->acceptJson()->timeout(20)->post(config('pagamentos.mercadopago.api_url').'/oauth/token',
+                ['grant_type' => 'client_credentials', 'client_id' => $id, 'client_secret' => $segredo]);
+            if (! $r->successful() || ! $r->json('access_token')) {
+                throw new RuntimeException('O Mercado Pago recusou o Client ID/Secret de teste (HTTP '.$r->status().').');
+            }
+
+            return $r->json('access_token');
+        });
     }
 
     /** Checkout Pro: cria a preferência e devolve a resposta (init_point, id...). */
