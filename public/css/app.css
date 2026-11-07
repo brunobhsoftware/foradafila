@@ -371,3 +371,4 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 .chaves__topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .chaves--producao { border-top: 4px solid #12B76A; }
 .chaves--teste { border-top: 4px solid #2E90FA; }
+.verificacao { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .9rem; }

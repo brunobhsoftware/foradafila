@@ -17,6 +17,7 @@ class MercadoPago
         'client_id' => ['parametro' => 'mp_client_id', 'secreto' => false, 'env' => 'MP_CLIENT_ID'],
         'client_secret' => ['parametro' => 'mp_client_secret', 'secreto' => true, 'env' => 'MP_CLIENT_SECRET'],
         'webhook_secret' => ['parametro' => 'mp_webhook_secret', 'secreto' => true, 'env' => 'MP_WEBHOOK_SECRET'],
+        'access_token' => ['parametro' => 'mp_access_token', 'secreto' => true, 'env' => 'MP_ACCESS_TOKEN'],
         // Credencial de TESTE da aplicação (Credenciais > Teste > Access Token): usada só no pagamento de teste.
         'teste_access_token' => ['parametro' => 'mp_teste_access_token', 'secreto' => true, 'env' => 'MP_TESTE_ACCESS_TOKEN'],
         'teste_webhook_secret' => ['parametro' => 'mp_teste_webhook_secret', 'secreto' => true, 'env' => 'MP_TESTE_WEBHOOK_SECRET'],
@@ -135,6 +136,10 @@ class MercadoPago
     /** Token da própria aplicação (fluxo client_credentials), para operar na conta da BH Software. Guardado 5 h em cache. */
     public static function tokenAplicacao(): string
     {
+        if ($t = self::credencial('access_token')) {
+            return $t; // Access Token de produção cadastrado
+        }
+
         return \Illuminate\Support\Facades\Cache::remember('mp_token_aplicacao_'.md5((string) self::credencial('client_id')), now()->addHours(5),
             fn () => self::token(['grant_type' => 'client_credentials'])['access_token']);
     }
