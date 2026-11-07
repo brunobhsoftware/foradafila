@@ -12,7 +12,29 @@
     @endcan
 </div>
 
-<div class="grade grade-4">
+@php $org = $organizadorAtual; @endphp
+<section class="cartao atalhos-org" aria-label="Sua organização">
+    <div class="atalhos-org__id">
+        @if ($org->logo_url)
+            <img src="{{ $org->logo_url }}" alt="" class="conta-menu__logo" width="56" height="56">
+        @else
+            <span class="conta-menu__logo conta-menu__logo--iniciais" aria-hidden="true">{{ collect(explode(' ', $org->nomeExibicao()))->filter()->take(2)->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('') }}</span>
+        @endif
+        <div style="min-width:0">
+            <b>{{ $org->nomeExibicao() }}</b>
+            <small>{{ $org->email_contato }}</small>
+        </div>
+    </div>
+    <div class="atalhos-org__botoes">
+        <a href="{{ route('organizador.publico', $org->slug) }}" target="_blank" rel="noopener" class="botao botao--contorno botao--pequeno"><x-icone nome="olho" /> Minha página de eventos</a>
+        <a href="{{ route('preferencias.edit') }}" class="botao botao--contorno botao--pequeno"><x-icone nome="perfil" /> Minhas preferências</a>
+        <a href="{{ route('conta.senha') }}" class="botao botao--contorno botao--pequeno"><x-icone nome="editar" /> Trocar senha</a>
+        <a href="{{ route('inicio') }}" class="botao botao--contorno botao--pequeno"><x-icone nome="painel" /> Ir para o site</a>
+        <form method="post" action="{{ route('sair') }}">@csrf<button type="submit" class="botao botao--perigo botao--pequeno"><x-icone nome="sair" /> Sair</button></form>
+    </div>
+</section>
+
+<div class="grade grade-4" style="margin-top:18px">
     <div class="cartao kpi"><x-icone nome="evento" /><small>Eventos publicados</small><b>{{ numero($totais->publicados) }}</b><small>de {{ numero($totais->eventos) }} cadastrados</small></div>
     <div class="cartao kpi"><x-icone nome="ingresso" /><small>Ingressos vendidos</small><b>{{ numero($totais->vendidos) }}</b><small>de {{ numero($totais->ofertados) }} ofertados</small></div>
     @can('financeiro.ver')
