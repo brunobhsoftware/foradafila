@@ -127,7 +127,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   (`MercadoPago::credencial()`). **PKCE opcional** (`mp_pkce`, padrão desligado; cartão 3 da página): tem de estar igual
   na aplicação do Mercado Pago (Detalhes da aplicação → Editar). **Pagamento de teste** (cartão 4, padrão R$ 5): token da própria
   aplicação (client_credentials, cache 5 h) + preferência do Checkout Pro com webhook; retorno `admin/mercadopago/teste/retorno` mostra
-  payment_id, merchant_order_id e status conferido na API; a página lista os 10 últimos webhooks. Empresas e taxas/isenções: em breve. Administrador sem empresa entra direto em `/admin`.
+  payment_id, merchant_order_id e status conferido na API; a página lista os 10 últimos webhooks. **Validado em produção em
+  07/11/2026:** pagamento de R$ 5 por Pix aprovado (payment_id 187277190645, merchant_order_id 45909646019). Empresas e taxas/isenções: em breve. Administrador sem empresa entra direto em `/admin`.
   **Primeiro acesso:** administrador criado sem senha usa "Esqueci a senha" (link de 60 min, `SenhaController::podeRedefinir`).
   Modelo decidido pelo Bruno (07/11/2026): **aplicação única da BH Software + "Conectar" de cada produtor**; o dinheiro
   cai direto na conta do produtor. O Financeiro do produtor mostra a etapa 1 só como "Liberação pela plataforma".
