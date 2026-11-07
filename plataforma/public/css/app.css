@@ -254,3 +254,7 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 
 .menu-lateral__logo { float: left; width: 36px; height: 36px; border-radius: 8px; object-fit: contain; background: #fff; margin: 0 10px 0 0; }
 .menu-lateral__org::after { content: ""; display: block; clear: both; }
+.formato-linha { display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; }
+.formato-linha #acao-endereco-org { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.formato-linha #acao-endereco-org[hidden] { display: none; }
+.formato-linha .botao .i { width: 16px; height: 16px; }

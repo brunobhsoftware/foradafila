@@ -7,7 +7,7 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const BASE = process.env.BASE || 'http://127.0.0.1:8000';
 const LOG = __dirname + '/../../storage/logs/laravel.log';
-const sql = (q) => execSync(`mysql -uroot foradafila -N -e "${q.replace(/"/g, '\\"')}"`).toString().trim();
+const sql = (q) => execSync(`mysql --default-character-set=utf8mb4 -uroot foradafila -N -e "${q.replace(/"/g, '\\"')}"`).toString().trim();
 const ok = (c, m) => { console.log((c ? 'PASSOU ' : 'FALHOU ') + m); if (!c) process.exitCode = 1; };
 const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
 const ultimoCodigo = () => { const m = [...fs.readFileSync(LOG, 'utf8').matchAll(/letter-spacing:8px;color:#101828;margin:18px 0">(\d{6})</g)]; return m.length ? m[m.length - 1][1] : null; };

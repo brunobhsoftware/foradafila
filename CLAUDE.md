@@ -52,7 +52,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   multi-tenant por `organizador_id` em toda tabela de negócio, exclusão lógica para dados financeiros.
 - Triggers: `trg_conta_bu`, `trg_evento_bi`, `trg_evento_bu`, `trg_lote_bu`.
 - **V003 e V004 importados em produção** em 07/11/2026 (conferido: "V004 ok" e "preferencias ok").
-- **V005 ainda não importado em produção**: até lá a capacidade continua obrigatória (`Esquema::capacidadeOpcional()`).
+- **V005 importado em produção** em 07/11/2026 ("V005 ok"): capacidade máxima do evento é opcional.
   O código continua tolerando banco sem o V004 (`App\\Support\\Esquema::temV004()`).
 - **phpMyAdmin da Hostinger:** nunca misturar consultas a `information_schema` com comandos no mesmo envio — a
   sessão passa a usar esse banco e tudo dá `#1044 acesso negado`. Se acontecer, reabrir o phpMyAdmin e começar o
@@ -103,6 +103,9 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
   (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores
   é responsabilidade do produtor, sob as leis de defesa do consumidor. Termos gerais (0.1) não foram alterados.
+- **Cadastro de evento:** ao lado do formato (presencial/híbrido) há o botão "Usar endereço da organização", que
+  preenche nome do local e endereço com os dados de Organização (pergunta antes de substituir; desativado se a
+  organização não tiver endereço). Só no navegador: o endereço continua editável e é gravado no `local` do evento.
 - **"Mostrar eventos passados"** aparece em Organização e em Preferências (mesmo campo da organização; só quem tem
   `organizador.editar` altera).
 - **Perfil "Dono" aparece como "Produtor"** em todas as telas (accessor em `PerfilAcesso`); o código interno continua
@@ -118,7 +121,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (24) e `fluxo-evento-regras.js` (18, simula antes/depois do V005) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (24) e `fluxo-evento-regras.js` (18, simula antes/depois do V005), `fluxo-endereco.js` (10) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.
@@ -187,7 +190,6 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - [ ] Canal de suporte da plataforma (e-mail/WhatsApp) — o FAQ hoje direciona ao organizador
 - [ ] Validação jurídica de qualquer menção a responsabilidade civil e criminal do organizador (não publicada)
 - [ ] Confirmar se o comprador pode cancelar sozinho a inscrição gratuita (ligado no piloto)
-- [ ] Importar `banco/V005` em produção
 - [ ] Token de integração (API) — campo hoje bloqueado
 - [ ] Validação jurídica do texto da declaração de cancelamento
 - [ ] Trocar as senhas das caixas fique@ e noreply@ (foram enviadas no chat) e usar senhas diferentes entre elas

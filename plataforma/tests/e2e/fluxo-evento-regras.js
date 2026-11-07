@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 const { execSync } = require('child_process');
 const BASE = process.env.BASE || 'http://127.0.0.1:8000';
 const V005 = __dirname + '/../../../banco/V005__evento_capacidade_opcional.sql';
-const sql = (q) => execSync(`mysql -uroot foradafila -N -e "${q.replace(/"/g, '\\"')}"`).toString().trim();
+const sql = (q) => execSync(`mysql --default-character-set=utf8mb4 -uroot foradafila -N -e "${q.replace(/"/g, '\\"')}"`).toString().trim();
 const ok = (c, m) => { console.log((c ? 'PASSOU ' : 'FALHOU ') + m); if (!c) process.exitCode = 1; };
 const local = (d, h = '20:00') => new Date(Date.now() + d * 864e5).toISOString().slice(0, 10) + 'T' + h;
 const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
