@@ -82,6 +82,7 @@ return array(
     'App\\Support\\Notificacoes' => $baseDir . '/app/Support/Notificacoes.php',
     'App\\Support\\PoliticaCancelamento' => $baseDir . '/app/Support/PoliticaCancelamento.php',
     'App\\Support\\RegraDoBanco' => $baseDir . '/app/Support/RegraDoBanco.php',
+    'App\\Support\\TaxaServico' => $baseDir . '/app/Support/TaxaServico.php',
     'App\\Support\\Tenant' => $baseDir . '/app/Support/Tenant.php',
     'Attribute' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
     'Brick\\Math\\BigDecimal' => $vendorDir . '/brick/math/src/BigDecimal.php',

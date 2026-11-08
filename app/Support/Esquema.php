@@ -27,6 +27,12 @@ class Esquema
         return self::$cache['v008'] ??= Schema::hasTable('impersonacao_log') && Schema::hasColumn('auditoria', 'admin_impersonando_id');
     }
 
+    /** V010: quem paga a taxa da plataforma (organizador.taxa_comprador, evento.taxa_comprador). */
+    public static function temV010(): bool
+    {
+        return self::$cache['v010'] ??= Schema::hasColumn('organizador', 'taxa_comprador') && Schema::hasColumn('evento', 'taxa_comprador');
+    }
+
     /** V009: cupom do tipo "divulgacao". */
     public static function temV009(): bool
     {

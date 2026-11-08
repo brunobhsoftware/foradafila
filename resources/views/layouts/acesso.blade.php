@@ -11,7 +11,7 @@
             <h1>@yield('chamada', 'Coloque seu evento fora da fila.')</h1>
             <p>Plataforma completa para vender ingressos, controlar a entrada e acompanhar tudo em tempo real.</p>
             <ul>
-                <li>Sem taxa para o comprador</li>
+                <li>Você escolhe: taxa embutida ou repassada ao comprador</li>
                 <li>O dinheiro das vendas cai direto na sua conta</li>
                 <li>Equipe com níveis de acesso: gerente, financeiro, portaria</li>
                 <li>Check-in por QR Code, inclusive sem internet</li>

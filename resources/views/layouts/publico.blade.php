@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>@hasSection('titulo')@yield('titulo') · fora da fila @else Fora da Fila — Plataforma de ingressos para eventos @endif</title>
-  <meta name="description" content="@yield('descricao', 'Venda ingressos para o seu evento sem complicação. Sem taxa para o comprador.')">
+  <meta name="description" content="@yield('descricao', 'Venda ingressos para o seu evento sem complicação. O produtor escolhe quem paga a taxa.')">
   <meta name="theme-color" content="#101828">
   @stack('meta')
   <link rel="icon" type="image/svg+xml" href="{{ asset('assets/img/favicon.svg') }}">

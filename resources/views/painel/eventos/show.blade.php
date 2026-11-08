@@ -116,7 +116,9 @@
                             <tr>
                                 <td><b>{{ $lote->nome }}</b>@if ($lote->visibilidade !== 'publico')<br><small>{{ \App\Models\Lote::VISIBILIDADES[$lote->visibilidade] }}</small>@endif</td>
                                 <td>{{ \App\Models\Lote::MODALIDADES[$lote->modalidade] }}</td>
-                                <td class="num">{{ $lote->preco > 0 ? moeda($lote->preco) : 'Grátis' }}</td>
+                                <td class="num">@if ($lote->preco > 0)@php($tx = \App\Support\TaxaServico::paraPreco($evento, (float) $lote->preco)){{ moeda($lote->preco) }}
+                                    @if ($tx['taxa'] > 0)<br><small class="suave" title="Taxa da plataforma {{ $tx['repassada'] ? 'repassada ao comprador' : 'embutida' }}">{{ $tx['repassada'] ? 'comprador paga '.moeda($tx['comprador_paga']) : 'você recebe '.moeda($tx['produtor_recebe']) }}</small>@endif
+                                    @else Grátis @endif</td>
                                 <td style="min-width:140px"><small>{{ numero($lote->vendido) }} / {{ numero($lote->quantidade) }}</small><div class="barra"><span style="width:{{ min(100, $pct) }}%"></span></div></td>
                                 <td><small>@if ($lote->lote_anterior_id)Após “{{ $lotesOpcoes[$lote->lote_anterior_id] ?? 'lote anterior' }}”@else{{ data_local($lote->venda_inicio, 'd/m H:i') }}@endif → {{ data_local($lote->venda_fim, 'd/m H:i') }}</small></td>
                                 <td><span class="selo {{ ['ativo' => 'selo--verde', 'esgotado' => 'selo--laranja', 'pausado' => 'selo--cinza', 'encerrado' => 'selo--azul'][$lote->status] ?? '' }}">{{ \App\Models\Lote::STATUS[$lote->status] }}</span></td>

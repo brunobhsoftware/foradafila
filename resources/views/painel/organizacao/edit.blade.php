@@ -60,6 +60,23 @@
         </div>
     </section>
 
+    @if ($temV010)
+    <section class="secao-form">
+        <h2>Taxa da plataforma</h2>
+        <p>Nos ingressos <b>pagos</b>, escolha quem paga a taxa do Fora da Fila. Vale como padrão para todos os eventos; cada evento pode mudar.
+            Ingressos gratuitos não têm taxa.</p>
+        @php $rep = (string) old('taxa_comprador', $org->taxa_comprador ? '1' : '0'); $t = $exemploTaxa['taxa'] ?? null; @endphp
+        <div class="opcoes-lote opcoes-lote--2">
+            <label class="opcao-cartao"><input type="radio" name="taxa_comprador" value="0" @checked($rep === '0')>
+                <span><b>Taxa embutida (eu absorvo)</b><small>O comprador paga o preço do ingresso e a taxa sai do valor que você recebe.
+                    @if ($t !== null)Ex.: ingresso de R$ 50,00 → comprador paga R$ 50,00 e você recebe {{ moeda(50 - $t) }}.@endif</small></span></label>
+            <label class="opcao-cartao"><input type="radio" name="taxa_comprador" value="1" @checked($rep === '1')>
+                <span><b>Repassar a taxa ao comprador</b><small>O comprador paga o preço mais a taxa e você recebe o valor cheio do ingresso.
+                    @if ($t !== null)Ex.: ingresso de R$ 50,00 → comprador paga {{ moeda(50 + $t) }} e você recebe R$ 50,00.@endif</small></span></label>
+        </div>
+    </section>
+    @endif
+
     <section class="secao-form">
         <h2>Página pública</h2>
         <p>Lista os seus eventos publicados.</p>
