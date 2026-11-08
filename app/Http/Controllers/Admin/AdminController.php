@@ -163,6 +163,18 @@ class AdminController extends Controller
     }
 
     /** Atualizações do banco aplicadas pela Administração (sem phpMyAdmin). */
+    /** Últimos e-mails (mensagem_envio): para conferir se saiu ou por que falhou. Sem o corpo (pode ter dados pessoais). */
+    public function emails(Request $request)
+    {
+        $busca = trim((string) $request->query('busca'));
+        $envios = DB::table('mensagem_envio')->where('canal', 'email')
+            ->when($busca !== '', fn ($q) => $q->where('destinatario', 'like', '%'.$busca.'%'))
+            ->when($request->query('status'), fn ($q, $s) => $q->where('status', $s))
+            ->orderByDesc('id')->limit(100)->get(['id', 'tipo', 'destinatario', 'assunto', 'status', 'erro', 'criado_em', 'enviado_em']);
+
+        return view('admin.emails', compact('envios', 'busca'));
+    }
+
     public function banco()
     {
         return view('admin.banco', ['scripts' => \App\Support\AtualizacaoBanco::lista()]);
