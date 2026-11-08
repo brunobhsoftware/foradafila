@@ -159,4 +159,18 @@ class Evento extends Model
 
         return $slug;
     }
+
+    /**
+     * Código fixo do link público (/e/{codigo}): 10 caracteres do uuid, que nunca muda — o nome (slug) pode mudar
+     * e quebrar links já compartilhados (decisão do Bruno, 08/11/2026). Links antigos com o nome continuam valendo.
+     */
+    public function codigoPublico(): string
+    {
+        return substr(str_replace('-', '', (string) $this->uuid), 0, 10);
+    }
+
+    public function linkPublico(array $query = []): string
+    {
+        return route('evento.publico', ['slug' => $this->codigoPublico()] + $query);
+    }
 }

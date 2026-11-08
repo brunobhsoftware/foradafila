@@ -16,7 +16,7 @@
       @elseif ($situacao === 'recusado' || in_array($pedido->status, ['recusado', 'expirado', 'cancelado'], true))
         <h1 style="font-size:1.6rem">Pagamento não concluído</h1>
         <p>O pagamento foi recusado, cancelado ou o prazo da reserva acabou. Nenhum valor foi cobrado por este pedido.</p>
-        <a href="{{ route('evento.publico', $evento->slug) }}" class="botao botao--amarelo">Tentar de novo</a>
+        <a href="{{ $evento->linkPublico() }}" class="botao botao--amarelo">Tentar de novo</a>
       @else
         <h1 style="font-size:1.6rem">Aguardando o pagamento</h1>
         <p>Assim que o Mercado Pago confirmar (no Pix costuma ser na hora), os ingressos aparecem em “Meus ingressos” e chegam por e-mail.

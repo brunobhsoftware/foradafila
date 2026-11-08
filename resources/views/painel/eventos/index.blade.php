@@ -27,7 +27,7 @@
         @foreach ($eventos as $evento)
             @php
                 $ind = $indicadores[$evento->id] ?? null; $v = $valores[$evento->id];
-                $link = route('evento.publico', $evento->slug);
+                $link = $evento->linkPublico();
                 $noAr = in_array($evento->status, ['publicado', 'pausado'], true);
                 $vendidos = (int) ($ind->ingressos_vendidos ?? 0); $ofertados = (int) ($ind->ingressos_ofertados ?? 0);
             @endphp
