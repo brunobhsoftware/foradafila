@@ -71,7 +71,7 @@ const nav = (p, acao) => Promise.all([p.waitForNavigation(), acao]);
     }
   }
   ok(quebrados.length === 0, `links internos ok (${visitados.size} verificados) ${quebrados.join(' | ')}`);
-  ok((await (await V.goto(BASE + '/precos')).text()).includes('1% sobre o valor das vendas'), 'página Preços mostra a regra de 1%');
+  ok((await (await V.goto(BASE + '/precos')).text()).includes('Taxa justa por ingresso pago'), 'página Preços explica a taxa');
   ok(!(await V.content()).match(/\b[2-9],?\d*%/), 'Preços não inventa outros percentuais');
 
   await V.goto(BASE + '/eventos');

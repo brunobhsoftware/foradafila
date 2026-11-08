@@ -21,6 +21,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V008__administracao_taxas_impersonacao.sql` | Motor de taxas (`taxa_regra` com faixas por volume, `taxa_organizador` com isenções/validade), `impersonacao_log` e `auditoria.admin_impersonando_id`/`impersonacao_id`. Idempotente. Importado em produção em 07/11/2026 ("V008 ok") |
 | `banco/V009__cupom_divulgacao.sql` | `cupom.tipo_desconto` ganha `divulgacao` (valor 0; ajusta o CHECK `ck_cupom_valor`). Idempotente. Importado em produção em 08/11/2026 ("V009 ok") |
 | `banco/V010__taxa_servico_comprador.sql` | Quem paga a taxa: `organizador.taxa_comprador` (padrão), `evento.taxa_comprador` (NULL = padrão), `pedido.valor_taxa_servico`, `pedido_item.taxa_unitaria`. Idempotente. Aplicado em produção em 08/11/2026 ("V010 ok") |
+| `banco/V011__cadastro_unico_pessoa.sql` | Cadastro único de pessoas (`pessoa`, chave CPF: nome, e-mail, telefone, origem). Idempotente. **Ainda não aplicado** (Administração → Atualizações do banco) |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
@@ -244,6 +245,14 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Sua organização" do Dashboard. Cartões da vitrine e de `/p/{slug}` mostram "A partir de R$ ..." ou "Gratuito"
   (menor preço dos lotes públicos ativos/agendados, `EventoPublicoController::precosMinimos`).
 - **Equipe:** botão "Reenviar convite" na linha de cada convite pendente (novo link, o anterior deixa de valer).
+- **Cadastro único por CPF** (V011, decisão do Bruno 08/11/2026; `App\Support\CadastroPessoa`): `registrar()` grava/atualiza a pessoa
+  sempre que alguém informa CPF + nome (participante da inscrição — com e-mail/telefone do comprador quando é ele mesmo —, representante
+  legal da Organização, pagamento de teste da Administração); valores vazios não apagam os existentes; falhas não interrompem a operação.
+  Busca `GET /cadastro-unico/{cpf}` **só para usuário logado da equipe** (throttle `cadastro-unico` 30/min, auditoria `pessoa.consulta`
+  com os 4 últimos dígitos). Campo com `data-busca-cpf` preenche os campos vazios `data-pessoa="nome|email|telefone"` do mesmo formulário.
+  **No site público não há preenchimento pelo CPF** (qualquer um descobriria nome/e-mail de terceiros pelo CPF — risco LGPD). Pendente:
+  citar o cadastro único no termo de privacidade e definir a base legal. Pagamento de teste usa **nome completo** (dividido em
+  first_name/last_name para o Mercado Pago).
 - **Regra de tela (decisão do Bruno, 08/11/2026): toda edição de item de lista abre ABAIXO da linha, em largura total, nunca ao
   lado.** Padrão: botão com `data-alternar="<id>"` + `<tr class="linha-acoes" id="<id>" hidden><td colspan="N">` (moldura cinza
   clara com borda laranja à esquerda, `public/css/app.css`). Usado em lotes, cupons, participantes, equipe e taxas da Administração.
@@ -253,7 +262,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (24), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-divulgacao.js` (16), `fluxo-convidados.js` (19), `fluxo-mensagens.js` (13), `fluxo-taxa.js` (14), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (24), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-divulgacao.js` (16), `fluxo-convidados.js` (19), `fluxo-mensagens.js` (13), `fluxo-taxa.js` (14), `fluxo-admin.js` (40, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.

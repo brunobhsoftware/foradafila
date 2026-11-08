@@ -33,6 +33,12 @@ class Esquema
         return self::$cache['v010'] ??= Schema::hasColumn('organizador', 'taxa_comprador') && Schema::hasColumn('evento', 'taxa_comprador');
     }
 
+    /** V011: cadastro único de pessoas por CPF. */
+    public static function temV011(): bool
+    {
+        return self::$cache['v011'] ??= Schema::hasTable('pessoa');
+    }
+
     /** V009: cupom do tipo "divulgacao". */
     public static function temV009(): bool
     {

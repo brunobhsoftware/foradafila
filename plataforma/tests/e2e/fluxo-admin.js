@@ -148,11 +148,21 @@ const falso = http.createServer((req, res) => {
 
   // Produção usa o token da aplicação (client_credentials)
   await P.goto(BASE + '/admin/mercadopago');
-  for (const [n, v] of [['email', 'comprador@real.test'], ['nome', 'Maria'], ['sobrenome', 'Silva'], ['cpf', '529.982.247-25'], ['telefone', '(31) 98888-7777']]) await P.fill(`#ambiente-producao [name=${n}]`, v);
+  for (const [n, v] of [['email', 'comprador@real.test'], ['nome', 'Maria Silva'], ['cpf', '529.982.247-25'], ['telefone', '(31) 98888-7777']]) await P.fill(`#ambiente-producao [name=${n}]`, v);
   await nav(P, P.click('button:has-text("Pagar de verdade no Mercado Pago")'));
   await P.goto(await P.inputValue('#link-teste'));
   ret = await P.content();
   ok(autorizacaoPref === 'Bearer APP-TOKEN-BH' && preferencia.payer.phone.area_code === '31' && preferencia.payer.phone.number === '988887777' && ret.includes('Produção') && ret.includes('Aprovado'), 'Produção: token da aplicação e telefone do comprador');
+  ok(preferencia.payer.first_name === 'Maria' && preferencia.payer.last_name === 'Silva', 'nome completo é dividido em nome e sobrenome para o Mercado Pago');
+  ok(sql("SELECT CONCAT_WS('|', nome, email, telefone) FROM pessoa WHERE cpf='52998224725'") === 'Maria Silva|comprador@real.test|31988887777', 'cadastro único gravou a pessoa pelo CPF');
+  await P.goto(BASE + '/admin/mercadopago');
+  await P.fill('#ambiente-producao [name=nome]', ''); await P.fill('#ambiente-producao [name=email]', '');
+  await P.fill('#ambiente-producao [name=cpf]', '529.982.247-25');
+  await P.waitForFunction(() => document.querySelector('#ambiente-producao [name=nome]').value !== '');
+  ok(await P.inputValue('#ambiente-producao [name=nome]') === 'Maria Silva' && await P.inputValue('#ambiente-producao [name=email]') === 'comprador@real.test', 'digitar o CPF preenche nome e e-mail');
+  const semLogin = await (await b.newContext()).newPage();
+  await semLogin.goto(BASE + '/cadastro-unico/52998224725');
+  ok(!(await semLogin.content()).includes('Maria'), 'sem login a busca por CPF não revela nada');
 
   // assinatura secreta de teste dos webhooks (mesma URL)
   await P.goto(BASE + '/admin/mercadopago');
@@ -172,7 +182,7 @@ const falso = http.createServer((req, res) => {
   await P.fill('#ambiente-producao [name=access_token]', 'APP_USR-producao-999');
   await nav(P, P.click('button:has-text("Salvar chaves de produção")'));
   ok(sql("SELECT valor NOT LIKE '%producao-999%' FROM parametro_sistema WHERE chave='mp_access_token'") === '1', 'Access Token de produção gravado criptografado');
-  for (const [n, v] of [['email', 'comprador@real.test'], ['nome', 'Maria'], ['sobrenome', 'Silva'], ['cpf', '529.982.247-25'], ['telefone', '(31) 98888-7777']]) await P.fill(`#ambiente-producao [name=${n}]`, v);
+  for (const [n, v] of [['email', 'comprador@real.test'], ['nome', 'Maria Silva'], ['cpf', '529.982.247-25'], ['telefone', '(31) 98888-7777']]) await P.fill(`#ambiente-producao [name=${n}]`, v);
   await nav(P, P.click('button:has-text("Pagar de verdade no Mercado Pago")'));
   ok(autorizacaoPref === 'Bearer APP_USR-producao-999', 'Produção usa o Access Token de produção cadastrado');
 

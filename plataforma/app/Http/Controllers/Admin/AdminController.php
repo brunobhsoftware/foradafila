@@ -34,12 +34,15 @@ class AdminController extends Controller
             'valor' => ['required', 'numeric', 'min:1', 'max:100'],
             'ambiente' => ['required', 'in:teste,producao'],
             'email' => ['required', 'email', 'max:150'],
-            'nome' => ['required', 'string', 'max:60'],
-            'sobrenome' => ['required', 'string', 'max:60'],
+            'nome' => ['required', 'string', 'max:150'],
             'cpf' => ['required', 'string', 'regex:/^\D*(\d\D*){11}$/'],
             'telefone' => ['nullable', 'string', 'regex:/^\D*(\d\D*){10,11}$/'],
         ], ['cpf.regex' => 'Informe os 11 números do CPF.', 'telefone.regex' => 'Telefone com DDD (10 ou 11 números).'],
-            ['valor' => 'valor', 'email' => 'e-mail do comprador', 'nome' => 'nome do comprador', 'sobrenome' => 'sobrenome do comprador']);
+            ['valor' => 'valor', 'email' => 'e-mail do comprador', 'nome' => 'nome completo do comprador']);
+        // Um campo só (nome completo): o Mercado Pago pede nome e sobrenome separados, então dividimos aqui.
+        $partes = preg_split('/\s+/', trim($d['nome']), 2);
+        [$primeiro, $sobrenome] = [$partes[0], $partes[1] ?? $partes[0]];
+        \App\Support\CadastroPessoa::registrar($d['cpf'], $d['nome'], $d['email'], $d['telefone'] ?? null, 'pagamento_teste');
         $valor = number_format((float) $d['valor'], 2, '.', '');
         $teste = $d['ambiente'] === 'teste';
         try {
@@ -66,8 +69,8 @@ class AdminController extends Controller
             'description' => 'Teste de integração Fora da Fila',
             'payer' => array_filter([
                 'email' => $d['email'],
-                'first_name' => $d['nome'],
-                'last_name' => $d['sobrenome'],
+                'first_name' => $primeiro,
+                'last_name' => $sobrenome,
                 'identification' => ['type' => 'CPF', 'number' => preg_replace('/\D/', '', $d['cpf'])],
                 'phone' => $fone ? ['area_code' => substr($fone, 0, 2), 'number' => substr($fone, 2)] : null,
             ]),
