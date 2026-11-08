@@ -98,7 +98,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/mercadopago', [\App\Http\Controllers\Admin\AdminController::class, 'mercadoPago'])->name('mercadopago');
     Route::post('/usuarios/{usuario}/senha', [\App\Http\Controllers\Admin\EmpresasController::class, 'enviarSenha'])->name('empresas.senha')->middleware('throttle:20,10,admin-senha');
     Route::put('/usuarios/{usuario}/email', [\App\Http\Controllers\Admin\EmpresasController::class, 'corrigirEmail'])->name('empresas.email');
-    Route::put('/mercadopago/vendas', [\App\Http\Controllers\Admin\AdminController::class, 'vendasTeste'])->name('mercadopago.vendas');
     Route::get('/repasses', [\App\Http\Controllers\Admin\RepassesController::class, 'index'])->name('repasses');
     Route::post('/repasses/{organizador}', [\App\Http\Controllers\Admin\RepassesController::class, 'registrar'])->name('repasses.registrar');
     Route::get('/emails', [\App\Http\Controllers\Admin\AdminController::class, 'emails'])->name('emails');

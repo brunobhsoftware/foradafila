@@ -48,15 +48,11 @@ class Checkout
         return $t;
     }
 
-    /**
-     * Vendas em homologação: geral (Administração → Mercado Pago) ou só da empresa (Financeiro → "Ambiente das vendas").
-     * Em homologação o checkout usa as credenciais de TESTE: nada é cobrado de verdade.
-     */
+    /** Vendas em homologação da empresa (Financeiro → "Ambiente das vendas"): o checkout usa as credenciais de TESTE. */
     public static function modoTeste(?int $organizadorId = null): bool
     {
-        $chaves = array_filter(['mp_vendas_teste', $organizadorId ? 'mp_vendas_teste_org_'.$organizadorId : null]);
-
-        return DB::table('parametro_sistema')->whereIn('chave', $chaves)->where('valor', '1')->exists();
+        // Só a empresa decide (Financeiro → Ambiente das vendas); não há mais chave geral na Administração (decisão do Bruno, 08/11/2026).
+        return $organizadorId !== null && DB::table('parametro_sistema')->where('chave', 'mp_vendas_teste_org_'.$organizadorId)->where('valor', '1')->exists();
     }
 
     /** Token da conta conforme o ambiente em que o pagamento foi feito ('teste' ou 'producao'). */

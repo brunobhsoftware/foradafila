@@ -116,11 +116,11 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   numera, emite ingressos e participantes, cadastro único, e-mails; idempotente com lock); recusado/cancelado/expirado → `liberar()`.
   Reserva vencida volta ao estoque sem cron (`liberarVencidas`, ao abrir o evento/comprar; confere antes no MP porque Pix pode ter sido
   pago). Pago depois de a reserva vencer e o lote esgotar → pedido cancelado + pagamento "devolver ao comprador". "Meus ingressos" mostra
-  pedido aguardando com "Pagar ou conferir pagamento". **Administração → Mercado Pago → "Vendas em modo de teste"** (`mp_vendas_teste`):
-  o checkout usa as credenciais de teste. **Repasses** (`/admin/repasses`, `App\Support\Repasses`): por produtora, liberado (fim do
+  pedido aguardando com "Pagar ou conferir pagamento". O modo de teste das vendas é **só por empresa** (a chave geral "Vendas em modo de teste" da Administração foi
+  removida em 08/11/2026 a pedido do Bruno: ela colocaria todas as empresas em teste). **Repasses** (`/admin/repasses`, `App\Support\Repasses`): por produtora, liberado (fim do
   evento + 3 dias úteis), aguardando e taxa; "Registrar repasse" (data, E2E/TED) grava `repasse` e fecha os pagamentos (`repasse_id`).
   **Homologação por empresa** (decisão do Bruno, 08/11/2026): Financeiro → "Ambiente das vendas" (cartões Produção/Homologação;
-  `parametro_sistema` `mp_vendas_teste_org_<id>`; `Checkout::modoTeste($orgId)` = geral OU da empresa): o checkout usa as credenciais de
+  `parametro_sistema` `mp_vendas_teste_org_<id>`; `Checkout::modoTeste($orgId)` = só da empresa): o checkout usa as credenciais de
   teste da conta de recebimento e a página do evento/compra mostra "Ambiente de teste". **Devolução pelo Mercado Pago**: cancelar
   ingresso pago (Participantes/Pedidos) chama `Checkout::reembolsar()` → `POST /v1/orders/{id}/refund` (total, ou parcial com
   `transactions[{id: gateway_pagamento_id, amount}]`) com o token do ambiente em que foi pago (`tokenDoAmbiente`); pagamento vira

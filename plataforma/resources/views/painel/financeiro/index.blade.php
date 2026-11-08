@@ -82,7 +82,6 @@
 @endphp
 <section class="cartao" style="padding:22px 24px;margin-top:18px">
     <h2 style="margin-top:0">Ambiente das vendas</h2>
-    @if ($homologacaoGeral && ! $homologacao)<p class="suave">A plataforma está toda em modo de teste.</p>@endif
     <form method="post" action="{{ route('financeiro.ambiente') }}">@csrf @method('PUT')
         <div class="grade grade-2" style="gap:12px">
             <label class="opcao-cartao"><input type="radio" name="ambiente_vendas" value="producao" @checked(! $homologacao)>
