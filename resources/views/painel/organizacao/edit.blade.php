@@ -40,15 +40,8 @@
         </section>
 
         <section class="secao-form">
-            <h2>Dados bancários <small class="suave" style="font-weight:400;font-size:.85rem">(opcional)</small></h2>
-            <p>Conta da organização para repasses e acertos com o Fora da Fila. Se preencher, informe os quatro campos.</p>
-            <div class="form-grade">
-                <x-campo nome="banco" rotulo="Banco" :valor="$org->banco" classe="col-6" list="lista-bancos" placeholder="Ex.: 341 - Itaú Unibanco" autocomplete="off" />
-                <x-campo nome="agencia" rotulo="Agência" :valor="$org->agencia" classe="col-2" inputmode="numeric" placeholder="1234" />
-                <x-campo nome="conta" rotulo="Conta" :valor="$org->conta" classe="col-4" placeholder="12345-6" ajuda="Com o dígito." />
-                <x-campo nome="favorecido" rotulo="Favorecido" :valor="$org->favorecido" classe="col-12" ajuda="Titular da conta, como está no banco." />
-            </div>
-            <datalist id="lista-bancos">@foreach (\App\Http\Controllers\Painel\OrganizacaoController::BANCOS as $b)<option value="{{ $b }}">@endforeach</datalist>
+            <h2>Dados bancários e Pix</h2>
+            <p>Agora ficam em <a href="{{ route('financeiro') }}">Financeiro → Dados para o repasse</a>, junto com a explicação de como você recebe.</p>
         </section>
     @endif
 

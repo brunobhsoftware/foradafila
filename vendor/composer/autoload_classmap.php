@@ -83,6 +83,7 @@ return array(
     'App\\Support\\MotorTaxas' => $baseDir . '/app/Support/MotorTaxas.php',
     'App\\Support\\Notificacoes' => $baseDir . '/app/Support/Notificacoes.php',
     'App\\Support\\PoliticaCancelamento' => $baseDir . '/app/Support/PoliticaCancelamento.php',
+    'App\\Support\\Recebimento' => $baseDir . '/app/Support/Recebimento.php',
     'App\\Support\\RegraDoBanco' => $baseDir . '/app/Support/RegraDoBanco.php',
     'App\\Support\\TaxaServico' => $baseDir . '/app/Support/TaxaServico.php',
     'App\\Support\\Tenant' => $baseDir . '/app/Support/Tenant.php',

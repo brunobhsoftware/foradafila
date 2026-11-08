@@ -33,6 +33,12 @@ class Esquema
         return self::$cache['v010'] ??= Schema::hasColumn('organizador', 'taxa_comprador') && Schema::hasColumn('evento', 'taxa_comprador');
     }
 
+    /** V012: recebimento pela plataforma (Pix/conta do produtor, conta_pagamento.modo, repasse). */
+    public static function temV012(): bool
+    {
+        return self::$cache['v012'] ??= Schema::hasColumn('conta_pagamento', 'modo') && Schema::hasTable('repasse');
+    }
+
     /** V011: cadastro único de pessoas por CPF. */
     public static function temV011(): bool
     {

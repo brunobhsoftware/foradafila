@@ -21,17 +21,75 @@ class FinanceiroController extends Controller
         Gate::authorize('financeiro.ver');
         $conta = $this->contaMercadoPago();
 
+        $org = \App\Models\Organizador::findOrFail(app(Tenant::class)->id());
+
         return view('painel.financeiro.index', [
+            'org' => $org,
+            'v012' => \App\Support\Esquema::temV012(),
+            'recebimento' => \App\Support\Recebimento::conta($org->id),
+            'conexaoDireta' => (bool) config('pagamentos.mercadopago.conexao_direta'),
             'conta' => $conta,
             'configurado' => MercadoPago::configurado(),
             'ambiente' => config('pagamentos.mercadopago.ambiente'),
         ]);
     }
 
+    /** Dados para o repasse (Pix e/ou conta bancária). Pelo menos um dos dois é obrigatório. */
+    public function salvarRecebimento(Request $request)
+    {
+        Gate::authorize('financeiro.contas');
+        abort_unless(\App\Support\Esquema::temV012(), 404);
+        $org = \App\Models\Organizador::findOrFail(app(Tenant::class)->id());
+        foreach (['agencia', 'conta'] as $k) {
+            $request->merge([$k => $request->filled($k) ? strtoupper(trim((string) $request->input($k))) : null]);
+        }
+        $tipo = $request->input('pix_tipo');
+        $chave = trim((string) $request->input('pix_chave'));
+        if (in_array($tipo, ['cpf', 'cnpj', 'telefone'], true)) {
+            $chave = preg_replace('/\D/', '', $chave);
+        } elseif ($tipo === 'email') {
+            $chave = mb_strtolower($chave);
+        }
+        $request->merge(['pix_chave' => $chave ?: null]);
+        $regrasChave = match ($tipo) {
+            'cpf' => [new \App\Rules\DocumentoValido('PF')],
+            'cnpj' => [new \App\Rules\DocumentoValido('PJ')],
+            'email' => ['email:filter', 'max:140'],
+            'telefone' => ['regex:/^[0-9]{10,11}$/'],
+            'aleatoria' => ['regex:/^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$/'],
+            default => [],
+        };
+        $dados = $request->validate([
+            'recebimento_preferido' => ['required', 'in:pix,conta'],
+            'pix_tipo' => ['nullable', 'required_with:pix_chave', 'required_if:recebimento_preferido,pix', 'in:'.implode(',', array_keys(\App\Support\Recebimento::PIX_TIPOS))],
+            'pix_chave' => array_merge(['nullable', 'required_with:pix_tipo', 'required_if:recebimento_preferido,pix', 'string'], $regrasChave),
+            'banco' => ['nullable', 'required_with:agencia,conta,favorecido', 'required_if:recebimento_preferido,conta', 'string', 'max:80'],
+            'agencia' => ['nullable', 'required_with:banco,conta', 'required_if:recebimento_preferido,conta', 'string', 'max:10', 'regex:/^[0-9]{1,6}(-?[0-9X])?$/'],
+            'conta' => ['nullable', 'required_with:banco,agencia', 'required_if:recebimento_preferido,conta', 'string', 'max:20', 'regex:/^[0-9]{1,15}-?[0-9X]?$/'],
+            'favorecido' => ['nullable', 'required_with:banco,agencia,conta', 'required_if:recebimento_preferido,conta', 'string', 'max:150'],
+        ], [
+            'pix_chave.regex' => $tipo === 'telefone' ? 'Celular com DDD (10 ou 11 números).' : 'Chave aleatória no formato 123e4567-e89b-12d3-a456-426614174000.',
+            'required_if' => 'Informe :attribute (é a forma de recebimento escolhida).',
+            'required_with' => 'Para a conta bancária, informe banco, agência, conta e favorecido.',
+            'agencia.regex' => 'Agência: só números, com o dígito se houver (ex.: 1234 ou 1234-5).',
+            'conta.regex' => 'Conta: números com o dígito (ex.: 12345-6).',
+        ], ['pix_tipo' => 'o tipo da chave Pix', 'pix_chave' => 'a chave Pix', 'banco' => 'o banco', 'agencia' => 'a agência', 'conta' => 'a conta', 'favorecido' => 'o favorecido']);
+
+        $antes = $org->getAttributes();
+        $org->forceFill($dados + ['recebimento_atualizado_em' => now()])->save();
+        \App\Support\Recebimento::sincronizar($org);
+        Auditoria::registrar('financeiro.recebimento', $org, $antes, $org->fresh()->getAttributes());
+
+        return redirect()->route('financeiro')->with('ok', 'Dados de recebimento salvos. Os repasses vão para: '.\App\Support\Recebimento::destino($org->fresh()).'.');
+    }
+
     /** Vai para a tela de autorização do Mercado Pago. */
     public function conectar(Request $request)
     {
         Gate::authorize('financeiro.contas');
+        if (! config('pagamentos.mercadopago.conexao_direta')) {
+            return back()->withErrors(['mercadopago' => 'A conexão direta com a sua conta do Mercado Pago estará disponível em breve.']);
+        }
         if (! MercadoPago::configurado()) {
             return back()->withErrors(['mercadopago' => 'A integração com o Mercado Pago ainda não foi configurada na plataforma.']);
         }
@@ -113,6 +171,6 @@ class FinanceiroController extends Controller
 
     private function contaMercadoPago(): ?ContaPagamento
     {
-        return ContaPagamento::where('gateway_id', $this->gatewayId())->orderByDesc('padrao')->orderByDesc('id')->first();
+        return ContaPagamento::where('gateway_id', $this->gatewayId())->when(\App\Support\Esquema::temV012(), fn ($q) => $q->where('modo', 'direta'))->orderByDesc('padrao')->orderByDesc('id')->first();
     }
 }

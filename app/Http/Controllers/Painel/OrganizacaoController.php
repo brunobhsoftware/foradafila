@@ -78,11 +78,7 @@ class OrganizacaoController extends Controller
             $regras += [
                 'representante_nome' => ['required', 'string', 'max:150'],
                 'representante_cpf' => ['required', new DocumentoValido('PF')],
-                // Dados bancários são opcionais; se um for preenchido, os quatro são pedidos juntos.
-                'banco' => ['nullable', 'required_with:agencia,conta,favorecido', 'string', 'max:80'],
-                'agencia' => ['nullable', 'required_with:banco,conta', 'string', 'max:10', 'regex:/^[0-9]{1,6}(-?[0-9Xx])?$/'],
-                'conta' => ['nullable', 'required_with:banco,agencia', 'string', 'max:20', 'regex:/^[0-9]{1,15}-?[0-9Xx]?$/'],
-                'favorecido' => ['nullable', 'required_with:banco,agencia,conta', 'string', 'max:150'],
+                // Dados bancários e Pix: agora em Financeiro → Dados para o repasse.
             ];
         }
 
@@ -111,8 +107,6 @@ class OrganizacaoController extends Controller
         }
         if ($v004) {
             $dados['mostrar_eventos_passados'] = $request->boolean('mostrar_eventos_passados');
-            $dados['agencia'] = isset($dados['agencia']) ? strtoupper($dados['agencia']) : null;
-            $dados['conta'] = isset($dados['conta']) ? strtoupper($dados['conta']) : null;
         }
 
         $antes = $org->getAttributes();
