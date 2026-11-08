@@ -57,7 +57,7 @@
         @else
             <div class="tabela-rolagem">
                 <table class="tabela">
-                    <thead><tr><th>Evento</th><th>Data</th><th>Status</th><th>Vendas</th></tr></thead>
+                    <thead><tr><th>Evento</th><th>Data</th><th>Status</th><th>Vendas</th><th></th></tr></thead>
                     <tbody>
                     @foreach ($proximos as $e)
                         @php $pct = $e->ingressos_ofertados ? 100 * $e->ingressos_vendidos / $e->ingressos_ofertados : 0; @endphp
@@ -68,6 +68,10 @@
                             <td style="min-width:160px">
                                 <small>{{ numero($e->ingressos_vendidos) }} / {{ numero($e->ingressos_ofertados) }}</small>
                                 <div class="barra"><span style="width: {{ min(100, $pct) }}%"></span></div>
+                            </td>
+                            <td class="num" style="white-space:nowrap">
+                                <a href="{{ route('eventos.show', $e->uuid) }}" class="botao botao--contorno botao--pequeno">Abrir</a>
+                                @can('evento.criar')<a href="{{ route('eventos.edit', $e->uuid) }}" class="botao botao--primario botao--pequeno">Editar</a>@endcan
                             </td>
                         </tr>
                     @endforeach
