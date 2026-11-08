@@ -140,6 +140,29 @@
 </details>
 @endif
 
+@if ($v012 && $saldo)
+<section class="cartao" style="padding:22px 24px;margin-top:18px">
+    <h2 style="margin-top:0">Extrato do recebimento pela plataforma</h2>
+    <div class="grade grade-4" style="gap:12px">
+        <div class="cartao kpi"><small>Vendas pagas a repassar</small><b>{{ moeda($saldo['vendas']) }}</b></div>
+        <div class="cartao kpi"><small>Taxa da plataforma</small><b>{{ moeda($saldo['comissao']) }}</b></div>
+        <div class="cartao kpi"><small>Liberado para repasse</small><b>{{ moeda($saldo['liberado']) }}</b><small>já pode ser transferido</small></div>
+        <div class="cartao kpi"><small>Aguardando o fim do evento</small><b>{{ moeda($saldo['aguardando']) }}</b><small>+ {{ \App\Support\Recebimento::PRAZO_DIAS_UTEIS }} dias úteis</small></div>
+    </div>
+    <h3 style="margin:18px 0 8px;font-size:1rem">Repasses recebidos</h3>
+    @if ($repasses->isEmpty())<p class="suave" style="margin:0">Nenhum repasse ainda.</p>
+    @else
+    <div class="tabela-rolagem"><table class="tabela">
+        <thead><tr><th>Data</th><th>Destino</th><th class="num">Vendas</th><th class="num">Taxa</th><th class="num">Recebido</th><th>Comprovante</th></tr></thead>
+        <tbody>@foreach ($repasses as $r)
+            <tr><td>{{ data_local($r->pago_em, 'd/m/Y') }}</td><td><small>{{ $r->destino }}</small></td><td class="num">{{ moeda($r->valor_vendas) }}</td>
+                <td class="num">{{ moeda($r->valor_comissao) }}</td><td class="num"><b>{{ moeda($r->valor_repasse) }}</b></td><td><small>{{ $r->comprovante }}</small></td></tr>
+        @endforeach</tbody>
+    </table></div>
+    @endif
+</section>
+@endif
+
 @if ($conexaoDireta || ! $v012)
 
 <section class="cartao mp">

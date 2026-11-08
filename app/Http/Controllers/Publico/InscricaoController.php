@@ -98,6 +98,10 @@ class InscricaoController extends Controller
         ]);
         $this->conferirLimitePorCpf($evento, $participantes);
 
+        if ($selecao->contains(fn ($s) => (float) $s['lote']->preco > 0)) {
+            return $this->reservarPago($request, $evento, $selecao, $participantes, $termos, $dados, $comprador, $cupom);
+        }
+
         try {
             $pedido = DB::transaction(function () use ($evento, $selecao, $total, $participantes, $termos, $dados, $request, $comprador, $cupom) {
                 if (! $comprador) {
@@ -201,6 +205,105 @@ class InscricaoController extends Controller
     }
 
     /**
+     * Compra paga: reserva o estoque, cria o pedido "aguardando pagamento" e manda o comprador ao Mercado Pago.
+     * Os ingressos só são emitidos quando o pagamento é aprovado (Checkout::aprovar).
+     */
+    private function reservarPago(Request $request, Evento $evento, Collection $selecao, Collection $participantes, $termos, array $dados, ?Comprador $comprador, $cupom)
+    {
+        $conta = \App\Support\Checkout::contaDoEvento($evento);
+        $org = $evento->organizador;
+        $subtotal = $selecao->sum(fn ($s) => (float) $s['lote']->preco * $s['quantidade']);
+        try {
+            $pedido = DB::transaction(function () use ($request, $evento, $selecao, $participantes, $termos, $dados, $comprador, $cupom, $conta, $org, $subtotal) {
+                if (! $comprador) {
+                    $comprador = Comprador::create([
+                        'nome' => $dados['nome'], 'email' => $dados['email'],
+                        'telefone' => preg_replace('/\D/', '', (string) ($dados['telefone'] ?? '')) ?: null,
+                        'senha_hash' => Hash::make($dados['senha']),
+                    ]);
+                }
+                foreach ($selecao->sortBy(fn ($s) => $s['lote']->id) as $s) {
+                    $ok = DB::update("UPDATE lote SET reservado = reservado + ?
+                        WHERE id = ? AND evento_id = ? AND visibilidade = 'publico'
+                          AND status IN ('ativo', 'agendado') AND UTC_TIMESTAMP() BETWEEN venda_inicio AND venda_fim
+                          AND quantidade - reservado - vendido >= ?",
+                        [$s['quantidade'], $s['lote']->id, $evento->id, $s['quantidade']]);
+                    if ($ok === 0) {
+                        throw ValidationException::withMessages(['q' => "Os ingressos de “{$s['lote']->nome}” esgotaram ou deixaram de estar disponíveis. Escolha de novo."]);
+                    }
+                }
+                $bruto = 0; $desconto = 0; $taxaTotal = 0; $linhas = [];
+                foreach ($selecao as $s) {
+                    $preco = (float) $s['lote']->preco;
+                    $desc = $preco > 0 && $cupom ? (float) ($cupom->desconto($preco, $s['lote']->id, $subtotal) ?? 0) : 0;
+                    $tx = $preco > 0 ? \App\Support\TaxaServico::paraPreco($evento, $preco - $desc, $org) : ['taxa' => 0, 'repassada' => false];
+                    $taxaUnit = (float) $tx['taxa'];
+                    $bruto += $preco * $s['quantidade']; $desconto += $desc * $s['quantidade'];
+                    $taxaTotal += ($tx['repassada'] ? $taxaUnit : 0) * $s['quantidade'];
+                    $linhas[] = [$s, $preco, $desc, $taxaUnit, $tx['repassada']];
+                }
+                $pedido = new Pedido();
+                $pedido->forceFill([
+                    'codigo' => Pedido::novoCodigo(), 'organizador_id' => $evento->organizador_id, 'evento_id' => $evento->id,
+                    'comprador_id' => $comprador->id, 'cupom_id' => $cupom?->id, 'origem' => 'site', 'chave_idempotencia' => $dados['chave'],
+                    'status' => 'aguardando_pagamento', 'valor_bruto' => round($bruto, 2), 'valor_desconto' => round($desconto, 2),
+                    'valor_taxa_servico' => round($taxaTotal, 2), 'valor_total' => round($bruto - $desconto + $taxaTotal, 2),
+                    'conta_pagamento_id' => $conta->id, 'ip' => $request->ip(), 'expira_em' => now()->addMinutes(\App\Support\Checkout::RESERVA_MIN),
+                ] + (\App\Support\Esquema::temV013() ? ['dados_participantes' => json_encode($participantes->values()->all())] : []))->save();
+                if (! \App\Support\Esquema::temV013()) {
+                    \Illuminate\Support\Facades\Cache::put('pedido_participantes_'.$pedido->id, json_encode($participantes->values()->all()), now()->addDays(3));
+                }
+                foreach ($linhas as [$s, $preco, $desc, $taxaUnit, $repassada]) {
+                    // taxa_unitaria = taxa da plataforma por ingresso (sempre). subtotal = (preço − desconto) × quantidade (regra
+                    // ck_item_subtotal); a taxa repassada ao comprador fica em pedido.valor_taxa_servico.
+                    $item = new PedidoItem();
+                    $item->forceFill(['pedido_id' => $pedido->id, 'lote_id' => $s['lote']->id, 'quantidade' => $s['quantidade'],
+                        'preco_unitario' => $preco, 'desconto_unitario' => $desc, 'taxa_unitaria' => $taxaUnit,
+                        'subtotal' => round(($preco - $desc) * $s['quantidade'], 2)])->save();
+                }
+                foreach ($termos as $termo) {
+                    TermoAceite::create(['termo_id' => $termo->id, 'comprador_id' => $comprador->id,
+                        'ip' => $request->ip() ?? '0.0.0.0', 'user_agent' => mb_substr((string) $request->userAgent(), 0, 255)]);
+                }
+                if ($cupom) {
+                    $ok = DB::update('UPDATE cupom SET usos = usos + 1 WHERE id = ? AND (max_usos IS NULL OR usos < max_usos)', [$cupom->id]);
+                    if (! $ok) {
+                        throw ValidationException::withMessages(['cupom' => 'Este código atingiu o limite de usos.']);
+                    }
+                    DB::table('cupom_uso')->insert(['cupom_id' => $cupom->id, 'pedido_id' => $pedido->id,
+                        'cpf' => $participantes[0]['cpf'] ?? null, 'valor_desconto' => round($desconto, 2), 'status' => 'reservado']);
+                }
+                Auditoria::registrar('pedido.reservar', $pedido);
+
+                return $pedido->setRelation('comprador_modelo', $comprador);
+            });
+        } catch (QueryException $e) {
+            if (str_contains($e->getMessage(), 'uq_pedido_idempotencia')) {
+                return redirect()->route('comprador.ingressos');
+            }
+            throw $e;
+        }
+
+        $compradorFinal = $pedido->getRelation('comprador_modelo');
+        if (! Auth::guard('comprador')->check()) {
+            Auth::guard('comprador')->login($compradorFinal);
+            $request->session()->regenerate();
+        }
+        $cpf = $participantes[0]['cpf'] ?? null;
+        try {
+            $link = \App\Support\Checkout::criarOrder($pedido, $evento, $compradorFinal, $conta, $cpf);
+        } catch (\Throwable $e) {
+            report($e);
+            \App\Support\Checkout::liberar($pedido->fresh(), 'cancelado');
+
+            return redirect()->route('evento.publico', $evento->slug)
+                ->withErrors(['q' => 'Não foi possível abrir o pagamento agora. Tente de novo em alguns minutos.']);
+        }
+
+        return redirect()->away($link);
+    }
+
+    /**
      * Evento + lotes escolhidos (q[uuid_do_lote] = quantidade), já conferidos:
      * só lotes gratuitos à venda agora, dentro dos limites por pedido.
      *
@@ -210,13 +313,15 @@ class InscricaoController extends Controller
     {
         $evento = EventoPublicoController::buscar($slug);
         $tenant->definir($evento->organizador);
+        \App\Support\Checkout::liberarVencidas($evento->id);
         $evento->load('lotes.tipo');
 
         $pedidos = collect((array) $request->input('q', []))->map(fn ($v) => (int) $v)->filter(fn ($v) => $v > 0);
         $selecao = $pedidos->map(function ($qtd, $uuid) use ($evento) {
             $lote = $evento->lotes->firstWhere('uuid', $uuid);
-            if (! $lote || (float) $lote->preco !== 0.0 || ! EventoPublicoController::loteAVenda($evento, $lote)) {
-                throw ValidationException::withMessages(['q' => 'Um dos ingressos escolhidos não está disponível para inscrição gratuita.']);
+            if (! $lote || ! EventoPublicoController::loteAVenda($evento, $lote)
+                || ((float) $lote->preco > 0 && ! \App\Support\Checkout::contaDoEvento($evento))) {
+                throw ValidationException::withMessages(['q' => 'Um dos ingressos escolhidos não está mais disponível. Escolha de novo.']);
             }
             if ($qtd < $lote->min_por_pedido || $qtd > $lote->max_por_pedido) {
                 throw ValidationException::withMessages(['q' => "Para “{$lote->nome}”, escolha entre {$lote->min_por_pedido} e {$lote->max_por_pedido} ingressos."]);

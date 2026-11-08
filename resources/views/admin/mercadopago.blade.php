@@ -115,6 +115,15 @@
 </section>
 @endforeach
 
+<form method="post" action="{{ route('admin.mercadopago.vendas') }}" class="cartao" style="padding:20px;margin-top:18px">
+    @csrf @method('PUT')
+    <h2 style="margin-top:0">Vendas de ingressos pagos</h2>
+    <p class="suave">Em <b>modo de teste</b>, o checkout das páginas de evento cobra com as credenciais de TESTE (pague com a conta compradora de teste).
+        Desligado, as vendas são reais, com as credenciais de produção.</p>
+    <label class="interruptor"><input type="hidden" name="vendas_teste" value="0"><input type="checkbox" name="vendas_teste" value="1" @checked(\App\Support\Checkout::modoTeste())><span></span> Vendas em modo de teste</label>
+    <div class="acoes-form"><button class="botao botao--escuro botao--pequeno">Salvar opção</button></div>
+</form>
+
 <form method="post" action="{{ route('admin.mercadopago.salvar') }}" class="cartao" style="padding:20px;margin-top:18px">
     @csrf @method('PUT')
     <input type="hidden" name="so_pkce" value="1">
