@@ -58,6 +58,33 @@
     atualizar();
   });
 
+  // Cadastro único: ao completar o CPF, preenche nome/e-mail/telefone vazios do mesmo formulário
+  $$('[data-busca-cpf]').forEach((cpf) => {
+    let ultimo = '';
+    cpf.addEventListener('input', async () => {
+      const d = cpf.value.replace(/\D/g, '');
+      if (d.length !== 11 || d === ultimo) return;
+      ultimo = d;
+      try {
+        const r = await fetch('/cadastro-unico/' + d, { headers: { Accept: 'application/json' } });
+        if (!r.ok) return;
+        const p = await r.json();
+        if (!p.encontrado) return;
+        const form = cpf.form || document;
+        let preencheu = false;
+        ['nome', 'email', 'telefone'].forEach((k) => {
+          const el = form.querySelector('[data-pessoa="' + k + '"]');
+          if (el && p[k] && !el.value.trim()) { el.value = p[k]; el.dispatchEvent(new Event('input', { bubbles: true })); preencheu = true; }
+        });
+        if (preencheu) {
+          let aviso = cpf.parentElement.querySelector('.cpf-encontrado');
+          if (!aviso) { aviso = document.createElement('small'); aviso.className = 'cpf-encontrado suave'; cpf.parentElement.appendChild(aviso); }
+          aviso.textContent = 'Dados preenchidos pelo cadastro único.';
+        }
+      } catch (e) { /* sem conexão: segue manual */ }
+    });
+  });
+
   // Botões que mostram/escondem um bloco (ex.: ações do participante)
   $$('[data-alternar]').forEach((b) => b.addEventListener('click', () => {
     const alvo = document.getElementById(b.dataset.alternar);

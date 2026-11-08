@@ -544,6 +544,7 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'App\\Rules\\DocumentoValido' => __DIR__ . '/../..' . '/app/Rules/DocumentoValido.php',
         'App\\Support\\AtualizacaoBanco' => __DIR__ . '/../..' . '/app/Support/AtualizacaoBanco.php',
         'App\\Support\\Auditoria' => __DIR__ . '/../..' . '/app/Support/Auditoria.php',
+        'App\\Support\\CadastroPessoa' => __DIR__ . '/../..' . '/app/Support/CadastroPessoa.php',
         'App\\Support\\CancelamentoIngressos' => __DIR__ . '/../..' . '/app/Support/CancelamentoIngressos.php',
         'App\\Support\\CodigoVerificacao' => __DIR__ . '/../..' . '/app/Support/CodigoVerificacao.php',
         'App\\Support\\Documento' => __DIR__ . '/../..' . '/app/Support/Documento.php',

@@ -34,8 +34,8 @@
             <h2>Representante legal</h2>
             <p>Pessoa que responde legalmente pela organização.</p>
             <div class="form-grade">
-                <x-campo nome="representante_nome" rotulo="Representante legal" :valor="$org->representante_nome" obrigatorio classe="col-8" autocomplete="name" />
-                <x-campo nome="representante_cpf" rotulo="CPF do representante legal" :valor="$org->representante_cpf" obrigatorio classe="col-4" data-mascara="cpf" inputmode="numeric" />
+                <x-campo nome="representante_nome" rotulo="Representante legal" :valor="$org->representante_nome" obrigatorio classe="col-8" autocomplete="name" data-pessoa="nome" />
+                <x-campo nome="representante_cpf" rotulo="CPF do representante legal" :valor="$org->representante_cpf" obrigatorio classe="col-4" data-mascara="cpf" inputmode="numeric" data-busca-cpf />
             </div>
         </section>
 

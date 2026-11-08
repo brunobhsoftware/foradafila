@@ -151,6 +151,8 @@ class InscricaoController extends Controller
                             'email' => $i === 0 ? $comprador->email : null,
                             'mesmo_que_comprador' => $i === 0 && mb_strtolower($p['nome']) === mb_strtolower($comprador->nome),
                         ]);
+                        $eleMesmo = $i === 0 && mb_strtolower($p['nome']) === mb_strtolower($comprador->nome);
+                        \App\Support\CadastroPessoa::registrar($p['cpf'], $p['nome'], $eleMesmo ? $comprador->email : null, $eleMesmo ? $comprador->telefone : null, 'inscricao');
                     }
                 }
 

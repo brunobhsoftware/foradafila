@@ -115,6 +115,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 Route::post('/admin/sair-da-conta', [\App\Http\Controllers\Admin\EmpresasController::class, 'sairDaConta'])->middleware(['auth', 'admin'])->name('admin.sair-da-conta');
 
 // ---------- Área do produtor ----------
+// Cadastro único (V011): busca pelo CPF, só para a equipe logada; cada consulta vai para a auditoria.
+Route::get('/cadastro-unico/{cpf}', function (string $cpf) {
+    $p = \App\Support\CadastroPessoa::buscar($cpf);
+    \App\Support\Auditoria::registrar('pessoa.consulta', auth()->user(), null, ['cpf_final' => substr(preg_replace('/\D/', '', $cpf), -4), 'encontrado' => (bool) $p]);
+
+    return response()->json($p ? ['encontrado' => true] + $p : ['encontrado' => false]);
+})->middleware(['auth', 'throttle:30,1,cadastro-unico'])->where('cpf', '[0-9]{11}')->name('cadastro-unico');
+
 Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () {
     Route::get('/', DashboardController::class)->name('painel');
 

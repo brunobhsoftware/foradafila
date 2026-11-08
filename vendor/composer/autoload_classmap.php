@@ -69,6 +69,7 @@ return array(
     'App\\Rules\\DocumentoValido' => $baseDir . '/app/Rules/DocumentoValido.php',
     'App\\Support\\AtualizacaoBanco' => $baseDir . '/app/Support/AtualizacaoBanco.php',
     'App\\Support\\Auditoria' => $baseDir . '/app/Support/Auditoria.php',
+    'App\\Support\\CadastroPessoa' => $baseDir . '/app/Support/CadastroPessoa.php',
     'App\\Support\\CancelamentoIngressos' => $baseDir . '/app/Support/CancelamentoIngressos.php',
     'App\\Support\\CodigoVerificacao' => $baseDir . '/app/Support/CodigoVerificacao.php',
     'App\\Support\\Documento' => $baseDir . '/app/Support/Documento.php',

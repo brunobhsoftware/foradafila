@@ -101,12 +101,11 @@
         @csrf
         <input type="hidden" name="ambiente" value="{{ $amb }}">
         @php $o = fn ($k, $p = '') => old('ambiente') === $amb ? old($k, $p) : $p; $err = old('ambiente') === $amb; @endphp
-        <div class="campo col-4"><label>E-mail do comprador</label><input name="email" type="email" required value="{{ $o('email') }}"
+        <div class="campo col-8"><label>Nome completo</label><input name="nome" required data-pessoa="nome" value="{{ $o('nome', $amb === 'teste' ? 'APRO Teste' : '') }}">@if ($err)@error('nome')<small class="erro">{{ $message }}</small>@enderror @endif</div>
+        <div class="campo col-4"><label>E-mail do comprador</label><input name="email" type="email" required data-pessoa="email" value="{{ $o('email') }}"
             placeholder="{{ $amb === 'teste' ? 'e-mail da conta compradora de teste' : 'e-mail de quem vai pagar' }}">@if ($err)@error('email')<small class="erro">{{ $message }}</small>@enderror @endif</div>
-        <div class="campo col-4"><label>Nome</label><input name="nome" required value="{{ $o('nome', $amb === 'teste' ? 'APRO' : '') }}">@if ($err)@error('nome')<small class="erro">{{ $message }}</small>@enderror @endif</div>
-        <div class="campo col-4"><label>Sobrenome</label><input name="sobrenome" required value="{{ $o('sobrenome', $amb === 'teste' ? 'Teste' : '') }}">@if ($err)@error('sobrenome')<small class="erro">{{ $message }}</small>@enderror @endif</div>
-        <div class="campo col-4"><label>CPF</label><input name="cpf" required data-mascara="cpf" value="{{ $o('cpf', $amb === 'teste' ? '123.456.789-09' : '') }}">@if ($err)@error('cpf')<small class="erro">{{ $message }}</small>@enderror @endif</div>
-        <div class="campo col-4"><label>Telefone com DDD</label><input name="telefone" data-mascara="telefone" value="{{ $o('telefone') }}">@if ($err)@error('telefone')<small class="erro">{{ $message }}</small>@enderror @endif</div>
+        <div class="campo col-4"><label>CPF</label><input name="cpf" required data-mascara="cpf" data-busca-cpf value="{{ $o('cpf', $amb === 'teste' ? '123.456.789-09' : '') }}">@if ($err)@error('cpf')<small class="erro">{{ $message }}</small>@enderror @endif</div>
+        <div class="campo col-4"><label>Telefone com DDD</label><input name="telefone" data-mascara="telefone" data-pessoa="telefone" value="{{ $o('telefone') }}">@if ($err)@error('telefone')<small class="erro">{{ $message }}</small>@enderror @endif</div>
         <div class="campo col-2"><label for="adm-valor-{{ $amb }}">Valor (R$)</label>
             <input id="adm-valor-{{ $amb }}" name="valor" type="number" step="0.01" min="1" max="100" value="{{ $o('valor', '5.00') }}" required></div>
         <div class="col-12">@if ($err)@error('valor')<p class="erro" style="color:var(--vermelho);margin:0 0 8px">{{ $message }}</p>@enderror @endif

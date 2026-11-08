@@ -127,6 +127,9 @@ class OrganizacaoController extends Controller
             $org->save();
         });
         Auditoria::registrar('organizador.editar', $org, $antes);
+        if (Esquema::temV004()) {
+            \App\Support\CadastroPessoa::registrar($org->representante_cpf, $org->representante_nome, null, null, 'representante_legal');
+        }
 
         return back()->with('ok', 'Dados da organização salvos.');
     }
