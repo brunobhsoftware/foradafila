@@ -6,7 +6,7 @@
     $podeLotes = auth()->user()->can('lote.gerenciar') && ! in_array($evento->status, ['encerrado', 'cancelado']);
     $tiposOpcoes = $evento->tipos->pluck('nome', 'id');
     $lotesOpcoes = $evento->lotes()->get()->mapWithKeys(fn ($l) => [$l->id => $l->nome]);
-    $vendaFimPadrao = para_input_data($evento->data_inicio);
+    $vendaFimPadrao = para_input_data($evento->data_fim ?? $evento->data_inicio);
     $somaLotes = $evento->tipos->flatMap->lotes->sum('quantidade');
 @endphp
 

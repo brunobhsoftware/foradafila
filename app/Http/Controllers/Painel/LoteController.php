@@ -200,8 +200,9 @@ class LoteController extends Controller
         if (! Carbon::parse($dados['venda_fim'], 'UTC')->gt(Carbon::parse($dados['venda_inicio'], 'UTC'))) {
             $erros['venda_fim'] = 'O fim das vendas precisa ser depois do início das vendas.';
         }
-        if (Carbon::parse($dados['venda_fim'], 'UTC')->gt($evento->data_inicio)) {
-            $erros['venda_fim'] = 'As vendas do lote precisam terminar até o início do evento ('.data_local($evento->data_inicio).').';
+        $limite = $evento->data_fim ?? $evento->data_inicio;
+        if (Carbon::parse($dados['venda_fim'], 'UTC')->gt($limite)) {
+            $erros['venda_fim'] = 'As vendas do lote precisam terminar até o fim do evento ('.data_local($limite).').';
         }
         $outros = (int) $evento->lotes()->when($lote, fn ($q) => $q->where('id', '<>', $lote->id))->sum('quantidade');
         if ($evento->capacidade !== null && $outros + $dados['quantidade'] > $evento->capacidade) {
