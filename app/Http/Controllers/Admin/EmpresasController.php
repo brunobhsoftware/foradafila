@@ -60,7 +60,7 @@ class EmpresasController extends Controller implements \Illuminate\Routing\Contr
         ];
         $usuarios = DB::table('organizador_usuario as ou')->join('usuario as u', 'u.id', '=', 'ou.usuario_id')
             ->join('perfil_acesso as p', 'p.id', '=', 'ou.perfil_id')->where('ou.organizador_id', $id)
-            ->select('u.nome', 'u.email', 'ou.status', 'p.codigo', 'p.nome as perfil', 'u.ultimo_login_em')->orderBy('u.nome')->get();
+            ->select('u.uuid', 'u.nome', 'u.email', 'u.ativo', 'ou.status', 'p.codigo', 'p.nome as perfil', 'u.ultimo_login_em')->orderBy('u.nome')->get();
         $contas = DB::table('conta_pagamento as c')->join('gateway as g', 'g.id', '=', 'c.gateway_id')->where('c.organizador_id', $id)
             ->select('g.nome as gateway', 'c.status', 'c.ambiente', 'c.email_conta', 'c.conectado_em')->get();
         $auditoria = DB::table('auditoria as a')->leftJoin('usuario as u', 'u.id', '=', 'a.usuario_id')
@@ -145,5 +145,15 @@ class EmpresasController extends Controller implements \Illuminate\Routing\Contr
         }
 
         return redirect()->to(route('admin.empresas.show', $organizador).'#taxas')->with('ok', 'Taxa específica encerrada.');
+    }
+
+    /** Administração: manda o link de nova senha para um usuário (ex.: produtor que não recebeu pelo "Esqueci a senha"). */
+    public function enviarSenha(\Illuminate\Http\Request $request, string $usuario)
+    {
+        $conta = \App\Models\Usuario::where('uuid', $usuario)->firstOrFail();
+        \App\Http\Controllers\Auth\SenhaController::enviarLink($conta, 'produtor');
+        \App\Support\Auditoria::registrar('admin.senha_link_enviado', $conta, null, ['email' => $conta->email]);
+
+        return back()->with('ok', 'Link para criar nova senha enviado para '.$conta->email.'. Confira em E-mails enviados.');
     }
 }

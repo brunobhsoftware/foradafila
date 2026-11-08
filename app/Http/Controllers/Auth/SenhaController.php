@@ -36,14 +36,20 @@ class SenhaController extends Controller
         $conta = $modelo::where('email', $email)->first();
 
         if ($conta && self::podeRedefinir($conta) && ($area !== 'produtor' || $conta->ativo)) {
-            // Assinatura só do caminho (sem domínio/esquema): na Hostinger o HTTPS termina na CDN.
-            $url = url(URL::temporarySignedRoute('senha.nova', now()->addMinutes(60), [
-                'area' => $area, 'uuid' => $conta->uuid, 'h' => self::impressao(self::base($conta)),
-            ], absolute: false));
-            Notificacoes::redefinirSenha($conta->nome, $conta->email, $url, self::AREAS[$area]['nome']);
+            self::enviarLink($conta, $area);
         }
 
         return back()->with('ok', 'Se houver uma conta com este e-mail, enviamos um link para criar uma nova senha. Confira também a caixa de spam.');
+    }
+
+    /** Envia o link de nova senha (também usado pela Administração). */
+    public static function enviarLink($conta, string $area): void
+    {
+        // Assinatura só do caminho (sem domínio/esquema): na Hostinger o HTTPS termina na CDN.
+        $url = url(URL::temporarySignedRoute('senha.nova', now()->addMinutes(60), [
+            'area' => $area, 'uuid' => $conta->uuid, 'h' => self::impressao(self::base($conta)),
+        ], absolute: false));
+        Notificacoes::redefinirSenha($conta->nome, $conta->email, $url, self::AREAS[$area]['nome']);
     }
 
     public function nova(Request $request, string $area, string $uuid)

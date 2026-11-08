@@ -95,7 +95,9 @@
         <h2 style="margin-top:0">Usuários</h2>
         @forelse ($usuarios as $u)
             <p><b>{{ $u->nome }}</b> · {{ $u->codigo === 'dono' ? 'Produtor' : $u->perfil }} · <span class="suave">{{ $u->status }}</span><br>
-                <small>{{ $u->email }}@if ($u->ultimo_login_em) · último acesso {{ data_local($u->ultimo_login_em) }}@endif</small></p>
+                <small>Login: <b>{{ $u->email }}</b>@if (! $u->ativo) · <span style="color:var(--vermelho)">conta desativada</span>@endif @if ($u->ultimo_login_em) · último acesso {{ data_local($u->ultimo_login_em) }}@endif</small></p>
+            <form method="post" action="{{ route('admin.empresas.senha', $u->uuid) }}" data-confirmar="Enviar para {{ $u->email }} o link para criar uma nova senha?" style="margin:-6px 0 12px">@csrf
+                <button class="botao botao--contorno botao--pequeno">Enviar link de nova senha</button></form>
         @empty <p class="suave">Nenhum usuário.</p> @endforelse
     </section>
     <section class="cartao" style="padding:20px">
