@@ -28,7 +28,13 @@
         <p>Você está em <b>Meus ingressos</b> como <b>{{ $comprador->nome }}</b> ({{ $comprador->email }}). Os ingressos ficarão nesta conta.</p>
       @else
         <div class="form-grade" style="margin-bottom:8px" data-compra-cpf data-url="{{ url('/compra/cpf') }}">
-          <x-campo nome="cpf" rotulo="Seu CPF" obrigatorio classe="col-4" data-mascara="cpf" inputmode="numeric" autocomplete="off" ajuda="Comece pelo CPF: se você já comprou com a gente, seus dados aparecem." />
+          <input type="hidden" name="sem_cpf" value="{{ old('sem_cpf') }}" data-sem-cpf>
+          <div class="campo col-12"><label for="cpf">Seu CPF <span data-cpf-obrig>*</span> <small style="font-weight:400" data-cpf-dica>— comece pelo seu CPF para buscar os dados cadastrais.</small></label>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+              <input id="cpf" name="cpf" value="{{ old('cpf') }}" data-mascara="cpf" inputmode="numeric" autocomplete="off" style="max-width:220px">
+              <button type="button" class="botao botao--contorno botao--pequeno" data-botao-sem-cpf>Não desejo informar o CPF</button>
+            </div>
+            @error('cpf')<small class="erro">{{ $message }}</small>@enderror</div>
           <div class="col-12" data-cpf-achado hidden>
             <p style="margin:0;padding:12px 14px;background:#F2F4F7;border-left:4px solid var(--laranja);border-radius:8px">
               Olá, <b data-achado-nome></b>! Os ingressos vão para <b data-achado-email></b><span data-achado-tel></span>.<br>
@@ -39,10 +45,10 @@
             <x-campo nome="email" rotulo="E-mail" tipo="email" obrigatorio autocomplete="email" classe="col-6" ajuda="Os ingressos chegam neste e-mail." />
             <x-campo nome="telefone" rotulo="Celular (opcional)" tipo="tel" data-mascara="telefone" autocomplete="tel" classe="col-6" />
           </div></div>
-          <div class="col-12"><small>Não precisa criar senha. Se quiser acessar “Meus ingressos” depois, use “Esqueci a senha” com este e-mail.</small></div>
         </div>
       @endif
 
+      <div data-depois-cpf @if (! $comprador && ! old('nome') && ! old('cpf') && ! old('sem_cpf')) hidden @endif>
       <h2 style="font-size:1.15rem;margin-top:24px">2. Quem vai usar {{ $total > 1 ? 'os ingressos' : 'o ingresso' }}</h2>
       <p><small>Informe os dados de quem vai usar cada ingresso. Campos com * são obrigatórios.</small></p>
       <div style="display:grid;gap:12px">
@@ -51,8 +57,8 @@
             <div class="pub-participante">
               <h3>Ingresso {{ $i + 1 }} · {{ $s['lote']->tipo->nome }} — {{ $s['lote']->nome }}</h3>
               @if ($i === 0)
-                <input type="hidden" name="participantes[0][usar_comprador]" value="{{ old('participantes.0.usar_comprador') }}" data-usar-comprador>
-                <button type="button" class="botao botao--contorno botao--pequeno" style="margin:0 0 10px" data-usar-meus-dados>Usar meus dados neste ingresso</button>
+                <input type="hidden" name="participantes[0][usar_comprador]" value="{{ old('participantes.0.usar_comprador', '1') }}" data-usar-comprador>
+                <button type="button" class="botao botao--escuro botao--pequeno" style="margin:0 0 10px" data-outra-pessoa>Estou comprando para outra pessoa</button>
               @endif
               <div class="form-grade">
                 @if ($campos)
@@ -98,7 +104,18 @@
         @error('cupom')<small class="erro">{{ $message }}</small>@enderror
       </div>
 
-      <h2 style="font-size:1.15rem;margin-top:24px">3. Termos</h2>
+      @if ($pago)
+      <h2 style="font-size:1.15rem;margin-top:24px">3. Forma de pagamento</h2>
+      <div class="grade grade-2" style="margin-bottom:6px">
+        <label class="opcao-cartao"><input type="radio" name="forma_pagamento" value="pix" @checked(old('forma_pagamento', 'pix') === 'pix') data-forma>
+          <span><b>Pix</b><small>Gera o Pix na hora; o ingresso sai assim que o pagamento cai.</small></span></label>
+        <label class="opcao-cartao"><input type="radio" name="forma_pagamento" value="cartao" @checked(old('forma_pagamento') === 'cartao') data-forma>
+          <span><b>Cartão de crédito</b><small>Para pagar com cartão é preciso informar o CPF do titular.</small></span></label>
+      </div>
+      @error('forma_pagamento')<small class="erro">{{ $message }}</small>@enderror
+      @endif
+
+      <h2 style="font-size:1.15rem;margin-top:24px">{{ $pago ? 4 : 3 }}. Termos</h2>
       <div style="display:grid;gap:10px;margin-bottom:20px">
         <label class="opcao"><input type="checkbox" name="aceite_termos" value="1" @checked(old('aceite_termos')) required>
           <span>Li e concordo com os <a href="{{ route('termo', 'compra_comprador') }}" target="_blank" rel="noopener">Termos de compra</a>
@@ -112,10 +129,11 @@
       @endif
       @if ($pago)
         <button class="botao botao--amarelo botao--largo">Ir para o pagamento — {{ moeda($valorTotal) }}</button>
-        <p style="margin:10px 0 0;text-align:center"><small>Você será levado ao Mercado Pago (Pix ou cartão). Os ingressos ficam reservados por {{ \App\Support\Checkout::RESERVA_MIN }} minutos e são emitidos assim que o pagamento é aprovado. Cupom de desconto é aplicado no total.</small></p>
+        <p style="margin:10px 0 0;text-align:center"><small>Você será levado ao Mercado Pago para pagar. Os ingressos ficam reservados por {{ \App\Support\Checkout::RESERVA_MIN }} minutos e são emitidos assim que o pagamento é aprovado. Cupom de desconto é aplicado no total.</small></p>
       @else
         <button class="botao botao--amarelo botao--largo">Confirmar inscrição gratuita</button>
       @endif
+      </div>
     </form>
 
     <aside class="pub-cartao pub-compra">

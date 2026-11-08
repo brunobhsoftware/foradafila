@@ -87,7 +87,7 @@ const webhook = async (P, id) => {
   ok(sql("SELECT CONCAT_WS('|', reservado, vendido) FROM lote") === '2|0', 'estoque reservado (2), nada vendido');
   ok(sql("SELECT CONCAT_WS('|', status, gateway_pedido_id, valor, comissao_retida, valor_liquido_org) FROM pagamento") === 'criado|ORD1|210.00|10.00|200.00', 'pagamento criado com a comissão de R$ 10 e R$ 200 do produtor');
   ok(ultimoCorpo.total_amount === '210.00' && ultimoCorpo.items[0].unit_price === '105.00' && ultimoCorpo.items[0].quantity === 2 && ultimoCorpo.external_reference.length > 4
-    && ultimoCorpo.payer.identification.number === '52998224725' && ultimoCorpo.config.statement_descriptor === 'FORADAFILA' && ultimoCorpo.config.online.transaction_security.liability_shift === 'required', 'order completa (itens, comprador com CPF, descrição na fatura, 3DS)');
+    && ultimoCorpo.payer.identification.number === '18609139034' && ultimoCorpo.config.payment_method.default_id === 'pix' && ultimoCorpo.config.statement_descriptor === 'FORADAFILA' && ultimoCorpo.config.online.transaction_security.liability_shift === 'required', 'order completa (itens, CPF de quem paga, Pix escolhido, descrição na fatura, 3DS)');
   ok(sql('SELECT COUNT(*) FROM ingresso') === '0', 'nenhum ingresso antes do pagamento');
 
   // volta do Mercado Pago ainda pendente

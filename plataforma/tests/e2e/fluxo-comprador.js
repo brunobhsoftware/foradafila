@@ -158,11 +158,26 @@ const formularioLegado = require('./_formulario-legado');
   await Z.waitForSelector('[data-cpf-achado]:visible');
   const achado = await Z.locator('[data-cpf-achado]').innerText();
   ok(achado.includes('Ana Compradora') && achado.includes('an***') && !achado.includes('ana@publico.test'), 'CPF conhecido: mostra o nome e o e-mail mascarado');
-  await Z.click('[data-usar-meus-dados]');
-  ok(await Z.inputValue('[name="participantes[0][nome]"]') === 'Ana Compradora', '"Usar meus dados" preenche o 1º ingresso');
+  ok(await Z.inputValue('[name="participantes[0][nome]"]') === 'Ana Compradora', 'com o CPF, o 1º ingresso já vem com o nome do comprador');
   await Z.check('[name=aceite_termos]');
   await nav(Z, Z.click('button:has-text("Confirmar inscrição")'));
   ok((await Z.content()).includes('enviados para an***@publico.test') && (await Z.goto(BASE + '/minha-conta')).url().includes('/entrar'), 'compra confirmada no cadastro existente, sem entrar na conta');
+
+  // "Não desejo informar o CPF" e "Estou comprando para outra pessoa"
+  const Y = await ctx();
+  await Y.goto(linkPublico); await Y.selectOption('select[name^="q["]', '1');
+  await nav(Y, Y.click('button:has-text("Garantir ingresso")'));
+  ok(!(await Y.locator('[data-depois-cpf]').isVisible()), 'ingressos só aparecem depois do CPF ou do botão');
+  await Y.click('[data-botao-sem-cpf]');
+  ok(await Y.locator('[name="participantes[0][nome]"]').isVisible(), '"Não desejo informar o CPF" libera os ingressos');
+  await Y.fill('[name=nome]', 'Sem Cpf Silva'); await Y.fill('[name=email]', 'semcpf@publico.test');
+  ok(await Y.inputValue('[name="participantes[0][nome]"]') === 'Sem Cpf Silva', '1º ingresso acompanha o nome digitado');
+  await Y.click('[data-outra-pessoa]');
+  ok(await Y.inputValue('[name="participantes[0][nome]"]') === '', '"Estou comprando para outra pessoa" limpa o 1º ingresso');
+  await Y.fill('[name="participantes[0][nome]"]', 'Amiga do Sem Cpf');
+  await Y.check('[name=aceite_termos]');
+  await nav(Y, Y.click('button:has-text("Confirmar inscrição")'));
+  ok(sql("SELECT CONCAT(IFNULL(c.cpf,'-'),'|',pa.nome) FROM comprador c JOIN pedido p ON p.comprador_id=c.id JOIN ingresso i ON i.pedido_id=p.id JOIN participante pa ON pa.ingresso_id=i.id WHERE c.email='semcpf@publico.test'") === '-|Amiga do Sem Cpf', 'compra sem CPF: comprador cadastrado pelo e-mail, ingresso para outra pessoa');
 
   // celular
   const M = await (await browser.newContext({ ...devices['iPhone 13'] })).newPage();
