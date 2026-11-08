@@ -19,6 +19,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V006__integracao_pagamentos.sql` | Campos para Mercado Pago e outras operadoras (OAuth, checkout, idempotência, webhooks). Idempotente. Importado em produção em 07/11/2026 ("V006 ok") |
 | `banco/V007__administrador_plataforma.sql` | Só dados: cria o administrador da plataforma (Bruno, bruno@bhsoftware.com.br, `admin_plataforma = 1`, sem senha). Idempotente. Importado em produção em 07/11/2026 ("V007 ok") |
 | `banco/V008__administracao_taxas_impersonacao.sql` | Motor de taxas (`taxa_regra` com faixas por volume, `taxa_organizador` com isenções/validade), `impersonacao_log` e `auditoria.admin_impersonando_id`/`impersonacao_id`. Idempotente. Importado em produção em 07/11/2026 ("V008 ok") |
+| `banco/V009__cupom_divulgacao.sql` | `cupom.tipo_desconto` ganha `divulgacao` (valor 0; ajusta o CHECK `ck_cupom_valor`). Idempotente. **Ainda não importado** |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
@@ -180,7 +181,12 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   percentual (≤ 100%) ou valor fixo, evento ou todos os eventos, lotes específicos (`cupom_lote`; nenhum = todos), limite de usos
   e por CPF, pedido mínimo, validade; situação (ativo, agendado, esgotado, expirado, desativado); editar (limite não fica abaixo
   dos usos), ativar/desativar, filtro por evento. `Cupom::desconto($valor, $loteId, $subtotal)` calcula o desconto — **ainda não
-  é usado no checkout** (entra com a venda paga, gravando em `cupom_uso`).
+  é usado no checkout** (entra com a venda paga, gravando em `cupom_uso`). **Cupom de divulgação** (V009, decisão do Bruno
+  08/11/2026): tipo "Divulgação" sem desconto, limites, pedido mínimo nem validade — só conta quantos ingressos cada pessoa trouxe.
+  Botão "Copiar link" (`/e/{slug}?cupom=CODIGO` ou `/p/{slug}?cupom=` se vale para todos os eventos); o código vai para a sessão
+  (`cupom_divulgacao`) e a inscrição gratuita traz o campo "Código de divulgação ou cupom" preenchido; o pedido grava
+  `pedido.cupom_id` + `cupom_uso` (desconto 0) e soma `cupom.usos`. A lista mostra a coluna **Ingressos** (válidos que saíram
+  por cada código; cancelados saem da conta). Sem o V009 a opção não aparece (`Esquema::temV009()`).
 - **Divulgação → Convidados** (`/painel/convidados`, `ConvidadosController`): listas por evento (`lista_convidados`: nome, lote
   usado para emitir, limite de convidados, máximo de acompanhantes); convidados (`convidado`) um a um ou colados em lote
   ("Nome; e-mail; acompanhantes", com erros por linha); "Emitir e enviar" (um ou todos os pendentes com e-mail; exige
@@ -228,7 +234,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-convidados.js` (19), `fluxo-mensagens.js` (13), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (19), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-divulgacao.js` (16), `fluxo-convidados.js` (19), `fluxo-mensagens.js` (13), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.

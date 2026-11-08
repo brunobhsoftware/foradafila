@@ -35,8 +35,17 @@ class Cupom extends Model
         return $this->belongsToMany(Lote::class, 'cupom_lote', 'cupom_id', 'lote_id');
     }
 
+    public function ehDivulgacao(): bool
+    {
+        return $this->tipo_desconto === 'divulgacao';
+    }
+
     public function descontoTexto(): string
     {
+        if ($this->ehDivulgacao()) {
+            return 'Divulgação';
+        }
+
         return $this->tipo_desconto === 'percentual' ? numero($this->valor, 0).'%' : moeda($this->valor);
     }
 
@@ -45,6 +54,9 @@ class Cupom extends Model
     {
         if (! $this->ativo) {
             return 'desativado';
+        }
+        if ($this->ehDivulgacao()) {
+            return 'ativo'; // sem limites nem validade
         }
         if ($this->max_usos !== null && $this->usos >= $this->max_usos) {
             return 'esgotado';
@@ -67,6 +79,9 @@ class Cupom extends Model
     {
         if ($this->situacao() !== 'ativo') {
             return null;
+        }
+        if ($this->ehDivulgacao()) {
+            return 0.0;
         }
         $lotes = \Illuminate\Support\Facades\DB::table('cupom_lote')->where('cupom_id', $this->id)->pluck('lote_id');
         if ($loteId && $lotes->isNotEmpty() && ! $lotes->contains($loteId)) {

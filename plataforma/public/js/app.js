@@ -160,6 +160,14 @@
       const aviso = form.querySelector('[data-sem-evento]'); if (aviso) aviso.hidden = !!sel.value;
     };
     sel.addEventListener('change', atualizar);
+    // Divulgação: esconde desconto, limites, pedido mínimo e validade
+    const tipo = form.querySelector('[name=tipo_desconto]');
+    const tipoAtualizar = () => {
+      const div = tipo.value === 'divulgacao';
+      form.querySelectorAll('[data-nao-divulgacao]').forEach((el) => { el.hidden = div; el.querySelectorAll('input').forEach((i) => { i.disabled = div; }); });
+      form.querySelectorAll('[data-so-divulgacao]').forEach((el) => { el.hidden = !div; });
+    };
+    tipo.addEventListener('change', tipoAtualizar); tipoAtualizar();
   });
 
   // Mensagens: inserir variável e pré-visualizar

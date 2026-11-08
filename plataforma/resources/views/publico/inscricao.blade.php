@@ -39,6 +39,12 @@
         @endforeach
       </div>
 
+      <div class="campo" style="margin-top:20px">
+        <label for="cupom">Código de divulgação ou cupom <small>(opcional)</small></label>
+        <input id="cupom" name="cupom" maxlength="30" value="{{ old('cupom', $cupom) }}" style="text-transform:uppercase" placeholder="Se alguém te indicou, digite o código">
+        @error('cupom')<small class="erro">{{ $message }}</small>@enderror
+      </div>
+
       <h2 style="font-size:1.15rem;margin-top:24px">3. Termos</h2>
       <div style="display:grid;gap:10px;margin-bottom:20px">
         @foreach (['compra_comprador' => 'os Termos de compra', 'privacidade' => 'a Política de privacidade'] as $tipo => $rotulo)

@@ -18,7 +18,7 @@ class Pedido extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'codigo', 'organizador_id', 'evento_id', 'comprador_id', 'origem', 'chave_idempotencia', 'status',
+        'codigo', 'organizador_id', 'evento_id', 'comprador_id', 'cupom_id', 'origem', 'chave_idempotencia', 'status',
         'valor_bruto', 'valor_desconto', 'valor_total', 'metodo_pagamento', 'ip', 'expira_em', 'pago_em', 'cancelado_em',
         'utm_source', 'utm_medium', 'utm_campaign',
     ];

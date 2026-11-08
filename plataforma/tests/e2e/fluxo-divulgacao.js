@@ -1,0 +1,108 @@
+// Teste de ponta a ponta do cupom de DIVULGAÇÃO (V009): criar (campos de desconto/limites/validade somem),
+// link com o código, inscrição pelo link (campo já preenchido), contagem de ingressos na lista, código digitado,
+// código inválido e cancelamento (sai da contagem). Banco limpo:
+//   BASE=http://127.0.0.1:8000 node tests/e2e/fluxo-divulgacao.js
+const { chromium } = require('playwright');
+const { execSync } = require('child_process');
+const BASE = process.env.BASE || 'http://127.0.0.1:8000';
+const sql = (q) => execSync(`mysql --default-character-set=utf8mb4 -uroot foradafila -N -e "${q.replace(/"/g, '\\"')}"`).toString().trim();
+const ok = (c, m) => { console.log((c ? 'PASSOU ' : 'FALHOU ') + m); if (!c) process.exitCode = 1; };
+const local = (d, h = '20:00') => new Date(Date.now() + d * 864e5).toISOString().slice(0, 10) + 'T' + h;
+const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
+
+(async () => {
+  const b = await chromium.launch(); const erros = [];
+  const P = await (await b.newContext({ viewport: { width: 1360, height: 900 }, permissions: ['clipboard-read', 'clipboard-write'] })).newPage();
+  P.on('pageerror', (e) => erros.push(e.message)); P.on('dialog', (d) => d.accept());
+  await P.goto(BASE + '/cadastro');
+  for (const [n, v] of [['nome', 'Bruno Divulga'], ['email', 'bruno@divulga.test'], ['telefone', '31988887777'], ['senha', 'Senha123'], ['senha_confirmation', 'Senha123'],
+    ['documento', '41.902.878/0001-08'], ['razao_social', 'Estacao Slod Ltda'], ['nome_fantasia', 'Estação Slod'], ['email_contato', 'sac@slod.test']]) await P.fill(`[name=${n}]`, v);
+  for (const t of ['uso_organizador', 'responsabilidade_organizador', 'privacidade']) await P.check(`[name="aceites[${t}]"]`);
+  await nav(P, P.click('button[type=submit]'));
+  await P.goto(BASE + '/painel/eventos/novo');
+  await P.fill('[name=titulo]', 'Festa Divulgada');
+  await P.fill('[name=data_inicio]', local(12)); await P.fill('[name=data_fim]', local(13, '02:00'));
+  await P.fill('[name="local[nome]"]', 'Local'); await P.fill('[name="local[cidade]"]', 'Belo Horizonte'); await P.fill('[name="local[uf]"]', 'MG');
+  await P.check('[name=aceite_cancelamento]');
+  await nav(P, P.click('.acoes-form button[type=submit]'));
+  await nav(P, P.click('button:has-text("Criar tipo")'));
+  await P.click('summary:has-text("Adicionar lote")');
+  const f = P.locator('form:has(input[name=_form][value^="lote-"])').last();
+  await f.locator('[name=quantidade]').fill('100');
+  await nav(P, f.locator('button:has-text("Adicionar lote")').click());
+  await nav(P, P.click('button:has-text("Publicar evento")'));
+
+  // ---- criar cupom de divulgação ----
+  await P.goto(BASE + '/painel/cupons');
+  const novo = P.locator('form:has(input[name=_cupom][value=novo])');
+  await novo.locator('[name=tipo_desconto]').selectOption('divulgacao');
+  ok(!(await novo.locator('[name=valor]').isVisible()) && !(await novo.locator('[name=max_usos]').isVisible()) && !(await novo.locator('[name=valido_ate]').isVisible())
+    && !(await novo.locator('[name=valor_minimo_pedido]').isVisible()) && !(await novo.locator('[name=max_usos_cpf]').isVisible()), 'divulgação esconde desconto, limites, pedido mínimo e validade');
+  ok((await novo.locator('[data-so-divulgacao]').innerText()).includes('quantos ingressos cada pessoa divulgou'), 'explica para que serve');
+  await novo.locator('[name=codigo]').fill('joao'); await novo.locator('[name=descricao]').fill('Promoter João');
+  await novo.locator('[name=evento]').selectOption({ label: 'Festa Divulgada' });
+  await nav(P, novo.locator('button:has-text("Criar cupom")').click());
+  ok((await P.content()).includes('Cupom JOAO criado'), 'cupom de divulgação criado');
+  ok(sql("SELECT CONCAT_WS('|', tipo_desconto, valor, IFNULL(max_usos,'-'), IFNULL(valido_ate,'-')) FROM cupom WHERE codigo='JOAO'") === 'divulgacao|0.00|-|-', 'gravado sem desconto, sem limite e sem validade');
+  let linha = P.locator('tr:has-text("JOAO")').first();
+  ok((await linha.innerText()).includes('Divulgação') && (await linha.innerText()).includes('sem limite'), 'lista mostra "Divulgação" e "sem limite"');
+  await linha.locator('button:has-text("Copiar link")').click();
+  const link = await P.evaluate(() => navigator.clipboard.readText());
+  ok(link.endsWith('/e/festa-divulgada?cupom=JOAO'), 'copia o link do evento com o código: ' + link);
+
+  // ---- inscrição pelo link ----
+  const V = await (await b.newContext()).newPage();
+  await V.goto(link);
+  await V.selectOption('select[name^="q["]', '2');
+  await nav(V, V.click('button:has-text("Garantir ingresso")'));
+  ok(await V.inputValue('[name=cupom]') === 'JOAO', 'inscrição já vem com o código do link');
+  for (const [n, v] of [['nome', 'Ana Compradora'], ['email', 'ana@publico.test'], ['senha', 'Ingresso1'], ['senha_confirmation', 'Ingresso1']]) await V.fill(`[name=${n}]`, v);
+  await V.fill('[name="participantes[0][nome]"]', 'Ana Compradora'); await V.fill('[name="participantes[1][nome]"]', 'Pedro Amigo');
+  for (const t of ['compra_comprador', 'privacidade']) await V.check(`[name="aceites[${t}]"]`);
+  await nav(V, V.click('button:has-text("Confirmar inscrição")'));
+  ok(V.url().endsWith('/minha-conta'), 'inscrição confirmada');
+  ok(sql("SELECT COUNT(*) FROM pedido p JOIN cupom c ON c.id=p.cupom_id WHERE c.codigo='JOAO'") === '1' && sql("SELECT usos FROM cupom WHERE codigo='JOAO'") === '1', 'pedido ligado ao cupom');
+
+  // ---- código digitado e código inválido ----
+  const W = await (await b.newContext()).newPage();
+  await W.goto(BASE + '/e/festa-divulgada');
+  await W.selectOption('select[name^="q["]', '1');
+  await nav(W, W.click('button:has-text("Garantir ingresso")'));
+  ok(await W.inputValue('[name=cupom]') === '', 'sem link: campo vazio');
+  for (const [n, v] of [['nome', 'Carla Prima'], ['email', 'carla@publico.test'], ['senha', 'Ingresso1'], ['senha_confirmation', 'Ingresso1']]) await W.fill(`[name=${n}]`, v);
+  await W.fill('[name="participantes[0][nome]"]', 'Carla Prima'); await W.fill('[name=cupom]', 'naoexiste');
+  for (const t of ['compra_comprador', 'privacidade']) await W.check(`[name="aceites[${t}]"]`);
+  await nav(W, W.click('button:has-text("Confirmar inscrição")'));
+  ok((await W.content()).includes('Código não encontrado'), 'código inválido é recusado');
+  for (const [n, v] of [['senha', 'Ingresso1'], ['senha_confirmation', 'Ingresso1']]) await W.fill(`[name=${n}]`, v);
+  await W.fill('[name=cupom]', 'joao');
+  for (const t of ['compra_comprador', 'privacidade']) await W.check(`[name="aceites[${t}]"]`);
+  await nav(W, W.click('button:has-text("Confirmar inscrição")'));
+  ok(W.url().endsWith('/minha-conta') && sql("SELECT usos FROM cupom WHERE codigo='JOAO'") === '2', 'código digitado (minúsculas) também conta');
+
+  // ---- contagem na lista ----
+  await P.reload();
+  linha = P.locator('tr:has-text("JOAO")').first();
+  ok((await linha.locator('td').nth(3).innerText()).trim() === '3', 'lista mostra 3 ingressos divulgados');
+
+  // ---- cancelamento sai da contagem ----
+  await P.goto(BASE + '/painel/participantes');
+  await P.locator('tr:not(.linha-acoes):has-text("Pedro Amigo") button:has-text("Ações")').click();
+  await nav(P, P.locator('tr.linha-acoes:visible button:has-text("Cancelar ingresso")').click());
+  await P.goto(BASE + '/painel/cupons');
+  ok((await P.locator('tr:has-text("JOAO")').first().locator('td').nth(3).innerText()).trim() === '2', 'ingresso cancelado sai da contagem');
+
+  // desativado: código passa a ser recusado
+  await nav(P, P.locator('tr:has-text("JOAO")').first().locator('button:has-text("Desativar")').click());
+  const X = await (await b.newContext()).newPage();
+  await X.goto(link); await X.selectOption('select[name^="q["]', '1');
+  await nav(X, X.click('button:has-text("Garantir ingresso")'));
+  for (const [n, v] of [['nome', 'Dani'], ['email', 'dani@publico.test'], ['senha', 'Ingresso1'], ['senha_confirmation', 'Ingresso1']]) await X.fill(`[name=${n}]`, v);
+  await X.fill('[name="participantes[0][nome]"]', 'Dani');
+  for (const t of ['compra_comprador', 'privacidade']) await X.check(`[name="aceites[${t}]"]`);
+  await nav(X, X.click('button:has-text("Confirmar inscrição")'));
+  ok((await X.content()).includes('Código não encontrado, desativado'), 'código desativado é recusado');
+
+  ok(erros.length === 0, 'sem erros de JavaScript ' + erros.join(' | '));
+  await b.close();
+})();
