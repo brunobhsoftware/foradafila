@@ -41,7 +41,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   t = await P.content();
   ok(t.includes('Dados de recebimento salvos') && t.includes('Pix E-mail: financeiro@slod.test'), 'salvo; repasse vai para o Pix preferido');
   ok(sql("SELECT CONCAT_WS('|', pix_tipo, pix_chave, recebimento_preferido, conta) FROM organizador") === 'email|financeiro@slod.test|pix|12345-X', 'gravado (e-mail minúsculo, conta com dígito maiúsculo)');
-  ok(sql("SELECT CONCAT_WS('|', modo, status, ambiente) FROM conta_pagamento") === 'plataforma|ativa|producao', 'conta "Recebimento pela plataforma" ativa');
+  ok(sql("SELECT CONCAT_WS('|', modo, status, ambiente) FROM conta_pagamento WHERE modo='plataforma'") === 'plataforma|ativa|producao', 'conta "Recebimento pela plataforma" ativa');
   ok(t.includes('Pronto para vender ingressos pagos'), 'selo de pronto');
 
   // Organização não tem mais os campos bancários
@@ -63,7 +63,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   await nav(P, f.locator('button:has-text("Adicionar lote")').click());
   ok((await P.content()).includes('Dados para o repasse cadastrados em Financeiro'), 'checklist mostra os dados para o repasse');
   await nav(P, P.click('button:has-text("Publicar evento")'));
-  ok(sql("SELECT status FROM evento") === 'publicado' && sql("SELECT e.conta_pagamento_id = c.id FROM evento e JOIN conta_pagamento c") === '1', 'evento com ingresso pago publicado, ligado à conta da plataforma');
+  ok(sql("SELECT status FROM evento") === 'publicado' && sql("SELECT e.conta_pagamento_id = c.id FROM evento e JOIN conta_pagamento c ON c.modo='plataforma'") === '1', 'evento com ingresso pago publicado, ligado à conta da plataforma');
 
   // trocar para conta bancária como preferida
   await P.goto(BASE + '/painel/financeiro');
