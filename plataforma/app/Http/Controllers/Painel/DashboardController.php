@@ -37,6 +37,9 @@ class DashboardController extends Controller
         $proximos = (clone $base)->whereIn('status', ['rascunho', 'publicado', 'pausado'])
             ->where('data_inicio', '>=', now()->subDay())
             ->orderBy('data_inicio')->limit(6)->get();
+        // A view não traz o uuid (usado nas rotas): busca para os links "Abrir" e "Editar".
+        $uuids = DB::table('evento')->whereIn('id', $proximos->pluck('evento_id'))->pluck('uuid', 'id');
+        $proximos->each(fn ($e) => $e->uuid = $uuids[$e->evento_id] ?? null);
 
         $org = $tenant->organizador();
         $passos = [

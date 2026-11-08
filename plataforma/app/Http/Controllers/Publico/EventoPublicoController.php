@@ -101,6 +101,7 @@ class EventoPublicoController extends Controller
         if ($evento->status !== 'publicado' || $lote->visibilidade !== 'publico'
             || ! in_array($lote->status, ['ativo', 'agendado'], true)
             || ! $lote->venda_inicio->isPast() || ! $lote->venda_fim->isFuture()
+            || ($evento->data_fim && $evento->data_fim->isPast())
             || ($lote->quantidade - $lote->reservado - $lote->vendido) <= 0) {
             return false;
         }

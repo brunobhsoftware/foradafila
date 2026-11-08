@@ -134,11 +134,12 @@ class EventoController extends Controller
         $fimNovo = $evento->data_fim->copy()->setTimezone('UTC')->format('Y-m-d H:i:s');
         $iniAntigo = $antes['data_inicio'] ?? null;
         $fimAntigo = $antes['data_fim'] ?? null;
-        if ($fimNovo === $fimAntigo && $evento->data_inicio->format('Y-m-d H:i:s') === $iniAntigo) {
-            return;
-        }
-        $lotes = $evento->lotes()->whereNotIn('status', ['encerrado'])
-            ->where(fn ($q) => $q->whereIn('venda_fim', array_filter([$iniAntigo, $fimAntigo]))->orWhere('venda_fim', '>', $fimNovo))->get();
+        // Nunca há venda depois do fim do evento: todo lote que passa do término é ajustado, mesmo sem mudar a data
+        // (corrige lotes antigos). Se a data mudou, os que terminavam junto com o evento acompanham o novo término.
+        $mudou = $fimNovo !== $fimAntigo || $evento->data_inicio->copy()->setTimezone('UTC')->format('Y-m-d H:i:s') !== $iniAntigo;
+        $lotes = $evento->lotes()
+            ->where(fn ($q) => $q->where('venda_fim', '>', $fimNovo)
+                ->when($mudou, fn ($q) => $q->orWhere(fn ($q) => $q->whereNotIn('status', ['encerrado'])->whereIn('venda_fim', array_filter([$iniAntigo, $fimAntigo])))))->get();
         foreach ($lotes as $lote) {
             $antesLote = $lote->getAttributes();
             $lote->update(['venda_fim' => $fimNovo]);

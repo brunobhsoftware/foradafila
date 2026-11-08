@@ -112,6 +112,15 @@ const lote = (nome) => sql(`SELECT CONCAT_WS('|', preco, modalidade, IFNULL(lote
   const fn = P.locator('form:has(input[name=_form][value^="lote-"])').last();
   ok((await fn.locator('[name=venda_fim]').inputValue()).endsWith('T03:00'), 'novo lote sugere o fim das vendas no término do evento');
 
+  // lote que passa do fim do evento (dado antigo) é corrigido ao salvar o evento, mesmo sem mudar a data
+  sql("UPDATE lote SET venda_fim=DATE_ADD(venda_fim, INTERVAL 5 DAY) WHERE nome='Equipe'");
+  await P.goto(BASE + '/painel');
+  ok(await P.locator('tr:has-text("Festa dos Lotes") a:has-text("Editar")').count() === 1, 'Próximos eventos tem o botão Editar');
+  await nav(P, P.click('tr:has-text("Festa dos Lotes") a:has-text("Editar")'));
+  await P.check('[name=aceite_cancelamento]');
+  await nav(P, P.click('.acoes-form button[type=submit]'));
+  ok(sql("SELECT COUNT(*) FROM lote l JOIN evento e ON e.id=l.evento_id WHERE l.venda_fim>e.data_fim") === '0', 'salvar o evento corrige lote que vendia depois do fim');
+
   ok(erros.length === 0, 'sem erros de JavaScript ' + erros.join(' | '));
   await b.close();
 })();

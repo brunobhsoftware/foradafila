@@ -125,6 +125,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   **Fim das vendas** (decisão do Bruno, 08/11/2026): vai até o **fim do evento** (`data_fim`); o lote novo já sugere esse horário.
   Ao editar a data do evento, os lotes que terminavam junto com o evento (no início ou no fim antigos) ou que passariam do novo
   término são ajustados para o novo `data_fim` (`EventoController::ajustarFimDasVendas`, auditoria `lote.fim_vendas_ajustado`).
+  **Nunca há venda depois do fim do evento:** salvar o evento sempre corrige lotes com `venda_fim` > `data_fim` (mesmo sem mudar a data) e a página pública não vende após o fim. Dashboard → Próximos eventos tem "Abrir" e "Editar".
   A edição do tipo e do lote abre embaixo, em largura total (botões com `data-alternar`).
 - **Financeiro / Mercado Pago (OAuth pronto, aguardando a aplicação no MP):** `/painel/financeiro` (`FinanceiroController`)
   conecta a conta do organizador por OAuth com PKCE (`state` na sessão), grava em `conta_pagamento` (status `conectada`,
@@ -249,7 +250,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (22), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-divulgacao.js` (16), `fluxo-convidados.js` (19), `fluxo-mensagens.js` (13), `fluxo-taxa.js` (14), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (24), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-divulgacao.js` (16), `fluxo-convidados.js` (19), `fluxo-mensagens.js` (13), `fluxo-taxa.js` (14), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.
