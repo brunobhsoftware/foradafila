@@ -120,7 +120,16 @@
                         <option value="0" @selected($valTaxa === '0')>Embutida: o comprador paga o preço e a taxa sai do valor que eu recebo</option>
                         <option value="1" @selected($valTaxa === '1')>Repassada: o comprador paga o preço + a taxa e eu recebo o valor cheio</option>
                     </select>
-                    <small class="suave">O padrão fica em Organização → Taxa da plataforma. Ingressos gratuitos não têm taxa.</small>
+                    @php
+                        // Exemplo com um ingresso de R$ 50: taxa real do motor; sem taxa configurada, um exemplo usual (5%, mínimo R$ 1).
+                        $calc = \App\Support\Esquema::temV008() && $orgTaxa ? \App\Support\MotorTaxas::calcular($orgTaxa, 'ingresso_pago', 50) : null;
+                        $tx = (float) ($calc['taxa'] ?? 0); $ilustrativo = $tx <= 0; if ($ilustrativo) { $tx = 2.50; }
+                        $exEmb = 'Exemplo: ingresso de '.moeda(50).' → o comprador paga '.moeda(50).' e você recebe '.moeda(50 - $tx).' (taxa de '.moeda($tx).' descontada do seu valor).';
+                        $exRep = 'Exemplo: ingresso de '.moeda(50).' → o comprador paga '.moeda(50 + $tx).' ('.moeda(50).' + '.moeda($tx).' de taxa) e você recebe '.moeda(50).'.';
+                    @endphp
+                    <p class="exemplo-taxa" data-exemplo-taxa data-padrao="{{ $orgTaxa?->taxa_comprador ? '1' : '0' }}" data-ex0="{{ $exEmb }}" data-ex1="{{ $exRep }}"
+                       style="margin:8px 0 4px;padding:10px 14px;background:#F4F5F7;border-left:3px solid var(--laranja);border-radius:6px"></p>
+                    <small class="suave">@if ($ilustrativo)Valores ilustrativos (taxa de 5%); a taxa real aparece no painel de ingressos. @endif O padrão fica em Organização → Taxa da plataforma. Ingressos gratuitos não têm taxa. Mudar aqui atualiza na hora todos os ingressos deste evento.</small>
                 </div>
             @endif
             <div class="col-12" style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:-8px">
