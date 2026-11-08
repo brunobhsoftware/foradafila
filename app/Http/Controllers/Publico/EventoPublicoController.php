@@ -31,6 +31,7 @@ class EventoPublicoController extends Controller
 
     public function show(string $slug, Tenant $tenant)
     {
+        self::guardarCupom();
         $evento = self::buscar($slug);
         $tenant->definir($evento->organizador);
         $evento->load(['local', 'categoria', 'tipos' => fn ($q) => $q->where('ativo', 1), 'tipos.lotes']);
@@ -44,6 +45,7 @@ class EventoPublicoController extends Controller
 
     public function organizador(string $slug)
     {
+        self::guardarCupom();
         $org = Organizador::where('slug', $slug)->where('situacao', '<>', 'encerrado')->firstOrFail();
         $comLocal = ['local' => fn ($q) => $q->withoutGlobalScope('organizador')];
         $eventos = Evento::withoutGlobalScope('organizador')->with($comLocal)->where('organizador_id', $org->id)
@@ -70,6 +72,15 @@ class EventoPublicoController extends Controller
             ->where('visibilidade', 'publico')->whereIn('status', ['ativo', 'agendado'])
             ->groupBy('evento_id')->selectRaw('evento_id, MIN(preco) AS menor')->pluck('menor', 'evento_id');
         $eventos->each(fn ($e) => $e->setAttribute('preco_minimo', $precos[$e->id] ?? null));
+    }
+
+    /** Link de divulgação (?cupom=CODIGO): guarda o código na sessão para a inscrição. */
+    private static function guardarCupom(): void
+    {
+        $codigo = strtoupper(preg_replace('/[^A-Za-z0-9_-]/', '', (string) request()->query('cupom', '')));
+        if ($codigo !== '') {
+            session(['cupom_divulgacao' => mb_substr($codigo, 0, 30)]);
+        }
     }
 
     /** Evento pela URL pública. Privados exigem link de acesso privado, que ainda não existe: 404. */

@@ -16,15 +16,19 @@
         @foreach ($eventos as $e)<option value="{{ $e->uuid }}" @selected($eventoUuid === $e->uuid)>{{ $e->titulo }}</option>@endforeach</select></div>
     <div class="campo col-3"><label>Tipo de desconto</label><select name="tipo_desconto">
         <option value="percentual" @selected($v('tipo_desconto', $c?->tipo_desconto ?? 'percentual') === 'percentual')>Percentual (%)</option>
-        <option value="valor_fixo" @selected($v('tipo_desconto', $c?->tipo_desconto) === 'valor_fixo')>Valor fixo (R$)</option></select></div>
-    <div class="campo col-3"><label>Desconto</label><input name="valor" type="number" step="0.01" min="0.01" required value="{{ $v('valor', $c ? (float) $c->valor : '') }}">
+        <option value="valor_fixo" @selected($v('tipo_desconto', $c?->tipo_desconto) === 'valor_fixo')>Valor fixo (R$)</option>
+        @if ($divulgacao ?? false)<option value="divulgacao" @selected($v('tipo_desconto', $c?->tipo_desconto) === 'divulgacao')>Divulgação (sem desconto)</option>@endif</select></div>
+    <div class="col-12 alerta alerta--info" data-so-divulgacao style="margin:0" @if ($v('tipo_desconto', $c?->tipo_desconto) !== 'divulgacao') hidden @endif>
+        <p>Cupom de <b>divulgação</b>: não dá desconto e não tem limite nem validade. Serve para saber quantos ingressos cada pessoa divulgou.
+        Ela compartilha o link do evento com o código (aparece na lista depois de criar) ou o comprador digita o código na inscrição.</p></div>
+    <div class="campo col-3" data-nao-divulgacao><label>Desconto</label><input name="valor" type="number" step="0.01" min="0.01" required value="{{ $v('valor', $c ? (float) $c->valor : '') }}">
         @if ($usa)@error('valor')<small class="erro">{{ $message }}</small>@enderror @endif</div>
-    <div class="campo col-3"><label>Limite de usos</label><input name="max_usos" type="number" min="1" value="{{ $v('max_usos', $c?->max_usos) }}" placeholder="sem limite">
+    <div class="campo col-3" data-nao-divulgacao><label>Limite de usos</label><input name="max_usos" type="number" min="1" value="{{ $v('max_usos', $c?->max_usos) }}" placeholder="sem limite">
         @if ($usa)@error('max_usos')<small class="erro">{{ $message }}</small>@enderror @endif</div>
-    <div class="campo col-3"><label>Limite por CPF</label><input name="max_usos_cpf" type="number" min="1" value="{{ $v('max_usos_cpf', $c?->max_usos_cpf) }}" placeholder="sem limite"></div>
-    <div class="campo col-3"><label>Pedido mínimo (R$)</label><input name="valor_minimo_pedido" type="number" step="0.01" min="0" value="{{ $v('valor_minimo_pedido', $c?->valor_minimo_pedido) }}" placeholder="sem mínimo"></div>
-    <div class="campo col-3"><label>Válido de</label><input name="valido_de" type="datetime-local" value="{{ $v('valido_de', $c?->valido_de ? para_input_data($c->valido_de) : '') }}"></div>
-    <div class="campo col-3"><label>Válido até</label><input name="valido_ate" type="datetime-local" value="{{ $v('valido_ate', $c?->valido_ate ? para_input_data($c->valido_ate) : '') }}">
+    <div class="campo col-3" data-nao-divulgacao><label>Limite por CPF</label><input name="max_usos_cpf" type="number" min="1" value="{{ $v('max_usos_cpf', $c?->max_usos_cpf) }}" placeholder="sem limite"></div>
+    <div class="campo col-3" data-nao-divulgacao><label>Pedido mínimo (R$)</label><input name="valor_minimo_pedido" type="number" step="0.01" min="0" value="{{ $v('valor_minimo_pedido', $c?->valor_minimo_pedido) }}" placeholder="sem mínimo"></div>
+    <div class="campo col-3" data-nao-divulgacao><label>Válido de</label><input name="valido_de" type="datetime-local" value="{{ $v('valido_de', $c?->valido_de ? para_input_data($c->valido_de) : '') }}"></div>
+    <div class="campo col-3" data-nao-divulgacao><label>Válido até</label><input name="valido_ate" type="datetime-local" value="{{ $v('valido_ate', $c?->valido_ate ? para_input_data($c->valido_ate) : '') }}">
         @if ($usa)@error('valido_ate')<small class="erro">{{ $message }}</small>@enderror @endif</div>
     <div class="campo col-12" data-cupom-lotes>
         <label>Lotes em que o cupom vale <small class="suave">(nenhum marcado = todos os lotes do evento)</small></label>

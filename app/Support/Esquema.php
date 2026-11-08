@@ -27,6 +27,12 @@ class Esquema
         return self::$cache['v008'] ??= Schema::hasTable('impersonacao_log') && Schema::hasColumn('auditoria', 'admin_impersonando_id');
     }
 
+    /** V009: cupom do tipo "divulgacao". */
+    public static function temV009(): bool
+    {
+        return self::$cache['v009'] ??= str_contains((string) (\Illuminate\Support\Facades\DB::selectOne("SHOW COLUMNS FROM cupom LIKE 'tipo_desconto'")->Type ?? ''), 'divulgacao');
+    }
+
     /** V005: evento.capacidade aceita NULL (capacidade máxima opcional). */
     public static function capacidadeOpcional(): bool
     {

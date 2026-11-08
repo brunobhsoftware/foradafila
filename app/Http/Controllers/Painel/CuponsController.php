@@ -26,7 +26,14 @@ class CuponsController extends Controller
             ->orderByDesc('id')->get();
         $lotes = Lote::with('tipo')->whereIn('evento_id', $eventos->pluck('id'))->orderBy('evento_id')->orderBy('ordem')->get()->groupBy('evento_id');
 
-        return view('painel.cupons.index', compact('cupons', 'eventos', 'eventoFiltro', 'lotes'));
+        // Ingressos válidos que saíram com cada código (divulgação ou desconto).
+        $ingressos = DB::table('cupom_uso as cu')->join('ingresso as i', 'i.pedido_id', '=', 'cu.pedido_id')
+            ->whereIn('cu.cupom_id', $cupons->pluck('id'))->whereIn('i.status', ['valido', 'utilizado'])
+            ->groupBy('cu.cupom_id')->selectRaw('cu.cupom_id, COUNT(*) n')->pluck('n', 'cupom_id');
+        $org = app(\App\Support\Tenant::class)->organizador();
+        $divulgacao = \App\Support\Esquema::temV009();
+
+        return view('painel.cupons.index', compact('cupons', 'eventos', 'eventoFiltro', 'lotes', 'ingressos', 'org', 'divulgacao'));
     }
 
     public function store(Request $request)
@@ -77,8 +84,8 @@ class CuponsController extends Controller
                 Rule::unique('cupom', 'codigo')->where('organizador_id', app(\App\Support\Tenant::class)->id())->ignore($cupom?->id)],
             'descricao' => ['nullable', 'string', 'max:150'],
             'evento' => ['nullable', Rule::in($eventos->keys()->all())],
-            'tipo_desconto' => ['required', 'in:percentual,valor_fixo'],
-            'valor' => ['required', 'numeric', 'gt:0', $request->input('tipo_desconto') === 'percentual' ? 'max:100' : 'max:100000'],
+            'tipo_desconto' => ['required', \App\Support\Esquema::temV009() ? 'in:percentual,valor_fixo,divulgacao' : 'in:percentual,valor_fixo'],
+            'valor' => ['exclude_if:tipo_desconto,divulgacao', 'required', 'numeric', 'gt:0', $request->input('tipo_desconto') === 'percentual' ? 'max:100' : 'max:100000'],
             'valor_minimo_pedido' => ['nullable', 'numeric', 'min:0'],
             'max_usos' => ['nullable', 'integer', 'min:1'],
             'max_usos_cpf' => ['nullable', 'integer', 'min:1'],
@@ -95,6 +102,11 @@ class CuponsController extends Controller
             throw \Illuminate\Validation\ValidationException::withMessages(['max_usos' => "O cupom já foi usado {$cupom->usos} vez(es): o limite não pode ser menor."]);
         }
         $eventoId = ($d['evento'] ?? null) ? $eventos[$d['evento']] : null;
+        // Divulgação: só conta os ingressos; sem desconto, limites, pedido mínimo nem validade.
+        if ($d['tipo_desconto'] === 'divulgacao') {
+            $d['valor'] = 0;
+            $d['max_usos'] = $d['max_usos_cpf'] = $d['valor_minimo_pedido'] = $d['valido_de'] = $d['valido_ate'] = null;
+        }
         // Lotes só valem para cupom de um evento e precisam ser desse evento.
         $lotes = $eventoId ? Lote::where('evento_id', $eventoId)->whereIn('id', $d['lotes'] ?? [])->pluck('id')->all() : [];
 

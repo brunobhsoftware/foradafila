@@ -52,6 +52,7 @@ class InscricaoController extends Controller
         return view('publico.inscricao', [
             'evento' => $evento, 'selecao' => $selecao, 'termos' => $termos,
             'comprador' => Auth::guard('comprador')->user(), 'chave' => (string) Str::uuid(),
+            'cupom' => $request->session()->get('cupom_divulgacao'),
         ]);
     }
 
@@ -68,6 +69,7 @@ class InscricaoController extends Controller
             'participantes.*.cpf' => $evento->exige_cpf_participante ? ['required', new DocumentoValido('PF')] : ['nullable', new DocumentoValido('PF')],
             'aceites' => ['required', 'array'],
             'aceites.*' => ['accepted'],
+            'cupom' => ['nullable', 'string', 'max:30'],
         ];
         if (! $comprador) {
             $request->merge(['email' => mb_strtolower(trim((string) $request->input('email')))]);
@@ -89,13 +91,15 @@ class InscricaoController extends Controller
             return redirect()->route('comprador.ingressos')->with('ok', 'Seu pedido '.$existente->codigo.' já está confirmado.');
         }
 
+        $cupom = $this->cupomValido($evento, $dados['cupom'] ?? null);
+
         $participantes = collect($dados['participantes'])->values()->map(fn ($p) => [
             'nome' => trim($p['nome']), 'cpf' => Documento::digitos($p['cpf'] ?? '') ?: null,
         ]);
         $this->conferirLimitePorCpf($evento, $participantes);
 
         try {
-            $pedido = DB::transaction(function () use ($evento, $selecao, $total, $participantes, $termos, $dados, $request, $comprador) {
+            $pedido = DB::transaction(function () use ($evento, $selecao, $total, $participantes, $termos, $dados, $request, $comprador, $cupom) {
                 if (! $comprador) {
                     $comprador = Comprador::create([
                         'nome' => $dados['nome'], 'email' => $dados['email'],
@@ -123,7 +127,7 @@ class InscricaoController extends Controller
 
                 $pedido = Pedido::create([
                     'codigo' => Pedido::novoCodigo(), 'organizador_id' => $evento->organizador_id, 'evento_id' => $evento->id,
-                    'comprador_id' => $comprador->id, 'origem' => 'site', 'chave_idempotencia' => $dados['chave'],
+                    'comprador_id' => $comprador->id, 'cupom_id' => $cupom?->id, 'origem' => 'site', 'chave_idempotencia' => $dados['chave'],
                     'status' => 'pago', 'valor_bruto' => 0, 'valor_desconto' => 0, 'valor_total' => 0,
                     'metodo_pagamento' => 'gratuito', 'ip' => $request->ip(), 'expira_em' => now(), 'pago_em' => now(),
                 ]);
@@ -155,6 +159,16 @@ class InscricaoController extends Controller
                         'termo_id' => $termo->id, 'comprador_id' => $comprador->id,
                         'ip' => $request->ip() ?? '0.0.0.0', 'user_agent' => mb_substr((string) $request->userAgent(), 0, 255),
                     ]);
+                }
+
+                if ($cupom) {
+                    // Inscrição gratuita: o código conta (divulgação) sem dar desconto. Cupom com limite não passa do máximo.
+                    $ok = DB::update('UPDATE cupom SET usos = usos + 1 WHERE id = ? AND (max_usos IS NULL OR usos < max_usos)', [$cupom->id]);
+                    if (! $ok) {
+                        throw ValidationException::withMessages(['cupom' => 'Este código atingiu o limite de usos.']);
+                    }
+                    DB::table('cupom_uso')->insert(['cupom_id' => $cupom->id, 'pedido_id' => $pedido->id,
+                        'cpf' => $participantes[0]['cpf'] ?? null, 'valor_desconto' => 0, 'status' => 'confirmado']);
                 }
 
                 Auditoria::registrar('pedido.gratuito.emitir', $pedido);
@@ -220,6 +234,22 @@ class InscricaoController extends Controller
     }
 
     /** max_ingressos_cpf: soma os ingressos válidos já emitidos para cada CPF neste evento. */
+    /** Código de divulgação/cupom informado na inscrição (ou vindo do link). Inválido = erro no formulário. */
+    private function cupomValido(Evento $evento, ?string $codigo): ?\App\Models\Cupom
+    {
+        $codigo = strtoupper(trim((string) $codigo));
+        if ($codigo === '') {
+            return null;
+        }
+        $cupom = \App\Models\Cupom::withoutGlobalScope('organizador')->where('organizador_id', $evento->organizador_id)->where('codigo', $codigo)
+            ->where(fn ($q) => $q->whereNull('evento_id')->orWhere('evento_id', $evento->id))->first();
+        if (! $cupom || $cupom->situacao() !== 'ativo') {
+            throw ValidationException::withMessages(['cupom' => 'Código não encontrado, desativado ou fora da validade. Confira ou deixe em branco.']);
+        }
+
+        return $cupom;
+    }
+
     private function conferirLimitePorCpf(Evento $evento, Collection $participantes): void
     {
         if (! $evento->max_ingressos_cpf) {
