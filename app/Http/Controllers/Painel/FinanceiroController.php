@@ -192,7 +192,9 @@ class FinanceiroController extends Controller
                 'description' => 'Ingresso de teste para validar a integração com o Fora da Fila', 'category_id' => 'tickets',
                 'quantity' => 1, 'unit_price' => $valor]],
             'config' => ['statement_descriptor' => 'FORADAFILA',
-                'online' => ['success_url' => $volta('sucesso'), 'failure_url' => $volta('falha'), 'pending_url' => $volta('pendente')]],
+                'online' => ['success_url' => $volta('sucesso'), 'failure_url' => $volta('falha'), 'pending_url' => $volta('pendente'),
+                    // 3DS (Qualidade da integração): valida quando há risco de fraude e transfere a responsabilidade ao emissor
+                    'transaction_security' => ['validation' => 'on_fraud_risk', 'liability_shift' => 'required']]],
             'additional_info' => ['payer.authentication_type' => 'WEB', 'payer.registration_date' => now()->toIso8601String(),
                 'payer.is_first_purchase_online' => true, 'payer.last_purchase' => now()->toIso8601String()],
         ];
