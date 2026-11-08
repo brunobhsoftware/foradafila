@@ -89,7 +89,7 @@
       @if ($lotes->isEmpty())
         <p>O organizador ainda não disponibilizou ingressos.</p>
       @else
-        <form method="get" action="{{ route('inscricao.create', $evento->slug) }}">
+        <form method="get" action="{{ route('inscricao.create', $evento->codigoPublico()) }}">
           @foreach ($lotes as $lote)
             @php
               $disponivel = $aVenda->contains('id', $lote->id);
