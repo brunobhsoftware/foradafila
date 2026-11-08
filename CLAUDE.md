@@ -174,6 +174,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   encerrar = fim ontem (ou remove se ainda não valeu). Sem o V008, essas telas mostram aviso (`admin.precisa-v008`).
   Ainda não há cobrança aplicada: o motor só calcula (simulação na tela da empresa).
   **E-mails enviados** (`/admin/emails`): últimos 100 de `mensagem_envio` (para, assunto, situação, erro; sem o corpo), busca e filtro; ao buscar, mostra "Quem tem esse e-mail" (login de produtor ativo/desativado/sem senha ou só e-mail de contato da organização) e o botão "Enviar link de nova senha" (também no detalhe da empresa, `admin.empresas.senha`, auditoria `admin.senha_link_enviado`).
+  **Convite pendente + "Esqueci a senha"**: ao salvar a nova senha, convites `convidado` não vencidos viram `ativo` (auditoria `equipe.aceitar_convite` via nova_senha); antes o login caía em "acesso não está ativo". Teste `fluxo-senha-convite.js`.
   **Primeiro acesso:** qualquer conta sem senha (administrador, pessoa da equipe convidada, comprador de cortesia) usa "Esqueci a senha" (link de 60 min, `SenhaController::podeRedefinir`).
   Modelo decidido pelo Bruno (07/11/2026): **aplicação única da BH Software + "Conectar" de cada produtor**; o dinheiro
   cai direto na conta do produtor. O Financeiro do produtor mostra a etapa 1 só como "Liberação pela plataforma".
