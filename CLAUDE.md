@@ -249,7 +249,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   sempre que alguém informa CPF + nome (participante da inscrição — com e-mail/telefone do comprador quando é ele mesmo —, representante
   legal da Organização, pagamento de teste da Administração); valores vazios não apagam os existentes; falhas não interrompem a operação.
   Busca `GET /cadastro-unico/{cpf}` **só para usuário logado da equipe** (throttle `cadastro-unico` 30/min, auditoria `pessoa.consulta`
-  com os 4 últimos dígitos). Campo com `data-busca-cpf` preenche os campos vazios `data-pessoa="nome|email|telefone"` do mesmo formulário.
+  com os 4 últimos dígitos). **O CPF vem sempre primeiro no formulário**; como no CEP, ao completar os 11 números ou sair do campo (`data-busca-cpf`) preenche `data-pessoa="nome|email|telefone"` do mesmo formulário com o que encontrar.
   **No site público não há preenchimento pelo CPF** (qualquer um descobriria nome/e-mail de terceiros pelo CPF — risco LGPD). Pendente:
   citar o cadastro único no termo de privacidade e definir a base legal. Pagamento de teste usa **nome completo** (dividido em
   first_name/last_name para o Mercado Pago).

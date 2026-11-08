@@ -61,7 +61,8 @@
   // Cadastro único: ao completar o CPF, preenche nome/e-mail/telefone vazios do mesmo formulário
   $$('[data-busca-cpf]').forEach((cpf) => {
     let ultimo = '';
-    cpf.addEventListener('input', async () => {
+    // Como no CEP: ao completar os 11 números ou ao sair do campo, consulta e preenche tudo o que encontrar.
+    const consultar = async () => {
       const d = cpf.value.replace(/\D/g, '');
       if (d.length !== 11 || d === ultimo) return;
       ultimo = d;
@@ -74,7 +75,7 @@
         let preencheu = false;
         ['nome', 'email', 'telefone'].forEach((k) => {
           const el = form.querySelector('[data-pessoa="' + k + '"]');
-          if (el && p[k] && !el.value.trim()) { el.value = p[k]; el.dispatchEvent(new Event('input', { bubbles: true })); preencheu = true; }
+          if (el && p[k]) { el.value = p[k]; el.dispatchEvent(new Event('input', { bubbles: true })); preencheu = true; }
         });
         if (preencheu) {
           let aviso = cpf.parentElement.querySelector('.cpf-encontrado');
@@ -82,7 +83,9 @@
           aviso.textContent = 'Dados preenchidos pelo cadastro único.';
         }
       } catch (e) { /* sem conexão: segue manual */ }
-    });
+    };
+    cpf.addEventListener('input', consultar);
+    cpf.addEventListener('blur', consultar);
   });
 
   // Botões que mostram/escondem um bloco (ex.: ações do participante)
