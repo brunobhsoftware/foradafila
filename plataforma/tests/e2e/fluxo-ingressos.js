@@ -96,6 +96,22 @@ const lote = (nome) => sql(`SELECT CONCAT_WS('|', preco, modalidade, IFNULL(lote
   const pub = await V.content();
   ok(pub.includes('Primeiro') && !pub.includes('Segundo') && !pub.includes('Equipe'), 'página do evento mostra só o lote para todo o público');
 
+  // mudar a data do evento: o fim das vendas dos lotes acompanha o novo término
+  const fimAntes = sql("SELECT data_fim FROM evento WHERE slug='festa-dos-lotes'");
+  await P.goto(BASE + '/painel/eventos'); await nav(P, P.click('a:has-text("Festa dos Lotes")'));
+  await nav(P, P.click('a:has-text("Editar")'));
+  await P.fill('[name=data_inicio]', local(30)); await P.fill('[name=data_fim]', local(31, '03:00'));
+  await P.check('[name=aceite_cancelamento]');
+  await nav(P, P.click('.acoes-form button[type=submit]'));
+  const fimNovo = sql("SELECT data_fim FROM evento WHERE slug='festa-dos-lotes'");
+  ok(fimNovo !== fimAntes && sql(`SELECT COUNT(*) FROM lote l JOIN evento e ON e.id=l.evento_id WHERE e.slug='festa-dos-lotes' AND l.venda_fim<>'${fimNovo}'`) === '0',
+    'mudar a data do evento leva o fim das vendas de todos os lotes para o novo término');
+  ok(sql("SELECT COUNT(*) FROM auditoria WHERE acao='lote.fim_vendas_ajustado'") === '3', 'ajuste registrado na auditoria de cada lote');
+  // novo lote já vem com o fim das vendas no término do evento
+  await P.click('summary:has-text("Adicionar lote")');
+  const fn = P.locator('form:has(input[name=_form][value^="lote-"])').last();
+  ok((await fn.locator('[name=venda_fim]').inputValue()).endsWith('T03:00'), 'novo lote sugere o fim das vendas no término do evento');
+
   ok(erros.length === 0, 'sem erros de JavaScript ' + erros.join(' | '));
   await b.close();
 })();

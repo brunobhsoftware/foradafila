@@ -118,10 +118,32 @@ class EventoController extends Controller
             }
             $evento->update($dadosEvento);
             Auditoria::registrar('evento.editar', $evento, $antes);
+            self::ajustarFimDasVendas($evento, $antes);
             self::registrarDeclaracao($evento);
         }), 'titulo');
 
         return redirect()->route('eventos.show', $evento)->with('ok', 'Evento atualizado.');
+    }
+
+    /**
+     * Mudou a data do evento: o fim das vendas dos lotes acompanha o novo término (decisão do Bruno, 08/11/2026).
+     * Muda os lotes que terminavam junto com o evento (no início ou no fim antigos) e os que passariam do novo término.
+     */
+    private static function ajustarFimDasVendas(Evento $evento, array $antes): void
+    {
+        $fimNovo = $evento->data_fim->copy()->setTimezone('UTC')->format('Y-m-d H:i:s');
+        $iniAntigo = $antes['data_inicio'] ?? null;
+        $fimAntigo = $antes['data_fim'] ?? null;
+        if ($fimNovo === $fimAntigo && $evento->data_inicio->format('Y-m-d H:i:s') === $iniAntigo) {
+            return;
+        }
+        $lotes = $evento->lotes()->whereNotIn('status', ['encerrado'])
+            ->where(fn ($q) => $q->whereIn('venda_fim', array_filter([$iniAntigo, $fimAntigo]))->orWhere('venda_fim', '>', $fimNovo))->get();
+        foreach ($lotes as $lote) {
+            $antesLote = $lote->getAttributes();
+            $lote->update(['venda_fim' => $fimNovo]);
+            Auditoria::registrar('lote.fim_vendas_ajustado', $lote, $antesLote);
+        }
     }
 
     /** Publicar, pausar, retomar, encerrar ou cancelar. As regras finais são dos triggers do banco. */
