@@ -32,16 +32,44 @@
       @endif
 
       <h2 style="font-size:1.15rem;margin-top:24px">2. Quem vai usar {{ $total > 1 ? 'os ingressos' : 'o ingresso' }}</h2>
-      <p><small>{{ $evento->nominal ? 'Cada ingresso é nominal: informe o nome de quem vai ao evento.' : 'Informe um nome de referência para cada ingresso.' }}
-        {{ $evento->exige_cpf_participante ? 'Este evento exige o CPF de cada participante.' : '' }}</small></p>
+      <p><small>Informe os dados de quem vai usar cada ingresso. Campos com * são obrigatórios.</small></p>
       <div style="display:grid;gap:12px">
         @foreach ($selecao as $s)
           @for ($n = 0; $n < $s['quantidade']; $n++, $i++)
             <div class="pub-participante">
               <h3>Ingresso {{ $i + 1 }} · {{ $s['lote']->tipo->nome }} — {{ $s['lote']->nome }}</h3>
               <div class="form-grade">
+                @if ($campos)
+                  @foreach ($campos as $cp)
+                    @php
+                      $nomeCampo = "participantes[{$i}][{$cp['chave']}]"; $old = old("participantes.{$i}.{$cp['chave']}");
+                      $pre = $i === 0 ? ['nome' => $comprador?->nome, 'email' => $comprador?->email, 'telefone' => $comprador?->telefone][$cp['chave']] ?? null : null;
+                      $largo = in_array($cp['tipo'], ['texto_longo', 'aceite', 'checkbox'], true) || in_array($cp['chave'], ['nome', 'logradouro'], true);
+                      $tipoInput = ['email' => 'email', 'data' => 'date', 'numero' => 'number'][$cp['tipo']] ?? 'text';
+                      $mascara = ['cpf' => 'cpf', 'telefone' => 'telefone', 'cep' => 'cep'][$cp['tipo']] ?? null;
+                    @endphp
+                    @if (in_array($cp['tipo'], ['aceite', 'checkbox'], true))
+                      <div class="campo col-12"><label class="opcao"><input type="checkbox" name="{{ $nomeCampo }}" value="1" @checked($old)> {{ $cp['rotulo'] }}@if ($cp['obrigatorio']) <span class="obrigatorio">*</span>@endif</label>
+                        @error("participantes.{$i}.{$cp['chave']}")<small class="erro">{{ $message }}</small>@enderror</div>
+                    @elseif ($cp['tipo'] === 'selecao')
+                      <div class="campo col-6"><label>{{ $cp['rotulo'] }}@if ($cp['obrigatorio']) <span class="obrigatorio">*</span>@endif</label>
+                        <select name="{{ $nomeCampo }}" @required($cp['obrigatorio'])><option value="">Selecione</option>
+                          @foreach ($cp['opcoes'] as $op)<option value="{{ str_replace(',', '', $op) }}" @selected($old === str_replace(',', '', $op))>{{ ucfirst(str_replace('_', ' ', $op)) }}</option>@endforeach</select>
+                        @error("participantes.{$i}.{$cp['chave']}")<small class="erro">{{ $message }}</small>@enderror</div>
+                    @elseif ($cp['tipo'] === 'texto_longo')
+                      <div class="campo col-12"><label>{{ $cp['rotulo'] }}@if ($cp['obrigatorio']) <span class="obrigatorio">*</span>@endif</label>
+                        <textarea name="{{ $nomeCampo }}" rows="3" @required($cp['obrigatorio'])>{{ $old }}</textarea>
+                        @error("participantes.{$i}.{$cp['chave']}")<small class="erro">{{ $message }}</small>@enderror</div>
+                    @else
+                      <div class="campo {{ $largo ? 'col-8' : 'col-4' }}"><label>{{ $cp['rotulo'] }}@if ($cp['obrigatorio']) <span class="obrigatorio">*</span>@endif</label>
+                        <input name="{{ $nomeCampo }}" type="{{ $tipoInput }}" value="{{ $old ?? $pre }}" @required($cp['obrigatorio']) @if ($mascara) data-mascara="{{ $mascara }}" inputmode="numeric" @endif @if ($cp['tipo'] === 'uf') maxlength="2" @endif>
+                        @error("participantes.{$i}.{$cp['chave']}")<small class="erro">{{ $message }}</small>@enderror</div>
+                    @endif
+                  @endforeach
+                @else
                 <x-campo nome="participantes[{{ $i }}][nome]" rotulo="Nome do participante" obrigatorio classe="col-8" :valor="$i === 0 ? $comprador?->nome : null" />
                 <x-campo nome="participantes[{{ $i }}][cpf]" rotulo="CPF" :obrigatorio="$evento->exige_cpf_participante" classe="col-4" data-mascara="cpf" inputmode="numeric" />
+                @endif
               </div>
             </div>
           @endfor

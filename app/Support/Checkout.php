@@ -263,6 +263,8 @@ class Checkout
             $numero = (int) DB::table('evento')->where('id', $p->evento_id)->value('ultimo_numero_ingresso') - $total;
             $participantes = json_decode((string) ($p->dados_participantes ?? Cache::get('pedido_participantes_'.$p->id) ?? '[]'), true) ?: [];
             $comprador = Comprador::find($p->comprador_id);
+            $eventoPedido = Evento::withoutGlobalScopes()->find($p->evento_id);
+            $campos = Formularios::ativo() ? Formularios::campos(Formularios::doEvento($eventoPedido)) : [];
             $i = 0;
             foreach ($itens as $it) {
                 $valorUnit = round((float) $it->preco_unitario - (float) $it->desconto_unitario + ((float) $p->valor_taxa_servico > 0 ? (float) $it->taxa_unitaria : 0), 2);
@@ -274,12 +276,7 @@ class Checkout
                     ]);
                     $pp = $participantes[$i] ?? ['nome' => $comprador?->nome ?? 'Participante', 'cpf' => null];
                     $eleMesmo = $i === 0 && $comprador && mb_strtolower($pp['nome']) === mb_strtolower($comprador->nome);
-                    Participante::create([
-                        'ingresso_id' => $ing->id, 'organizador_id' => $p->organizador_id, 'evento_id' => $p->evento_id,
-                        'nome' => $pp['nome'], 'cpf' => $pp['cpf'] ?? null, 'email' => $i === 0 ? $comprador?->email : null,
-                        'mesmo_que_comprador' => $eleMesmo,
-                    ]);
-                    CadastroPessoa::registrar($pp['cpf'] ?? null, $pp['nome'], $eleMesmo ? $comprador->email : null, $eleMesmo ? $comprador->telefone : null, 'compra');
+                    Formularios::criarParticipante($p->organizador_id, $p->evento_id, $ing->id, $pp, $campos, $comprador, $i, 'compra');
                 }
             }
             DB::table('pedido')->where('id', $p->id)->update(['status' => 'pago', 'pago_em' => now(), 'metodo_pagamento' => $metodo]

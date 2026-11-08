@@ -53,6 +53,7 @@ class InscricaoController extends Controller
             'evento' => $evento, 'selecao' => $selecao, 'termos' => $termos,
             'comprador' => Auth::guard('comprador')->user(), 'chave' => (string) Str::uuid(),
             'cupom' => $request->session()->get('cupom_divulgacao'),
+            'campos' => \App\Support\Formularios::ativo() ? \App\Support\Formularios::campos(\App\Support\Formularios::doEvento($evento)) : null,
         ]);
     }
 
@@ -67,6 +68,14 @@ class InscricaoController extends Controller
             'participantes' => ['required', 'array', 'size:'.$total],
             'participantes.*.nome' => ['required', 'string', 'max:150'],
             'participantes.*.cpf' => $evento->exige_cpf_participante ? ['required', new DocumentoValido('PF')] : ['nullable', new DocumentoValido('PF')],
+        ];
+        // Formulário de inscrição do evento (V015): as regras de cada campo vêm dele.
+        $campos = \App\Support\Formularios::campos(\App\Support\Formularios::doEvento($evento));
+        if (\App\Support\Formularios::ativo()) {
+            unset($regras['participantes.*.cpf']);
+            $regras = array_merge($regras, \App\Support\Formularios::regras($campos));
+        }
+        $regras += [
             'aceites' => ['required', 'array'],
             'aceites.*' => ['accepted'],
             'cupom' => ['nullable', 'string', 'max:30'],
@@ -79,7 +88,7 @@ class InscricaoController extends Controller
             'email.unique' => 'Já existe uma conta com este e-mail. Entre em “Meus ingressos” para continuar.',
             'participantes.*.nome.required' => 'Informe o nome de cada participante.',
             'participantes.*.cpf.required' => 'Este evento exige o CPF de cada participante.',
-        ], ['participantes.*.cpf' => 'CPF do participante']);
+        ], ['participantes.*.cpf' => 'CPF do participante'] + \App\Support\Formularios::nomes($campos));
 
         $termos = Termo::vigente()->whereIn('tipo', self::TERMOS)->get();
         if ($termos->count() < count(self::TERMOS) || $termos->contains(fn ($t) => ! isset($dados['aceites'][$t->tipo]))) {
@@ -93,9 +102,9 @@ class InscricaoController extends Controller
 
         $cupom = $this->cupomValido($evento, $dados['cupom'] ?? null);
 
-        $participantes = collect($dados['participantes'])->values()->map(fn ($p) => [
-            'nome' => trim($p['nome']), 'cpf' => Documento::digitos($p['cpf'] ?? '') ?: null,
-        ]);
+        $participantes = collect($dados['participantes'])->values()->map(fn ($p) => \App\Support\Formularios::ativo()
+            ? \App\Support\Formularios::normalizar($campos, $p) + ['cpf' => null]
+            : ['nome' => trim($p['nome']), 'cpf' => Documento::digitos($p['cpf'] ?? '') ?: null]);
         $this->conferirLimitePorCpf($evento, $participantes);
 
         if ($selecao->contains(fn ($s) => (float) $s['lote']->preco > 0)) {
@@ -103,7 +112,7 @@ class InscricaoController extends Controller
         }
 
         try {
-            $pedido = DB::transaction(function () use ($evento, $selecao, $total, $participantes, $termos, $dados, $request, $comprador, $cupom) {
+            $pedido = DB::transaction(function () use ($evento, $selecao, $total, $participantes, $termos, $dados, $request, $comprador, $cupom, $campos) {
                 if (! $comprador) {
                     $comprador = Comprador::create([
                         'nome' => $dados['nome'], 'email' => $dados['email'],
@@ -148,15 +157,8 @@ class InscricaoController extends Controller
                             'pedido_item_id' => $item->id, 'lote_id' => $s['lote']->id, 'ingresso_tipo_id' => $s['lote']->ingresso_tipo_id,
                             'numero' => ++$numero, 'codigo_qr' => Ingresso::novoCodigoQr(), 'valor_pago' => 0, 'status' => 'valido',
                         ]);
-                        $p = $participantes[$i];
-                        Participante::create([
-                            'ingresso_id' => $ingresso->id, 'organizador_id' => $evento->organizador_id, 'evento_id' => $evento->id,
-                            'nome' => $p['nome'], 'cpf' => $p['cpf'],
-                            'email' => $i === 0 ? $comprador->email : null,
-                            'mesmo_que_comprador' => $i === 0 && mb_strtolower($p['nome']) === mb_strtolower($comprador->nome),
-                        ]);
-                        $eleMesmo = $i === 0 && mb_strtolower($p['nome']) === mb_strtolower($comprador->nome);
-                        \App\Support\CadastroPessoa::registrar($p['cpf'], $p['nome'], $eleMesmo ? $comprador->email : null, $eleMesmo ? $comprador->telefone : null, 'inscricao');
+                        \App\Support\Formularios::criarParticipante($evento->organizador_id, $evento->id, $ingresso->id, $participantes[$i],
+                            \App\Support\Formularios::ativo() ? $campos : [], $comprador, $i, 'inscricao');
                     }
                 }
 

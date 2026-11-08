@@ -26,6 +26,7 @@ class Evento extends Model
         'visibilidade', 'max_ingressos_pedido', 'max_ingressos_cpf', 'exige_cpf_participante', 'nominal',
         'permite_transferencia', 'transferencia_ate_h', 'permite_reentrada', 'politica_cancelamento', 'criado_por',
         'taxa_comprador', // V010
+        'formulario_id', // V015
     ];
 
     protected function casts(): array

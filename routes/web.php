@@ -136,6 +136,13 @@ Route::get('/cadastro-unico/{cpf}', function (string $cpf) {
 Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () {
     Route::get('/', DashboardController::class)->name('painel');
 
+    Route::get('/formularios', [\App\Http\Controllers\Painel\FormulariosController::class, 'index'])->name('formularios.index');
+    Route::get('/formularios/novo', [\App\Http\Controllers\Painel\FormulariosController::class, 'editar'])->name('formularios.novo');
+    Route::post('/formularios', [\App\Http\Controllers\Painel\FormulariosController::class, 'salvar'])->name('formularios.criar');
+    Route::get('/formularios/{id}', [\App\Http\Controllers\Painel\FormulariosController::class, 'editar'])->name('formularios.editar')->whereNumber('id');
+    Route::post('/formularios/{id}', [\App\Http\Controllers\Painel\FormulariosController::class, 'salvar'])->name('formularios.salvar')->whereNumber('id');
+    Route::post('/formularios/{id}/padrao', [\App\Http\Controllers\Painel\FormulariosController::class, 'padrao'])->name('formularios.padrao')->whereNumber('id');
+    Route::delete('/formularios/{id}', [\App\Http\Controllers\Painel\FormulariosController::class, 'excluir'])->name('formularios.excluir')->whereNumber('id');
     Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro');
     Route::put('/financeiro/mercadopago/propria/{ambiente}', [FinanceiroController::class, 'salvarPropria'])->name('financeiro.mp.propria')->whereIn('ambiente', ['aplicacao', 'teste', 'producao']);
     Route::post('/financeiro/mercadopago/propria/verificar', [FinanceiroController::class, 'verificarPropria'])->name('financeiro.mp.propria.verificar')->middleware('throttle:10,1,mp-propria-verificar');
