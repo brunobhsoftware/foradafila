@@ -158,6 +158,10 @@ const webhook = async (P, id) => {
   ok(reembolsos.length === 1 && reembolsos[0].id === 'ORD1' && reembolsos[0].corpo.transactions[0].amount === '105.00' && reembolsos[0].corpo.transactions[0].id === 'PAYORD1',
     'cancelar 1 ingresso devolve R$ 105 pelo Mercado Pago (devolução parcial da order)');
   ok(sql("SELECT status FROM pagamento WHERE gateway_pedido_id='ORD1'") === 'estorno_parcial' && sql("SELECT status FROM reembolso") === 'concluido', 'pagamento com estorno parcial e devolução concluída');
+  await P.goto(BASE + '/painel/eventos');
+  t = (await P.locator('.evento-painel').first().innerText()).replace(/\s+/g, ' ');
+  ok(t.includes('Valor vendido R$ 210,00') && t.includes('Taxa da plataforma R$ 5,00') && t.includes('Devolvido R$ 105,00') && t.includes('Valor líquido R$ 100,00')
+    && (await P.locator('.evento-painel [data-compartilhar]').count()) === 1, 'Meus eventos: vendido, taxa dos válidos, devolvido, líquido e botão de compartilhar');
   // ---- homologação por empresa ----
   await P.goto(BASE + '/painel/financeiro');
   await P.check('input[name=ambiente_vendas][value=homologacao]', { force: true });

@@ -417,3 +417,18 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 .linha-acoes .lote-form { margin-top: 0 !important; }
 .opcoes-lote--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 900px) { .opcoes-lote--2 { grid-template-columns: 1fr; } }
+
+/* Meus eventos: painel por evento */
+.lista-eventos { display: grid; gap: 14px; padding: 0 18px 18px; }
+.evento-painel { border: 1px solid var(--borda); border-radius: var(--raio-p, 10px); padding: 16px 18px; background: #fff; }
+.evento-painel__topo { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.evento-painel__titulo { font-weight: 700; font-size: 1.05rem; color: var(--tinta); text-decoration: none; display: inline-block; margin-bottom: 2px; }
+.evento-painel__numeros { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }
+.evento-painel__numeros > div { background: #F4F5F7; border-radius: 8px; padding: 10px 12px; display: grid; gap: 2px; }
+.evento-painel__numeros b { font-size: 1.05rem; color: var(--tinta); }
+.evento-painel__numeros small { color: var(--suave); font-size: .75rem; }
+.evento-painel__numeros .destaque { background: #FFF4EC; box-shadow: inset 0 0 0 1px var(--laranja); }
+.evento-painel__link .copiar { display: flex; gap: 8px; flex-wrap: wrap; }
+.evento-painel__link .copiar input { flex: 1 1 260px; min-width: 0; }
+@media (max-width: 1100px) { .evento-painel__numeros { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .evento-painel__numeros { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

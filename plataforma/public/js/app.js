@@ -96,6 +96,13 @@
     sel.addEventListener('change', mostrar); mostrar();
   });
 
+  // Compartilhar o link (menu do celular/navegador; sem ele, copia o link)
+  $$('[data-compartilhar]').forEach((b) => b.addEventListener('click', async () => {
+    const url = b.dataset.compartilhar;
+    if (navigator.share) { try { await navigator.share({ title: b.dataset.titulo || document.title, url }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+    try { await navigator.clipboard.writeText(url); b.textContent = 'Link copiado'; setTimeout(() => { b.textContent = 'Compartilhar'; }, 2000); } catch (e) { window.prompt('Copie o link:', url); }
+  }));
+
   // Botões que mostram/escondem um bloco (ex.: ações do participante)
   $$('[data-alternar]').forEach((b) => b.addEventListener('click', () => {
     const alvo = document.getElementById(b.dataset.alternar);

@@ -29,9 +29,28 @@ class EventoController extends Controller
             ->orderBy('data_inicio')
             ->paginate(15)->withQueryString();
 
-        $indicadores = DB::table('vw_dashboard_evento')->whereIn('evento_id', $eventos->pluck('id'))->get()->keyBy('evento_id');
+        $ids = $eventos->pluck('id');
+        $indicadores = DB::table('vw_dashboard_evento')->whereIn('evento_id', $ids)->get()->keyBy('evento_id');
+        // Valores por evento: vendido (o que os compradores pagaram), descontos, taxa da plataforma, devoluções e líquido.
+        $vendas = DB::table('pedido')->whereIn('evento_id', $ids)->whereIn('status', ['pago', 'reembolso_parcial', 'reembolsado'])
+            ->groupBy('evento_id')->selectRaw('evento_id, SUM(valor_total) AS vendido, SUM(valor_desconto) AS descontos, COUNT(*) AS pedidos')
+            ->get()->keyBy('evento_id');
+        // Taxa só dos ingressos que continuam válidos (a de um ingresso devolvido volta ao comprador junto com o valor).
+        $taxas = DB::table('ingresso as i')->join('pedido_item as pi', 'pi.id', '=', 'i.pedido_item_id')->whereIn('i.evento_id', $ids)
+            ->whereIn('i.status', ['valido', 'utilizado'])->groupBy('i.evento_id')
+            ->selectRaw('i.evento_id, SUM(pi.taxa_unitaria) AS taxa')->pluck('taxa', 'i.evento_id');
+        $devolvido = DB::table('reembolso as r')->join('pedido as p', 'p.id', '=', 'r.pedido_id')->whereIn('p.evento_id', $ids)
+            ->whereIn('r.status', ['aprovado', 'concluido'])->groupBy('p.evento_id')->selectRaw('p.evento_id, SUM(r.valor) AS v')->pluck('v', 'p.evento_id');
+        $valores = $ids->mapWithKeys(function ($id) use ($vendas, $taxas, $devolvido) {
+            $vendido = (float) ($vendas[$id]->vendido ?? 0);
+            $taxa = (float) ($taxas[$id] ?? 0);
+            $dev = (float) ($devolvido[$id] ?? 0);
 
-        return view('painel.eventos.index', compact('eventos', 'indicadores'));
+            return [$id => (object) ['vendido' => $vendido, 'descontos' => (float) ($vendas[$id]->descontos ?? 0), 'taxa' => $taxa,
+                'devolvido' => $dev, 'liquido' => round($vendido - $taxa - $dev, 2), 'pedidos' => (int) ($vendas[$id]->pedidos ?? 0)]];
+        });
+
+        return view('painel.eventos.index', compact('eventos', 'indicadores', 'valores'));
     }
 
     public function create()

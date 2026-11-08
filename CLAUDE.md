@@ -82,6 +82,11 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - Recusas dos triggers (SQLSTATE 45000) viram erro de formulário via `App\Support\RegraDoBanco::executar()`.
 - Toda ação relevante grava em `auditoria` via `App\Support\Auditoria::registrar()`.
 - Datas: banco em UTC; tela em `America/Sao_Paulo` (helpers `data_local`, `para_input_data`, `utc_de_local`).
+- **Meus eventos** (decisão do Bruno, 08/11/2026): cada evento num painel (`.evento-painel`): nome, local, início–fim, status, Abrir/Editar;
+  números — ingressos vendidos/ofertados, valor vendido (Σ `pedido.valor_total` pago/reembolso parcial/reembolsado), descontos,
+  taxa da plataforma (só dos ingressos válidos/utilizados), devolvido (`reembolso` aprovado/concluído) e **valor líquido**
+  (vendido − taxa − devoluções); link público com Copiar, Compartilhar (`data-compartilhar`: `navigator.share` ou copia) e WhatsApp.
+  Sem a coluna Capacidade.
 - Telas prontas (produtor): cadastro, login, convite da equipe, troca de organização, painel, **Meus eventos**
   (lista, novo, editar, publicar/pausar/encerrar/cancelar, link da página pública), tipos de ingresso e lotes,
   equipe, níveis de acesso, dados da organização, Pedidos, Participantes, Check-in, Cupons, Convidados, Mensagens e Financeiro.
