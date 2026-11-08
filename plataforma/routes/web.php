@@ -81,6 +81,8 @@ Route::middleware('auth')->group(function () {
 });
 
 // ---------- Avisos das operadoras de pagamento (sem login e sem CSRF) ----------
+Route::get('/pedido/{pedido}/pagamento', [\App\Http\Controllers\Publico\PagamentoController::class, 'retorno'])->name('pedido.retorno')
+    ->whereUuid('pedido')->middleware('throttle:30,1,pedido-retorno');
 Route::post('/webhooks/mercadopago/{conta}', [WebhookController::class, 'mercadoPagoEmpresa'])->name('webhook.mercadopago.empresa')->whereUuid('conta')
     ->middleware('throttle:120,1,webhook-mp-empresa');
 Route::post('/webhooks/mercadopago', [WebhookController::class, 'mercadoPago'])->name('webhook.mercadopago')
@@ -96,6 +98,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/mercadopago', [\App\Http\Controllers\Admin\AdminController::class, 'mercadoPago'])->name('mercadopago');
     Route::post('/usuarios/{usuario}/senha', [\App\Http\Controllers\Admin\EmpresasController::class, 'enviarSenha'])->name('empresas.senha')->middleware('throttle:20,10,admin-senha');
     Route::put('/usuarios/{usuario}/email', [\App\Http\Controllers\Admin\EmpresasController::class, 'corrigirEmail'])->name('empresas.email');
+    Route::put('/mercadopago/vendas', [\App\Http\Controllers\Admin\AdminController::class, 'vendasTeste'])->name('mercadopago.vendas');
+    Route::get('/repasses', [\App\Http\Controllers\Admin\RepassesController::class, 'index'])->name('repasses');
+    Route::post('/repasses/{organizador}', [\App\Http\Controllers\Admin\RepassesController::class, 'registrar'])->name('repasses.registrar');
     Route::get('/emails', [\App\Http\Controllers\Admin\AdminController::class, 'emails'])->name('emails');
     Route::get('/banco', [\App\Http\Controllers\Admin\AdminController::class, 'banco'])->name('banco');
     Route::post('/banco', [\App\Http\Controllers\Admin\AdminController::class, 'aplicarBanco'])->name('banco.aplicar')->middleware('throttle:10,10,admin-banco');

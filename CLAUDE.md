@@ -23,6 +23,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V010__taxa_servico_comprador.sql` | Quem paga a taxa: `organizador.taxa_comprador` (padrão), `evento.taxa_comprador` (NULL = padrão), `pedido.valor_taxa_servico`, `pedido_item.taxa_unitaria`. Idempotente. Aplicado em produção em 08/11/2026 ("V010 ok") |
 | `banco/V011__cadastro_unico_pessoa.sql` | Cadastro único de pessoas (`pessoa`, chave CPF: nome, e-mail, telefone, origem). Idempotente. Aplicado em produção em 08/11/2026 ("V011 ok") |
 | `banco/V012__recebimento_pela_plataforma.sql` | Recebimento pela plataforma: `organizador.pix_tipo/pix_chave/recebimento_preferido`, `conta_pagamento.modo` (direta/plataforma), tabela `repasse`, `pagamento.repasse_id`; `organizador.recebimento_modo` e colunas da aplicação própria em `conta_pagamento` (client_id, segredos e token de teste criptografados). Idempotente. Aplicado em produção em 08/11/2026 ("V012 ok") |
+| `banco/V013__checkout_pago.sql` | Checkout pago: `pedido.dados_participantes` (JSON até o pagamento ser aprovado) e `ck_pedido_valores` passa a somar `valor_taxa_servico`. Idempotente. **Ainda não aplicado** |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
@@ -93,7 +94,24 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - **Inscrição gratuita real** (`InscricaoController`): só lotes com preço 0. Baixa de estoque por UPDATE condicional,
   numeração por `evento.ultimo_numero_ingresso`, `codigo_qr` 256 bits + HMAC (`Ingresso::conteudoQr()`),
   participante por ingresso, aceite de `compra_comprador` e `privacidade`, chave de idempotência.
-  Lotes pagos aparecem com preço e "venda online em breve" — sem botão de compra.
+  Lotes pagos: vendidos pelo **checkout pago** (abaixo) quando a organização tem conta de recebimento ativa; senão "venda online em breve".
+- **Checkout pago** (`App\Support\Checkout`, 08/11/2026): a mesma tela de inscrição vira "Comprar ingresso" com o resumo (preço + taxa
+  repassada) e "Ir para o pagamento". `InscricaoController::reservarPago` reserva o estoque (`lote.reservado`, UPDATE condicional) por
+  `RESERVA_MIN` (30) min, cria o pedido `aguardando_pagamento` (participantes em `dados_participantes`; `pedido_item.taxa_unitaria` =
+  taxa da plataforma por ingresso, sempre; `subtotal` = (preço − desconto) × qtd; a taxa repassada fica em `pedido.valor_taxa_servico`),
+  cria a **order** (API de Orders, SDK) com o token da conta de recebimento (`Checkout::token`: aplicação da BH para `plataforma`,
+  Access Token da empresa para `propria`) e redireciona ao `checkout_url`. Linha em `pagamento` (order id, comissão = Σ taxa_unitaria,
+  líquido do produtor). Confirmação por **webhook** (`WebhookController::processar` → `Checkout::sincronizar`) e pelo **retorno**
+  `/pedido/{uuid}/pagamento` (consulta a order na API, não confia na URL): `processed`/`accredited` → `aprovar()` (reserva vira venda,
+  numera, emite ingressos e participantes, cadastro único, e-mails; idempotente com lock); recusado/cancelado/expirado → `liberar()`.
+  Reserva vencida volta ao estoque sem cron (`liberarVencidas`, ao abrir o evento/comprar; confere antes no MP porque Pix pode ter sido
+  pago). Pago depois de a reserva vencer e o lote esgotar → pedido cancelado + pagamento "devolver ao comprador". "Meus ingressos" mostra
+  pedido aguardando com "Pagar ou conferir pagamento". **Administração → Mercado Pago → "Vendas em modo de teste"** (`mp_vendas_teste`):
+  o checkout usa as credenciais de teste. **Repasses** (`/admin/repasses`, `App\Support\Repasses`): por produtora, liberado (fim do
+  evento + 3 dias úteis), aguardando e taxa; "Registrar repasse" (data, E2E/TED) grava `repasse` e fecha os pagamentos (`repasse_id`).
+  Financeiro da produtora mostra o **extrato** (vendas, taxa, liberado, aguardando, repasses recebidos). Ainda não: reembolso pela API,
+  parcelamento configurável, cupom de desconto no checkout pago já aplica o desconto (`Cupom::desconto`). Teste `fluxo-checkout.js`
+  (26, porta 8001 + MP falso).
 - Sem cron ainda: lote `agendado` abre quando chega `venda_inicio`; lote com `lote_anterior_id` só abre quando o
   anterior esgota, encerra ou passa do fim (`EventoPublicoController::loteAVenda`).
 - **Imagem de divulgação do evento** (opcional): JPEG/GIF/PNG até 2 MB, recomendada 1600 x 838, campo "clique ou

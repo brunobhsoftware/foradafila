@@ -10,6 +10,8 @@
 @php
     $org = $evento->organizador;
     $gratuitos = $aVenda->filter(fn ($l) => (float) $l->preco === 0.0);
+    $vendePago = $vendePago ?? false;
+    $compraveis = $aVenda->filter(fn ($l) => (float) $l->preco === 0.0 || $vendePago);
     $max = $evento->max_ingressos_pedido;
 @endphp
 
@@ -100,7 +102,7 @@
                       @elseif ($lote->venda_inicio->isFuture()) vendas a partir de {{ data_local($lote->venda_inicio, 'd/m H:i') }}
                       @elseif ($lote->lote_anterior_id && $evento->status === 'publicado') abre quando o lote anterior encerrar
                       @else indisponível @endif
-                  @elseif (! $gratis) · venda online em breve
+                  @elseif (! $gratis && ! $vendePago) · venda online em breve
                   @else · até {{ data_local($lote->venda_fim, 'd/m H:i') }} @endif
                 </small>
               </div>
@@ -108,7 +110,7 @@
                 @php $tx = $gratis ? null : \App\Support\TaxaServico::paraPreco($evento, (float) $lote->preco, $evento->organizador); @endphp
                 <span class="pub-preco">{{ $gratis ? 'Grátis' : moeda($tx['comprador_paga']) }}
                   @if ($tx && $tx['repassada'] && $tx['taxa'] > 0)<small class="pub-preco__taxa">{{ moeda($tx['preco']) }} + {{ moeda($tx['taxa']) }} de taxa</small>@endif</span>
-                @if ($disponivel && $gratis && $limite >= $lote->min_por_pedido)
+                @if ($disponivel && ($gratis || $vendePago) && $limite >= $lote->min_por_pedido)
                   <div style="margin-top:6px">
                     <label class="oculto-visual" for="q_{{ $lote->uuid }}">Quantidade de {{ $lote->nome }}</label>
                     <select id="q_{{ $lote->uuid }}" name="q[{{ $lote->uuid }}]">
@@ -121,12 +123,12 @@
             </div>
           @endforeach
 
-          @if ($gratuitos->isNotEmpty())
-            <button class="botao botao--amarelo botao--largo" style="margin-top:16px">Garantir ingresso</button>
-            <p style="margin:10px 0 0"><small>Sem taxa para você. Ingresso digital com QR Code em “Meus ingressos”.</small></p>
+          @if ($compraveis->isNotEmpty())
+            <button class="botao botao--amarelo botao--largo" style="margin-top:16px">{{ $compraveis->count() > $gratuitos->count() ? 'Comprar ingresso' : 'Garantir ingresso' }}</button>
+            <p style="margin:10px 0 0"><small>Ingresso digital com QR Code em “Meus ingressos”.@if ($compraveis->count() > $gratuitos->count()) Pagamento seguro pelo Mercado Pago (Pix ou cartão).@endif</small></p>
           @endif
         </form>
-        @if ($aVenda->isNotEmpty() && $gratuitos->count() < $aVenda->count())
+        @if (! $vendePago && $aVenda->isNotEmpty() && $gratuitos->count() < $aVenda->count())
           <p style="margin:14px 0 0"><small><b>Ingressos pagos:</b> a compra online está em desenvolvimento e ainda não é possível pagar pelo site.</small></p>
         @endif
       @endif

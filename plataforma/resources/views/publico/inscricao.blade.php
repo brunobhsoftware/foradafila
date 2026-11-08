@@ -1,7 +1,16 @@
 @extends('layouts.publico')
 @section('titulo', 'Garantir ingresso — '.$evento->titulo)
 
-@php $total = $selecao->sum('quantidade'); $i = 0; @endphp
+@php
+    $total = $selecao->sum('quantidade'); $i = 0;
+    $pago = $selecao->contains(fn ($s) => (float) $s['lote']->preco > 0);
+    $linhas = $selecao->map(function ($s) use ($evento) {
+        $preco = (float) $s['lote']->preco;
+        $tx = $preco > 0 ? \App\Support\TaxaServico::paraPreco($evento, $preco, $evento->organizador) : null;
+        return $s + ['unit' => $tx ? $tx['comprador_paga'] : 0, 'taxa' => $tx && $tx['repassada'] ? $tx['taxa'] : 0, 'preco' => $preco];
+    });
+    $valorTotal = $linhas->sum(fn ($l) => $l['unit'] * $l['quantidade']);
+@endphp
 
 @section('conteudo')
 <section class="pub-secao">
@@ -12,7 +21,7 @@
       @foreach ($selecao as $s)<input type="hidden" name="q[{{ $s['lote']->uuid }}]" value="{{ $s['quantidade'] }}">@endforeach
 
       <div class="pub-trilha" style="margin-bottom:4px"><a href="{{ route('evento.publico', $evento->slug) }}" style="color:var(--laranja)">‹ Voltar ao evento</a></div>
-      <h1 style="font-size:1.7rem;margin-bottom:18px">Garantir ingresso</h1>
+      <h1 style="font-size:1.7rem;margin-bottom:18px">{{ $pago ? 'Comprar ingresso' : 'Garantir ingresso' }}</h1>
 
       <h2 style="font-size:1.15rem">1. Seus dados</h2>
       @if ($comprador)
@@ -56,17 +65,23 @@
         <small>O ingresso é emitido pelo organizador <b>{{ $evento->organizador->nomeExibicao() }}</b>, responsável pelo evento.</small>
       </div>
 
-      <button class="botao botao--amarelo botao--largo">Confirmar inscrição gratuita</button>
+      @if ($pago)
+        <button class="botao botao--amarelo botao--largo">Ir para o pagamento — {{ moeda($valorTotal) }}</button>
+        <p style="margin:10px 0 0;text-align:center"><small>Você será levado ao Mercado Pago (Pix ou cartão). Os ingressos ficam reservados por {{ \App\Support\Checkout::RESERVA_MIN }} minutos e são emitidos assim que o pagamento é aprovado. Cupom de desconto é aplicado no total.</small></p>
+      @else
+        <button class="botao botao--amarelo botao--largo">Confirmar inscrição gratuita</button>
+      @endif
     </form>
 
     <aside class="pub-cartao pub-compra">
       <small>Resumo</small>
       <h2 style="font-size:1.2rem;margin:4px 0 6px">{{ $evento->titulo }}</h2>
       <p style="margin:0 0 12px"><small>{{ data_local($evento->data_inicio, 'd/m/Y \à\s H:i') }} · {{ $evento->local?->enderecoCurto() ?? \App\Models\Evento::FORMATOS[$evento->formato] }}</small></p>
-      @foreach ($selecao as $s)
-        <div class="pub-lote"><div><b>{{ $s['quantidade'] }} × {{ $s['lote']->tipo->nome }}</b><small>{{ $s['lote']->nome }}</small></div><span class="pub-preco">Grátis</span></div>
+      @foreach ($linhas as $s)
+        <div class="pub-lote"><div><b>{{ $s['quantidade'] }} × {{ $s['lote']->tipo->nome }}</b><small>{{ $s['lote']->nome }}@if ($s['taxa'] > 0) · {{ moeda($s['preco']) }} + {{ moeda($s['taxa']) }} de taxa @endif</small></div>
+          <span class="pub-preco">{{ $s['preco'] > 0 ? moeda($s['unit'] * $s['quantidade']) : 'Grátis' }}</span></div>
       @endforeach
-      <div class="pub-lote" style="border-top:1px solid var(--borda)"><b>Total</b><span class="pub-preco">R$ 0,00</span></div>
+      <div class="pub-lote" style="border-top:1px solid var(--borda)"><b>Total</b><span class="pub-preco">{{ moeda($valorTotal) }}</span></div>
     </aside>
   </div>
 </section>

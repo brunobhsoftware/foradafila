@@ -33,6 +33,12 @@ class Esquema
         return self::$cache['v010'] ??= Schema::hasColumn('organizador', 'taxa_comprador') && Schema::hasColumn('evento', 'taxa_comprador');
     }
 
+    /** V013: participantes guardados no pedido até o pagamento ser aprovado. */
+    public static function temV013(): bool
+    {
+        return self::$cache['v013'] ??= Schema::hasColumn('pedido', 'dados_participantes');
+    }
+
     /** V012: recebimento pela plataforma (Pix/conta do produtor, conta_pagamento.modo, repasse). */
     public static function temV012(): bool
     {

@@ -38,6 +38,10 @@
             <small>Pedido <b>{{ $pedido->codigo }}</b> · {{ data_local($pedido->criado_em, 'd/m/Y') }} · {{ $pedido->ehGratuito() ? 'Gratuito' : moeda($pedido->valor_total) }}</small>
           </div>
         </div>
+        @if ($pedido->status === 'aguardando_pagamento')
+          <p style="margin:10px 0"><small>Aguardando o pagamento. Os ingressos são emitidos assim que o Mercado Pago confirmar.</small>
+            <a href="{{ route('pedido.retorno', $pedido->uuid) }}" class="botao botao--amarelo botao--pequeno">Pagar ou conferir pagamento</a></p>
+        @endif
         <div class="pub-pedido__ingressos">
           @foreach ($pedido->ingressos as $ingresso)
             <div>

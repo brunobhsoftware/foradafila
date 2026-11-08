@@ -198,6 +198,15 @@ class AdminController extends Controller
         return redirect()->route('admin.banco')->with('ok', "{$arquivo} aplicado ({$n} comando(s)). Recarregue as telas do painel para ver as novidades.");
     }
 
+    public function vendasTeste(Request $request)
+    {
+        $teste = $request->boolean('vendas_teste');
+        DB::table('parametro_sistema')->updateOrInsert(['chave' => 'mp_vendas_teste'], ['valor' => $teste ? '1' : '0', 'descricao' => 'Checkout das páginas de evento com as credenciais de teste']);
+        Auditoria::registrar('plataforma.mercadopago_vendas_teste', $request->user(), null, ['teste' => $teste]);
+
+        return back()->with('ok', $teste ? 'Vendas em modo de teste: o checkout usa as credenciais de teste.' : 'Vendas reais: o checkout usa as credenciais de produção.');
+    }
+
     public function mercadoPago()
     {
         return view('admin.mercadopago', ['credenciais' => MercadoPago::situacaoCredenciais(), 'configurado' => MercadoPago::configurado(), 'pkce' => MercadoPago::usaPkce(),

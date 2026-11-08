@@ -61,7 +61,32 @@ class WebhookController extends Controller
             'erro' => $valida ? ($origem === 'teste' ? 'Assinatura de teste' : null) : 'Assinatura ausente ou inválida',
         ]);
 
+        if ($valida) {
+            $this->processar($dataId, (string) (data_get($corpo, 'type') ?? $request->query('type') ?? ''), $idExterno);
+        }
+
         // 200 mesmo com assinatura inválida (só é registrado e ignorado), para não revelar a conferência.
         return response()->json(['ok' => true]);
+    }
+
+    /** Order (ou pagamento de uma order) do checkout: acha o pedido e sincroniza com a API. */
+    private function processar(string $recursoId, string $tipo, string $idExterno): void
+    {
+        if ($recursoId === '') {
+            return;
+        }
+        try {
+            $pg = DB::table('pagamento')->where(fn ($q) => $q->where('gateway_pedido_id', $recursoId)->orWhere('gateway_pagamento_id', $recursoId))
+                ->orderByDesc('id')->first();
+            if ($pg) {
+                $pedido = \App\Models\Pedido::withoutGlobalScopes()->find($pg->pedido_id);
+                \App\Support\Checkout::sincronizar($pedido);
+                DB::table('webhook_evento')->where('id_evento_externo', mb_substr($idExterno, 0, 150))
+                    ->update(['status' => 'processado', 'processado_em' => now(), 'pagamento_id' => $pg->id]);
+            }
+        } catch (\Throwable $e) {
+            report($e);
+            DB::table('webhook_evento')->where('id_evento_externo', mb_substr($idExterno, 0, 150))->update(['status' => 'erro', 'erro' => mb_substr($e->getMessage(), 0, 255)]);
+        }
     }
 }

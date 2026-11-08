@@ -34,13 +34,16 @@ class EventoPublicoController extends Controller
         self::guardarCupom();
         $evento = self::buscar($slug);
         $tenant->definir($evento->organizador);
+        \App\Support\Checkout::liberarVencidas($evento->id); // reservas de pagamento vencidas voltam ao estoque
         $evento->load(['local', 'categoria', 'tipos' => fn ($q) => $q->where('ativo', 1), 'tipos.lotes']);
 
         // Só os lotes públicos aparecem; ocultos e de convidados dependem de link próprio (fase futura).
         $lotes = $evento->tipos->flatMap->lotes->where('visibilidade', 'publico')->values();
         $aVenda = $lotes->filter(fn ($l) => self::loteAVenda($evento, $l));
 
-        return view('publico.evento', compact('evento', 'lotes', 'aVenda'));
+        $vendePago = (bool) \App\Support\Checkout::contaDoEvento($evento);
+
+        return view('publico.evento', compact('evento', 'lotes', 'aVenda', 'vendePago'));
     }
 
     public function organizador(string $slug)

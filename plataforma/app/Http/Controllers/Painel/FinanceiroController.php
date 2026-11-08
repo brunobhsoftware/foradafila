@@ -29,6 +29,8 @@ class FinanceiroController extends Controller
             'recebimento' => \App\Support\Recebimento::conta($org->id),
             'propria' => \App\Support\Esquema::temV012() ? \App\Support\Recebimento::conta($org->id, 'propria') : null,
             'verificacao' => session('verificacao_mp'),
+            'saldo' => \App\Support\Esquema::temV012() ? \App\Support\Repasses::resumo($org->id) : null,
+            'repasses' => \App\Support\Esquema::temV012() ? DB::table('repasse')->where('organizador_id', $org->id)->orderByDesc('id')->limit(20)->get() : collect(),
             'conexaoDireta' => (bool) config('pagamentos.mercadopago.conexao_direta'),
             'conta' => $conta,
             'configurado' => MercadoPago::configurado(),
