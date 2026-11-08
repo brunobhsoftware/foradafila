@@ -35,8 +35,11 @@
                                     @csrf <button class="botao botao--escuro botao--pequeno" title="Gera um novo link (o anterior deixa de valer) e envia por e-mail">Reenviar convite</button>
                                 </form>
                             @endif
-                            <details class="painel-recolhivel" style="display:inline-block"><summary class="botao botao--contorno botao--pequeno">Alterar</summary>
-                                <form method="post" action="{{ route('equipe.update', $v) }}" style="text-align:left;min-width:min(380px,80vw)" class="pilha">
+                            <button type="button" class="botao botao--contorno botao--pequeno" data-alternar="vinculo-{{ $v->id }}">Alterar</button>
+                        </td>
+                    </tr>
+                    <tr class="linha-acoes" id="vinculo-{{ $v->id }}" hidden><td colspan="5">
+                                <form method="post" action="{{ route('equipe.update', $v) }}" class="pilha">
                                     @csrf @method('PUT')
                                     @include('painel.equipe.campos-acesso', ['perfilAtual' => $v->perfil_id, 'todos' => $v->todos_eventos, 'marcados' => $v->eventos->pluck('id')->all(), 'sufixo' => $v->id])
                                     @if ($v->status === 'convidado')
@@ -51,9 +54,7 @@
                                         <form method="post" action="{{ route('equipe.destroy', $v) }}" data-confirmar="Remover {{ $v->usuario->nome }} da equipe?">@csrf @method('DELETE')<button class="botao botao--perigo botao--pequeno">Remover</button></form>
                                     @endunless
                                 </div>
-                            </details>
-                        </td>
-                    </tr>
+                    </td></tr>
                 @endforeach
                 </tbody>
             </table>

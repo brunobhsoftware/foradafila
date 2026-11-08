@@ -383,7 +383,8 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 .acoes-linha { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .acoes-linha form { margin: 0; }
 @media (max-width: 900px) { .faixa-impersonacao { top: 52px; padding: 10px 16px; } }
-.linha-acoes > td { background: var(--fundo); padding: 16px 20px; }
+.linha-acoes > td { background: #F4F5F7; padding: 18px 22px; border-left: 3px solid var(--laranja); box-shadow: inset 0 1px 0 #E4E7EC, inset 0 -1px 0 #E4E7EC; }
+/* Regra do painel: toda edição de item de lista abre ABAIXO da linha, em largura total, nesta moldura cinza (nunca ao lado). */
 .linha-acoes__grade { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 24px; }
 .linha-acoes__titulo { margin: 0 0 8px; font-weight: 600; color: var(--tinta); }
 @media (max-width: 900px) { .linha-acoes__grade { grid-template-columns: 1fr; } }
