@@ -71,6 +71,20 @@ class SenhaController extends Controller
         }
         $conta->save();
 
+        if ($conta instanceof Usuario) {
+            // Quem foi convidado e criou a senha pelo "Esqueci a senha" provou ter o e-mail: o convite pendente (não vencido)
+            // vale como aceito, senão o login seria recusado ("acesso não está ativo em nenhuma organização").
+            $pendentes = \App\Models\OrganizadorUsuario::withoutGlobalScopes()->where('usuario_id', $conta->id)->where('status', 'convidado')
+                ->where(fn ($q) => $q->whereNull('convite_expira_em')->orWhere('convite_expira_em', '>', now()))->get();
+            foreach ($pendentes as $v) {
+                $v->forceFill(['status' => 'ativo', 'convite_token_hash' => null, 'convite_expira_em' => null])->save();
+                \App\Support\Auditoria::registrar('equipe.aceitar_convite', $v, null, ['via' => 'nova_senha']);
+            }
+            if ($pendentes->isNotEmpty() && ! $conta->email_verificado_em) {
+                $conta->forceFill(['email_verificado_em' => now()])->save();
+            }
+        }
+
         return redirect()->route(self::AREAS[$area]['login'])->with('ok', 'Senha alterada. Entre com a nova senha.');
     }
 
