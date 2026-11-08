@@ -27,6 +27,17 @@ class CancelamentoIngressos
             return ['cancelados' => 0, 'valor' => 0.0];
         }
         $valor = round((float) $alvos->sum('valor_pago'), 2);
+        // Pago pelo checkout do Mercado Pago: devolve pela API antes de cancelar (se falhar, nada é cancelado).
+        if ($valor > 0) {
+            try {
+                if (Checkout::reembolsar($pedido, $valor)) {
+                    $devolvido = true;
+                    $observacao = trim(($observacao ? $observacao.' — ' : '').'Devolvido pelo Mercado Pago');
+                }
+            } catch (\Throwable $e) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['cancelar' => 'Não foi possível devolver pelo Mercado Pago: '.$e->getMessage().' Nada foi cancelado.']);
+            }
+        }
 
         DB::transaction(function () use ($pedido, $alvos, $motivo, $observacao, $devolvido, $valor) {
             foreach ($alvos->groupBy('lote_id')->sortKeys() as $loteId => $grupo) {

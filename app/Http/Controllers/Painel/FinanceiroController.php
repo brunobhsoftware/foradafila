@@ -28,6 +28,8 @@ class FinanceiroController extends Controller
             'v012' => \App\Support\Esquema::temV012(),
             'recebimento' => \App\Support\Recebimento::conta($org->id),
             'temPropria' => \App\Support\Esquema::temPropria(),
+            'homologacao' => \App\Support\Checkout::modoTeste($org->id),
+            'homologacaoGeral' => \App\Support\Checkout::modoTeste(null),
             'propria' => ! \App\Support\Esquema::temPropria() ? null : (Gate::allows('financeiro.contas') ? \App\Support\Recebimento::contaPropria($org) : \App\Support\Recebimento::conta($org->id, 'propria')),
             'verificacao' => session('verificacao_mp'),
             'saldo' => \App\Support\Esquema::temV012() ? \App\Support\Repasses::resumo($org->id) : null,
@@ -208,6 +210,21 @@ class FinanceiroController extends Controller
 
         return view('painel.financeiro.teste-link', ['link' => $order['checkout_url'] ?? '', 'valor' => (float) $valor,
             'teste' => $ambiente === 'teste', 'orderId' => $order['id'], 'empresa' => $org->nomeExibicao(), 'linkSandbox' => null]);
+    }
+
+    /** Ambiente das vendas da empresa: produção (cobrança real) ou homologação (credenciais de teste, nada é cobrado). */
+    public function ambienteVendas(Request $request)
+    {
+        Gate::authorize('financeiro.contas');
+        $teste = $request->validate(['ambiente_vendas' => ['required', 'in:producao,homologacao']])['ambiente_vendas'] === 'homologacao';
+        $org = app(Tenant::class)->id();
+        DB::table('parametro_sistema')->updateOrInsert(['chave' => 'mp_vendas_teste_org_'.$org],
+            ['valor' => $teste ? '1' : '0', 'descricao' => 'Vendas da organização '.$org.' em homologação (credenciais de teste)']);
+        Auditoria::registrar('financeiro.ambiente_vendas', \App\Models\Organizador::findOrFail($org), null, ['homologacao' => $teste]);
+
+        return back()->with('ok', $teste
+            ? 'Vendas em HOMOLOGAÇÃO: as compras usam as credenciais de teste e nada é cobrado. Pague com a conta compradora de teste.'
+            : 'Vendas em PRODUÇÃO: as compras passam a ser cobradas de verdade.');
     }
 
     /** Escolhe como as vendas são recebidas: pela plataforma (repasse) ou na aplicação própria da empresa. */
