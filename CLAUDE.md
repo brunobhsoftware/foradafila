@@ -76,6 +76,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 
 - Laravel 12, PHP 8.3, Blade + CSS próprio (`public/css/app.css`) + JS puro (`public/js/app.js`). **Sem Vite/npm.**
 - Sem migrations do Laravel: as tabelas vêm dos scripts `banco/V0xx`. Sessão, cache e fila em arquivo/sync.
+  **Sessões em `FF_ARMAZENAMENTO/sessoes`** (fora do public_html, 08/11/2026): a publicação apagava `storage/framework/sessions` e dava 419
+  no meio da compra. Um 419 que ainda aconteça volta ao formulário com os dados e o aviso "sessão expirou" (`bootstrap/app.php`).
 - Auth no model `Usuario` (tabela `usuario`, coluna `senha_hash`). Login bloqueia 15 min após 5 erros.
 - Multi-organizador: `App\Support\Tenant` + trait `PertenceAoOrganizador` (escopo global, **falha fechada**: sem
   organizador definido a consulta não retorna nada). O middleware `organizador` roda antes do route model binding.

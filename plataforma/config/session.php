@@ -60,7 +60,9 @@ return [
     |
     */
 
-    'files' => storage_path('framework/sessions'),
+    // Em produção, fora do public_html (FF_ARMAZENAMENTO): a publicação substitui o public_html e apagava as
+    // sessões, o que dava "419 página expirada" em quem estava no meio de uma compra.
+    'files' => env('FF_ARMAZENAMENTO') ? rtrim(env('FF_ARMAZENAMENTO'), '/').'/sessoes' : storage_path('framework/sessions'),
 
     /*
     |--------------------------------------------------------------------------

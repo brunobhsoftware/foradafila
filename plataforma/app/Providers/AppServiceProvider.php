@@ -19,6 +19,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $sessoes = config('session.files');
+        if (config('session.driver') === 'file' && $sessoes && ! is_dir($sessoes)) {
+            @mkdir($sessoes, 0750, true);
+        }
+
         // Em desenvolvimento, acusa erro ao preencher coluna fora do $fillable ou ler coluna inexistente.
         Model::preventSilentlyDiscardingAttributes(! $this->app->isProduction());
         Model::preventAccessingMissingAttributes(! $this->app->isProduction());
