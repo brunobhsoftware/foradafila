@@ -12,6 +12,7 @@ const ok = (c, m) => { console.log((c ? 'PASSOU ' : 'FALHOU ') + m); if (!c) pro
 const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
 
 let clientIdUsado = null; let segredoUsado = null; let preferencia = null; let autorizacaoPref = null;
+let agenteOrder = '';
 const falso = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
   if (u.pathname === '/authorization') { clientIdUsado = u.searchParams.get('client_id'); res.writeHead(302, { Location: u.searchParams.get('redirect_uri') + '?error=cancelado&state=' + u.searchParams.get('state') }); return res.end(); }
@@ -30,7 +31,7 @@ const falso = http.createServer((req, res) => {
   }
   let corpo = ''; req.on('data', (d) => { corpo += d; }); req.on('end', () => {
     if (u.pathname === '/v1/orders' && req.method === 'POST') {
-      preferencia = JSON.parse(corpo); autorizacaoPref = req.headers.authorization;
+      preferencia = JSON.parse(corpo); autorizacaoPref = req.headers.authorization; agenteOrder = req.headers['user-agent'] || '';
       res.writeHead(201, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ id: 'ORDTST1', status: 'created', checkout_url: preferencia.config.online.success_url }));
     }
     if (u.pathname === '/checkout/preferences') {
@@ -153,6 +154,7 @@ const falso = http.createServer((req, res) => {
   await P.goto(await P.inputValue('#link-teste'));
   ret = await P.content();
   ok(autorizacaoPref === 'Bearer APP-TOKEN-BH' && preferencia.payer.phone.area_code === '31' && preferencia.payer.phone.number === '988887777' && ret.includes('Produção') && ret.includes('Aprovado'), 'Produção: token da aplicação e telefone do comprador');
+  ok(agenteOrder.includes('MercadoPago DX-PHP SDK'), 'order criada pelo SDK oficial do Mercado Pago (' + agenteOrder + ')');
   ok(preferencia.payer.first_name === 'Maria' && preferencia.payer.last_name === 'Silva', 'nome completo é dividido em nome e sobrenome para o Mercado Pago');
   ok(sql("SELECT CONCAT_WS('|', nome, email, telefone) FROM pessoa WHERE cpf='52998224725'") === 'Maria Silva|comprador@real.test|31988887777', 'cadastro único gravou a pessoa pelo CPF');
   await P.goto(BASE + '/admin/mercadopago');
