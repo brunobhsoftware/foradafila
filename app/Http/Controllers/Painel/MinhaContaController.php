@@ -71,7 +71,7 @@ class MinhaContaController extends Controller
         $request->merge(['email' => mb_strtolower(trim((string) $request->input('email')))]);
         $dados = $request->validate([
             'codigo' => ['required', 'digits:6'],
-            'email' => ['required', 'email', 'max:150', Rule::unique('usuario', 'email')->ignore($usuario->id), Rule::notIn([$usuario->email])],
+            'email' => ['required', 'email:filter', 'max:150', Rule::unique('usuario', 'email')->ignore($usuario->id), Rule::notIn([$usuario->email])],
         ], [
             'codigo.digits' => 'O código tem 6 números.',
             'email.unique' => 'Este e-mail já é usado por outra conta.',

@@ -45,14 +45,14 @@ class CadastroController extends Controller
 
         $dados = $request->validate([
             'nome' => ['required', 'string', 'max:150'],
-            'email' => ['required', 'email', 'max:150', Rule::unique('usuario', 'email')],
+            'email' => ['required', 'email:filter', 'max:150', Rule::unique('usuario', 'email')],
             'telefone' => ['required', 'string', 'max:20'],
             'senha' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
             'tipo_pessoa' => ['required', Rule::in(['PF', 'PJ'])],
             'documento' => ['required', new DocumentoValido($request->input('tipo_pessoa')), Rule::unique('organizador', 'documento')],
             'razao_social' => ['required', 'string', 'max:150'],
             'nome_fantasia' => ['nullable', 'string', 'max:150'],
-            'email_contato' => ['required', 'email', 'max:150'],
+            'email_contato' => ['required', 'email:filter', 'max:150'],
             'cidade' => ['nullable', 'string', 'max:100'],
             'uf' => ['nullable', 'string', 'size:2'],
             'aceites' => ['required', 'array'],

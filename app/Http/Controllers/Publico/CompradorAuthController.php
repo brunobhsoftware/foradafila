@@ -26,7 +26,7 @@ class CompradorAuthController extends Controller
 
     public function autenticar(Request $request)
     {
-        $dados = $request->validate(['email' => ['required', 'email'], 'senha' => ['required', 'string']]);
+        $dados = $request->validate(['email' => ['required', 'email:filter'], 'senha' => ['required', 'string']]);
         $email = mb_strtolower(trim($dados['email']));
         $chave = 'comprador-login:'.$email.'|'.$request->ip();
 
@@ -83,7 +83,7 @@ class CompradorAuthController extends Controller
     {
         return [
             'nome' => ['required', 'string', 'max:150'],
-            'email' => ['required', 'email', 'max:150', Rule::unique('comprador', 'email')],
+            'email' => ['required', 'email:filter', 'max:150', Rule::unique('comprador', 'email')],
             'telefone' => ['nullable', 'string', 'max:20'],
             'senha' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
         ];

@@ -90,7 +90,7 @@ class ConvidadosController extends Controller
                 $linhas[] = ['nome' => $partes[0] ?? '', 'email' => $partes[1] ?? null, 'acompanhantes' => (int) ($partes[2] ?? 0), 'linha' => $n + 1];
             }
         } else {
-            $d = $request->validate(['nome' => ['required', 'string', 'max:150'], 'email' => ['nullable', 'email', 'max:150'],
+            $d = $request->validate(['nome' => ['required', 'string', 'max:150'], 'email' => ['nullable', 'email:filter', 'max:150'],
                 'telefone' => ['nullable', 'string', 'max:20'], 'acompanhantes' => ['nullable', 'integer', 'min:0']]);
             $linhas[] = $d + ['linha' => null];
         }

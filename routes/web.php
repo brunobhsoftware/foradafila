@@ -93,6 +93,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/', [\App\Http\Controllers\Admin\AdminController::class, 'inicio'])->name('inicio');
     Route::get('/mercadopago', [\App\Http\Controllers\Admin\AdminController::class, 'mercadoPago'])->name('mercadopago');
     Route::post('/usuarios/{usuario}/senha', [\App\Http\Controllers\Admin\EmpresasController::class, 'enviarSenha'])->name('empresas.senha')->middleware('throttle:20,10,admin-senha');
+    Route::put('/usuarios/{usuario}/email', [\App\Http\Controllers\Admin\EmpresasController::class, 'corrigirEmail'])->name('empresas.email');
     Route::get('/emails', [\App\Http\Controllers\Admin\AdminController::class, 'emails'])->name('emails');
     Route::get('/banco', [\App\Http\Controllers\Admin\AdminController::class, 'banco'])->name('banco');
     Route::post('/banco', [\App\Http\Controllers\Admin\AdminController::class, 'aplicarBanco'])->name('banco.aplicar')->middleware('throttle:10,10,admin-banco');
