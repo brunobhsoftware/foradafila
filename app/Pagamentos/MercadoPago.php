@@ -274,7 +274,7 @@ class MercadoPago
         return null;
     }
 
-    private static function confereAssinatura(string $segredo, ?string $assinatura, ?string $requestId, ?string $dataId): bool
+    public static function confereAssinatura(string $segredo, ?string $assinatura, ?string $requestId, ?string $dataId): bool
     {
         if (! $assinatura) {
             return false;

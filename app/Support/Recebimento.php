@@ -43,13 +43,40 @@ class Recebimento
         return ($pref === 'conta' ? ($conta ?? $pix) : ($pix ?? $conta));
     }
 
-    public static function conta(int $organizadorId): ?ContaPagamento
+    public static function conta(int $organizadorId, string $modo = 'plataforma'): ?ContaPagamento
     {
         if (! Esquema::temV012()) {
             return null;
         }
 
-        return ContaPagamento::withoutGlobalScopes()->where('organizador_id', $organizadorId)->where('modo', 'plataforma')->first();
+        return ContaPagamento::withoutGlobalScopes()->where('organizador_id', $organizadorId)->where('modo', $modo)->first();
+    }
+
+    /** Conta usada nas vendas: a aplicação própria (se escolhida e ativa) ou o recebimento pela plataforma. */
+    public static function contaAtual(int $organizadorId): ?ContaPagamento
+    {
+        if (! Esquema::temV012()) {
+            return null;
+        }
+        $modo = Organizador::whereKey($organizadorId)->value('recebimento_modo') ?: 'plataforma';
+
+        return self::conta($organizadorId, $modo === 'propria' ? 'propria' : 'plataforma');
+    }
+
+    /** Aplicação Mercado Pago da própria empresa (cria o registro vazio na primeira vez). */
+    public static function contaPropria(Organizador $org): ContaPagamento
+    {
+        $conta = self::conta($org->id, 'propria');
+        if (! $conta) {
+            $conta = new ContaPagamento();
+            $conta->forceFill([
+                'organizador_id' => $org->id, 'gateway_id' => DB::table('gateway')->where('codigo', 'mercadopago')->value('id'),
+                'apelido' => 'Mercado Pago da empresa (aplicação própria)', 'modo' => 'propria', 'ambiente' => 'producao',
+                'status' => 'pendente', 'descricao_fatura' => 'FORADAFILA',
+            ])->save();
+        }
+
+        return $conta;
     }
 
     /** Cria/ativa (ou suspende, sem dados) a conta "Recebimento pela plataforma" da organização. */
@@ -69,7 +96,8 @@ class Recebimento
                 'descricao_fatura' => 'FORADAFILA', 'padrao' => 1,
             ]);
         }
-        $conta->forceFill(['status' => $status, 'ativada_em' => $status === 'ativa' ? ($conta->ativada_em ?? now()) : $conta->ativada_em])->save();
+        // O gatilho trg_conta_bu só ativa conta homologada: aqui não há OAuth a homologar, os dados de repasse bastam.
+        $conta->forceFill(['status' => $status] + ($status === 'ativa' ? ['homologada_em' => $conta->homologada_em ?? now()] : []))->save();
 
         return $conta;
     }

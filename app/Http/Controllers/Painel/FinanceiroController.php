@@ -27,6 +27,8 @@ class FinanceiroController extends Controller
             'org' => $org,
             'v012' => \App\Support\Esquema::temV012(),
             'recebimento' => \App\Support\Recebimento::conta($org->id),
+            'propria' => \App\Support\Esquema::temV012() ? \App\Support\Recebimento::conta($org->id, 'propria') : null,
+            'verificacao' => session('verificacao_mp'),
             'conexaoDireta' => (bool) config('pagamentos.mercadopago.conexao_direta'),
             'conta' => $conta,
             'configurado' => MercadoPago::configurado(),
@@ -81,6 +83,94 @@ class FinanceiroController extends Controller
         Auditoria::registrar('financeiro.recebimento', $org, $antes, $org->fresh()->getAttributes());
 
         return redirect()->route('financeiro')->with('ok', 'Dados de recebimento salvos. Os repasses vão para: '.\App\Support\Recebimento::destino($org->fresh()).'.');
+    }
+
+    /** Aplicação Mercado Pago da própria empresa: grava as chaves de um ambiente (em branco mantém as já salvas). */
+    public function salvarPropria(Request $request, string $ambiente)
+    {
+        Gate::authorize('financeiro.contas');
+        abort_unless(\App\Support\Esquema::temV012() && in_array($ambiente, ['teste', 'producao'], true), 404);
+        $d = $request->validate([
+            'client_id' => ['nullable', 'string', 'max:100', 'regex:/^[0-9]+$/'],
+            'client_secret' => ['nullable', 'string', 'max:200'],
+            'access_token' => ['nullable', 'string', 'max:300', 'regex:/^(APP_USR|TEST)-/'],
+            'public_key' => ['nullable', 'string', 'max:255', 'regex:/^(APP_USR|TEST)-/'],
+            'webhook_secret' => ['nullable', 'string', 'max:200'],
+        ], ['client_id.regex' => 'O Client ID tem só números.', 'access_token.regex' => 'O Access Token começa com APP_USR- (ou TEST-).',
+            'public_key.regex' => 'A Public Key começa com APP_USR- (ou TEST-).']);
+        $org = \App\Models\Organizador::findOrFail(app(Tenant::class)->id());
+        $conta = \App\Support\Recebimento::contaPropria($org);
+        $p = $ambiente === 'teste' ? 'teste_' : '';
+        $cripto = fn ($v) => encrypt(trim($v), false);
+        $novos = array_filter([
+            $p.'client_id' => $d['client_id'] ?? null,
+            $p.'client_secret_cript' => filled($d['client_secret'] ?? null) ? $cripto($d['client_secret']) : null,
+            ($ambiente === 'teste' ? 'teste_access_token_cript' : 'access_token_cript') => filled($d['access_token'] ?? null) ? $cripto($d['access_token']) : null,
+            ($ambiente === 'teste' ? 'teste_public_key' : 'public_key') => $d['public_key'] ?? null,
+            $p.'webhook_secret_cript' => filled($d['webhook_secret'] ?? null) ? $cripto($d['webhook_secret']) : null,
+        ]);
+        if ($ambiente === 'producao' && isset($novos['access_token_cript'])) {
+            $novos += ['status' => 'em_homologacao', 'conectado_por' => auth()->id(), 'conectado_em' => now()]; // vira "ativa" ao verificar
+        }
+        $conta->forceFill($novos)->save();
+        Auditoria::registrar('financeiro.mp_propria_chaves', $conta, null, ['ambiente' => $ambiente, 'campos' => array_keys($novos)]);
+
+        return redirect()->route('financeiro', ['mp' => 1])->with('ok', 'Chaves '.($ambiente === 'teste' ? 'de teste' : 'de produção').' salvas'
+            .($ambiente === 'producao' && isset($novos['access_token_cript']) ? '. Clique em "Verificar de quem é o token" para ativar.' : '.'));
+    }
+
+    /** Confere de quem são os tokens (/users/me). O de produção válido ativa a conta própria. */
+    public function verificarPropria()
+    {
+        Gate::authorize('financeiro.contas');
+        $org = \App\Models\Organizador::findOrFail(app(Tenant::class)->id());
+        $conta = \App\Support\Recebimento::conta($org->id, 'propria');
+        abort_unless($conta, 404);
+        $info = function (?string $cript) {
+            if (! $cript) {
+                return null;
+            }
+            try {
+                $u = MercadoPago::usuario(decrypt($cript, false));
+            } catch (\Throwable $e) {
+                $u = [];
+            }
+            $tags = (array) ($u['tags'] ?? []);
+
+            return $u ? ['ok' => true, 'id' => $u['id'] ?? null, 'email' => $u['email'] ?? null, 'apelido' => $u['nickname'] ?? null,
+                'teste' => in_array('test_user', $tags, true) || str_contains((string) ($u['email'] ?? ''), '@testuser.')] : ['ok' => false];
+        };
+        $r = ['producao' => $info($conta->access_token_cript), 'teste' => $info($conta->teste_access_token_cript)];
+        if ($r['producao']['ok'] ?? false) {
+            $conta->forceFill(['status' => 'ativa', 'homologada_em' => $conta->homologada_em ?? now(), 'conta_externa_id' => $r['producao']['id'],
+                'email_conta' => $r['producao']['email'], 'apelido_externo' => $r['producao']['apelido'], 'ultimo_erro' => null])->save();
+        } elseif ($conta->access_token_cript) {
+            $conta->forceFill(['status' => 'suspensa', 'ultimo_erro' => 'O Mercado Pago recusou o Access Token de produção.', 'ultimo_erro_em' => now()])->save();
+        }
+        Auditoria::registrar('financeiro.mp_propria_verificar', $conta, null, ['producao' => $r['producao']['ok'] ?? null, 'teste' => $r['teste']['ok'] ?? null]);
+
+        return redirect()->route('financeiro', ['mp' => 1])->with('verificacao_mp', $r);
+    }
+
+    /** Escolhe como as vendas são recebidas: pela plataforma (repasse) ou na aplicação própria da empresa. */
+    public function modoRecebimento(Request $request)
+    {
+        Gate::authorize('financeiro.contas');
+        $modo = $request->validate(['recebimento_modo' => ['required', 'in:plataforma,propria']])['recebimento_modo'];
+        $org = \App\Models\Organizador::findOrFail(app(Tenant::class)->id());
+        $conta = \App\Support\Recebimento::conta($org->id, $modo);
+        if (! $conta || $conta->status !== 'ativa') {
+            return back()->withErrors(['recebimento_modo' => $modo === 'propria'
+                ? 'Cadastre e verifique o Access Token de produção da aplicação da empresa antes de usá-la.'
+                : 'Cadastre os dados para o repasse antes de receber pela plataforma.']);
+        }
+        $antes = $org->getAttributes();
+        $org->forceFill(['recebimento_modo' => $modo])->save();
+        // Eventos ainda não encerrados passam a usar a conta escolhida.
+        \App\Models\Evento::whereNotIn('status', ['encerrado', 'cancelado'])->update(['conta_pagamento_id' => $conta->id]);
+        Auditoria::registrar('financeiro.recebimento_modo', $org, $antes, ['recebimento_modo' => $modo]);
+
+        return back()->with('ok', $modo === 'propria' ? 'As vendas passam a cair direto na conta do Mercado Pago da empresa.' : 'As vendas passam a ser recebidas pela plataforma, com repasse.');
     }
 
     /** Vai para a tela de autorização do Mercado Pago. */
