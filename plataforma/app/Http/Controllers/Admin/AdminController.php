@@ -172,7 +172,12 @@ class AdminController extends Controller
             ->when($request->query('status'), fn ($q, $s) => $q->where('status', $s))
             ->orderByDesc('id')->limit(100)->get(['id', 'tipo', 'destinatario', 'assunto', 'status', 'erro', 'criado_em', 'enviado_em']);
 
-        return view('admin.emails', compact('envios', 'busca'));
+        $contas = $busca !== '' ? [
+            'produtores' => DB::table('usuario')->where('email', 'like', '%'.$busca.'%')->limit(10)->get(['uuid', 'nome', 'email', 'ativo', 'senha_hash']),
+            'organizacoes' => DB::table('organizador')->where('email_contato', 'like', '%'.$busca.'%')->limit(10)->get(['nome_fantasia', 'razao_social', 'email_contato']),
+        ] : null;
+
+        return view('admin.emails', compact('envios', 'busca', 'contas'));
     }
 
     public function banco()
