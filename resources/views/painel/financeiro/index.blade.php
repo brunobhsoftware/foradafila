@@ -122,19 +122,25 @@
     @endif
 
     @can('financeiro.contas')
-    @foreach (['teste' => '1. Ambiente de TESTE', 'producao' => '2. Ambiente de PRODUÇÃO'] as $amb => $titulo)
+    <form method="post" action="{{ route('financeiro.mp.propria', 'aplicacao') }}" class="form-grade" style="margin-top:16px;padding:14px 16px;background:#F4F5F7;border-left:3px solid var(--tinta);border-radius:6px">
+        @csrf @method('PUT')
+        <h3 class="col-12" style="margin:0">1. Aplicação <small class="suave" style="font-weight:400">— vale para teste e produção</small></h3>
+        <p class="col-12 suave" style="margin:0"><small>No Mercado Pago, Client ID e Client Secret ficam em <b>Credenciais de produção</b>; a assinatura secreta, em <b>Webhooks</b>. São um só para a aplicação.</small></p>
+        <x-campo nome="client_id" rotulo="Client ID" :valor="$propria?->client_id" classe="col-6" autocomplete="off" />
+        <x-campo nome="client_secret" rotulo="Client Secret" tipo="password" classe="col-6" autocomplete="new-password" :placeholder="$propria?->client_secret_cript ? 'salvo — em branco mantém' : ''" />
+        <x-campo nome="webhook_secret" rotulo="Assinatura secreta dos webhooks" tipo="password" classe="col-12" autocomplete="new-password" :placeholder="$propria?->webhook_secret_cript ? 'salva — em branco mantém' : ''" />
+        <div class="col-12"><button class="botao botao--escuro botao--pequeno">Salvar dados da aplicação</button></div>
+    </form>
+    @foreach (['teste' => '2. Ambiente de TESTE', 'producao' => '3. Ambiente de PRODUÇÃO'] as $amb => $titulo)
         @php
             $pre = $amb === 'teste' ? 'teste_' : '';
             $tem = fn ($campo) => $propria && $propria->{$campo};
         @endphp
         <form method="post" action="{{ route('financeiro.mp.propria', $amb) }}" class="form-grade" style="margin-top:16px;padding:14px 16px;background:#F4F5F7;border-left:3px solid var(--laranja);border-radius:6px">
             @csrf @method('PUT')
-            <h3 class="col-12" style="margin:0">{{ $titulo }}</h3>
-            <x-campo nome="client_id" rotulo="Client ID" :valor="$propria?->{$pre.'client_id'}" classe="col-6" autocomplete="off" />
-            <x-campo nome="client_secret" rotulo="Client Secret" tipo="password" classe="col-6" autocomplete="new-password" :placeholder="$tem($pre.'client_secret_cript') ? 'salvo — em branco mantém' : ''" />
+            <h3 class="col-12" style="margin:0">{{ $titulo }} <small class="suave" style="font-weight:400">— Access Token e Public Key {{ $amb === 'teste' ? 'de teste' : 'de produção' }}</small></h3>
             <x-campo nome="access_token" rotulo="Access Token" tipo="password" classe="col-6" autocomplete="new-password" :placeholder="$tem($amb === 'teste' ? 'teste_access_token_cript' : 'access_token_cript') ? 'salvo — em branco mantém' : 'APP_USR-...'" />
             <x-campo nome="public_key" rotulo="Public Key" :valor="$propria?->{$amb === 'teste' ? 'teste_public_key' : 'public_key'}" classe="col-6" autocomplete="off" />
-            <x-campo nome="webhook_secret" rotulo="Assinatura secreta dos webhooks" tipo="password" classe="col-12" autocomplete="new-password" :placeholder="$tem($pre.'webhook_secret_cript') ? 'salva — em branco mantém' : ''" />
             <div class="col-12" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
                 <button class="botao {{ $amb === 'teste' ? 'botao--contorno' : 'botao--primario' }} botao--pequeno">Salvar chaves {{ $amb === 'teste' ? 'de teste' : 'de produção' }}</button>
                 <button type="submit" form="mp-prop-verificar" class="botao botao--escuro botao--pequeno">Verificar de quem é o token</button>

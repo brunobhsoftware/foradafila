@@ -92,7 +92,7 @@ class FinanceiroController extends Controller
     public function salvarPropria(Request $request, string $ambiente)
     {
         Gate::authorize('financeiro.contas');
-        abort_unless(\App\Support\Esquema::temV012() && in_array($ambiente, ['teste', 'producao'], true), 404);
+        abort_unless(\App\Support\Esquema::temV012() && in_array($ambiente, ['aplicacao', 'teste', 'producao'], true), 404);
         $d = $request->validate([
             'client_id' => ['nullable', 'string', 'max:100', 'regex:/^[0-9]+$/'],
             'client_secret' => ['nullable', 'string', 'max:200'],
@@ -103,14 +103,16 @@ class FinanceiroController extends Controller
             'public_key.regex' => 'A Public Key começa com APP_USR- (ou TEST-).']);
         $org = \App\Models\Organizador::findOrFail(app(Tenant::class)->id());
         $conta = \App\Support\Recebimento::contaPropria($org);
-        $p = $ambiente === 'teste' ? 'teste_' : '';
         $cripto = fn ($v) => encrypt(trim($v), false);
-        $novos = array_filter([
-            $p.'client_id' => $d['client_id'] ?? null,
-            $p.'client_secret_cript' => filled($d['client_secret'] ?? null) ? $cripto($d['client_secret']) : null,
+        // Client ID, Client Secret e assinatura dos webhooks são da APLICAÇÃO (um só par, nas credenciais de produção);
+        // Access Token e Public Key existem em cada ambiente (teste e produção).
+        $novos = $ambiente === 'aplicacao' ? array_filter([
+            'client_id' => $d['client_id'] ?? null,
+            'client_secret_cript' => filled($d['client_secret'] ?? null) ? $cripto($d['client_secret']) : null,
+            'webhook_secret_cript' => filled($d['webhook_secret'] ?? null) ? $cripto($d['webhook_secret']) : null,
+        ]) : array_filter([
             ($ambiente === 'teste' ? 'teste_access_token_cript' : 'access_token_cript') => filled($d['access_token'] ?? null) ? $cripto($d['access_token']) : null,
             ($ambiente === 'teste' ? 'teste_public_key' : 'public_key') => $d['public_key'] ?? null,
-            $p.'webhook_secret_cript' => filled($d['webhook_secret'] ?? null) ? $cripto($d['webhook_secret']) : null,
         ]);
         if ($ambiente === 'producao' && isset($novos['access_token_cript'])) {
             $novos += ['status' => 'em_homologacao', 'conectado_por' => auth()->id(), 'conectado_em' => now()]; // vira "ativa" ao verificar
@@ -118,7 +120,7 @@ class FinanceiroController extends Controller
         $conta->forceFill($novos)->save();
         Auditoria::registrar('financeiro.mp_propria_chaves', $conta, null, ['ambiente' => $ambiente, 'campos' => array_keys($novos)]);
 
-        return redirect()->route('financeiro', ['mp' => 1])->with('ok', 'Chaves '.($ambiente === 'teste' ? 'de teste' : 'de produção').' salvas'
+        return redirect()->route('financeiro', ['mp' => 1])->with('ok', ['aplicacao' => 'Dados da aplicação salvos', 'teste' => 'Chaves de teste salvas', 'producao' => 'Chaves de produção salvas'][$ambiente]
             .($ambiente === 'producao' && isset($novos['access_token_cript']) ? '. Clique em "Verificar de quem é o token" para ativar.' : '.'));
     }
 
