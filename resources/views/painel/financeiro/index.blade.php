@@ -100,11 +100,14 @@
         <a href="https://www.mercadopago.com.br/developers/panel/app" target="_blank" rel="noopener">painel de desenvolvedores do Mercado Pago</a>
         (logado na conta da empresa; tipo <b>Checkout Pro</b>, API de <b>Orders</b>), cadastre nela o endereço de notificações abaixo e cole aqui as chaves de teste e de produção.</p>
     @if ($webhookPropria)
-        <div class="campo"><label>Endereço de notificações (webhooks) para cadastrar na aplicação</label>
-            <div class="copiar"><input id="mp-prop-webhook" value="{{ $webhookPropria }}" readonly><button type="button" class="botao botao--contorno botao--pequeno" data-copiar="mp-prop-webhook">Copiar</button></div>
-            <small class="suave">Eventos: Order (pedidos) e Pagamentos.</small></div>
-    @else
-        <p class="suave"><small>O endereço de notificações aparece depois de salvar as primeiras chaves.</small></p>
+        <div class="form-grade" style="margin-bottom:6px">
+            <div class="campo col-12"><label>URL de notificações (webhooks) — cadastre em "Webhooks" da aplicação, nos dois modos (teste e produção)</label>
+                <div class="copiar"><input id="mp-prop-webhook" value="{{ $webhookPropria }}" readonly><button type="button" class="botao botao--contorno botao--pequeno" data-copiar="mp-prop-webhook">Copiar</button></div>
+                <small class="suave">Eventos: <b>Order (Mercado Pago)</b> e <b>Pagamentos</b>. Depois copie a "assinatura secreta" gerada e cole nos campos abaixo.</small></div>
+            <div class="campo col-6"><label>Site da aplicação</label>
+                <div class="copiar"><input id="mp-prop-site" value="{{ url('/') }}" readonly><button type="button" class="botao botao--contorno botao--pequeno" data-copiar="mp-prop-site">Copiar</button></div></div>
+            <div class="campo col-6"><label>Tipo de solução</label><input value="Checkout Pro — API de Orders" readonly></div>
+        </div>
     @endif
 
     @if ($verificacao)
@@ -129,6 +132,19 @@
             <x-campo nome="public_key" rotulo="Public Key" :valor="$propria?->{$amb === 'teste' ? 'teste_public_key' : 'public_key'}" classe="col-6" autocomplete="off" />
             <x-campo nome="webhook_secret" rotulo="Assinatura secreta dos webhooks" tipo="password" classe="col-12" autocomplete="new-password" :placeholder="$tem($pre.'webhook_secret_cript') ? 'salva — em branco mantém' : ''" />
             <div class="col-12"><button class="botao {{ $amb === 'teste' ? 'botao--contorno' : 'botao--primario' }} botao--pequeno">Salvar chaves {{ $amb === 'teste' ? 'de teste' : 'de produção' }}</button></div>
+        </form>
+        @php $temToken = $propria && ($amb === 'teste' ? $propria->teste_access_token_cript : $propria->access_token_cript); @endphp
+        <form method="post" action="{{ route('financeiro.mp.propria.teste', $amb) }}" class="form-grade" style="margin:8px 0 0;padding:14px 16px;border:1px dashed var(--borda);border-radius:6px">
+            @csrf
+            <h4 class="col-12" style="margin:0">Pagamento de teste — {{ $amb === 'teste' ? 'homologação (conta compradora de teste)' : 'produção (cobrança real; pague com outra conta)' }}</h4>
+            @error('teste_'.$amb)<p class="col-12 erro" style="color:var(--vermelho);margin:0">{{ $message }}</p>@enderror
+            <div class="campo col-3"><label>CPF</label><input name="cpf" required data-mascara="cpf" data-busca-cpf inputmode="numeric" value="{{ $amb === 'teste' ? '123.456.789-09' : '' }}"></div>
+            <div class="campo col-5"><label>Nome completo</label><input name="nome" required data-pessoa="nome" value="{{ $amb === 'teste' ? 'APRO Teste' : '' }}"></div>
+            <div class="campo col-4"><label>E-mail de quem paga</label><input name="email" type="email" required data-pessoa="email" placeholder="{{ $amb === 'teste' ? 'e-mail da conta compradora de teste' : '' }}"></div>
+            <div class="campo col-4"><label>Telefone com DDD</label><input name="telefone" data-mascara="telefone" data-pessoa="telefone"></div>
+            <div class="campo col-2"><label>Valor (R$)</label><input name="valor" type="number" step="0.01" min="1" max="100" value="5.00" required></div>
+            <div class="col-6" style="align-self:end"><button class="botao botao--escuro botao--pequeno" @disabled(! $temToken)>{{ $amb === 'teste' ? 'Pagar teste no Mercado Pago' : 'Pagar de verdade no Mercado Pago' }} ↗</button>
+                @unless ($temToken)<small class="suave">Salve o Access Token {{ $amb === 'teste' ? 'de teste' : 'de produção' }} antes.</small>@endunless</div>
         </form>
     @endforeach
     @if ($propria)

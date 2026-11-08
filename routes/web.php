@@ -139,6 +139,8 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro');
     Route::put('/financeiro/mercadopago/propria/{ambiente}', [FinanceiroController::class, 'salvarPropria'])->name('financeiro.mp.propria')->whereIn('ambiente', ['teste', 'producao']);
     Route::post('/financeiro/mercadopago/propria/verificar', [FinanceiroController::class, 'verificarPropria'])->name('financeiro.mp.propria.verificar')->middleware('throttle:10,1,mp-propria-verificar');
+    Route::post('/financeiro/mercadopago/propria/teste/{ambiente}', [FinanceiroController::class, 'testePropria'])->name('financeiro.mp.propria.teste')
+        ->whereIn('ambiente', ['teste', 'producao'])->middleware('throttle:10,10,mp-propria-teste');
     Route::put('/financeiro/modo', [FinanceiroController::class, 'modoRecebimento'])->name('financeiro.modo');
     Route::put('/financeiro/recebimento', [FinanceiroController::class, 'salvarRecebimento'])->name('financeiro.recebimento');
     Route::post('/financeiro/mercadopago/conectar', [FinanceiroController::class, 'conectar'])->name('financeiro.mp.conectar');

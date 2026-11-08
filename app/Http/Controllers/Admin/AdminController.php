@@ -117,9 +117,12 @@ class AdminController extends Controller
         $info = $ref !== '' ? \Illuminate\Support\Facades\Cache::get('mp_teste_'.$ref) : null;
         $admin = (bool) $request->user()?->admin_plataforma;
         $order = [];
-        if ($admin && $info) {
+        $contaEmpresa = $info && ! empty($info['conta']) ? \App\Models\ContaPagamento::withoutGlobalScopes()->find($info['conta']) : null;
+        if (($admin || $contaEmpresa) && $info) {
             try {
-                $token = $info['ambiente'] === 'teste' ? MercadoPago::tokenTeste() : MercadoPago::tokenAplicacao();
+                $token = $contaEmpresa
+                    ? decrypt((string) ($info['ambiente'] === 'teste' ? $contaEmpresa->teste_access_token_cript : $contaEmpresa->access_token_cript), false)
+                    : ($info['ambiente'] === 'teste' ? MercadoPago::tokenTeste() : MercadoPago::tokenAplicacao());
                 $order = $token ? MercadoPago::order($token, $info['order']) : [];
             } catch (\Throwable $e) {
                 $order = [];
