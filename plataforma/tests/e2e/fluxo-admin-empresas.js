@@ -57,8 +57,8 @@ const cadastrar = async (P, nome, email, doc, razao, fantasia) => {
 
   // ---- motor de taxas: regra padrão e faixas ----
   await P.goto(BASE + '/admin/taxas');
-  const editar = P.locator('tr:has-text("Lançamento") summary:has-text("Editar")'); await editar.click();
-  let f = P.locator('tr:has-text("Lançamento") form');
+  const editar = P.locator('tr:has-text("Lançamento") button:has-text("Editar")'); await editar.click();
+  let f = P.locator("tr.linha-acoes:visible form");
   await f.locator('[name=nome]').fill('Faixa 1 — até 10 mil'); await f.locator('[name=percentual]').fill('5'); await f.locator('[name=valor_fixo]').fill('1');
   await f.locator('[name=valor_minimo]').fill('2'); await f.locator('[name=volume_max]').fill('10000');
   await nav(P, f.locator('button:has-text("Salvar regra")').click());

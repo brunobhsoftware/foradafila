@@ -98,9 +98,10 @@ async function cadastrar(page, { nome, email, tipo, doc, razao, fantasia }) {
   // 7. último Dono não pode ser rebaixado
   await A.goto(BASE + '/painel/equipe');
   const linhaDono = A.locator('tr:has-text("(você)")');
-  await linhaDono.locator('summary').click();
-  await linhaDono.locator('[name=perfil_id]').selectOption({ label: 'Gerente' });
-  await Promise.all([A.waitForNavigation(), linhaDono.locator('button:has-text("Salvar")').click()]);
+  await linhaDono.locator('button:has-text("Alterar")').click();
+  const edDono = A.locator('tr.linha-acoes:visible');
+  await edDono.locator('[name=perfil_id]').selectOption({ label: 'Gerente' });
+  await Promise.all([A.waitForNavigation(), edDono.locator('button:has-text("Salvar")').click()]);
   ok((await A.content()).includes('pelo menos um Produtor ativo'), 'último Produtor (dono) não pode ser rebaixado');
 
   await A.goto(BASE + '/painel/perfis');

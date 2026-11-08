@@ -244,6 +244,9 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Sua organização" do Dashboard. Cartões da vitrine e de `/p/{slug}` mostram "A partir de R$ ..." ou "Gratuito"
   (menor preço dos lotes públicos ativos/agendados, `EventoPublicoController::precosMinimos`).
 - **Equipe:** botão "Reenviar convite" na linha de cada convite pendente (novo link, o anterior deixa de valer).
+- **Regra de tela (decisão do Bruno, 08/11/2026): toda edição de item de lista abre ABAIXO da linha, em largura total, nunca ao
+  lado.** Padrão: botão com `data-alternar="<id>"` + `<tr class="linha-acoes" id="<id>" hidden><td colspan="N">` (moldura cinza
+  clara com borda laranja à esquerda, `public/css/app.css`). Usado em lotes, cupons, participantes, equipe e taxas da Administração.
 - **Limites de tentativas (throttle):** sempre com nome próprio (`throttle:5,15,codigo-senha`), senão rotas diferentes
   dividem o mesmo contador.
 - **Preferências de notificação** (por pessoa da equipe, `organizador_usuario`): `/painel/preferencias` —

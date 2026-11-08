@@ -22,9 +22,9 @@
                     <td class="num">{{ numero($r->percentual, 2) }}%</td><td class="num">{{ moeda($r->valor_fixo) }}</td><td class="num">{{ moeda($r->valor_minimo) }}</td>
                     <td>{{ $r->carencia_dias ? $r->carencia_dias.' dias' : '—' }}</td>
                     <td>@if ($r->ativo)<span class="selo selo--verde">Ativa</span>@else<span class="selo selo--cinza">Inativa</span>@endif</td>
-                    <td class="num"><details class="painel-recolhivel" style="display:inline-block" @if (old('_regra') == $r->id) open @endif><summary class="botao botao--contorno botao--pequeno">Editar</summary>
-                        <div style="text-align:left;min-width:min(640px,84vw)">@include('admin._regra-form', ['r' => $r])</div></details></td>
+                    <td class="num"><button type="button" class="botao botao--contorno botao--pequeno" data-alternar="regra-{{ $r->id }}">Editar</button></td>
                 </tr>
+                <tr class="linha-acoes" id="regra-{{ $r->id }}" @unless (old('_regra') == $r->id) hidden @endunless><td colspan="8">@include('admin._regra-form', ['r' => $r])</td></tr>
             @endforeach
             </tbody>
         </table></div>
