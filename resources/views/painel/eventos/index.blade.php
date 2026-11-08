@@ -23,24 +23,44 @@
             @can('evento.criar')<a href="{{ route('eventos.create') }}" class="botao botao--primario">Criar evento</a>@endcan
         </div>
     @else
-        <div class="tabela-rolagem">
-            <table class="tabela">
-                <thead><tr><th>Evento</th><th>Data</th><th>Status</th><th class="num">Vendidos</th><th class="num">Capacidade</th><th></th></tr></thead>
-                <tbody>
-                @foreach ($eventos as $evento)
-                    @php $ind = $indicadores[$evento->id] ?? null; @endphp
-                    <tr>
-                        <td><a href="{{ route('eventos.show', $evento) }}"><b>{{ $evento->titulo }}</b></a><br>
-                            <small>{{ $evento->local?->enderecoCurto() ?? \App\Models\Evento::FORMATOS[$evento->formato] }}</small></td>
-                        <td>{{ data_local($evento->data_inicio, 'd/m/Y') }}<br><small>{{ data_local($evento->data_inicio, 'H:i') }}</small></td>
-                        <td><x-status-evento :status="$evento->status" /></td>
-                        <td class="num">{{ numero($ind->ingressos_vendidos ?? 0) }}</td>
-                        <td class="num">{{ $evento->capacidade === null ? '—' : numero($evento->capacidade) }}</td>
-                        <td class="num"><a href="{{ route('eventos.show', $evento) }}" class="botao botao--contorno botao--pequeno">Abrir</a></td>
-                    </tr>
-                @endforeach
-                </tbody>
-            </table>
+        <div class="lista-eventos">
+        @foreach ($eventos as $evento)
+            @php
+                $ind = $indicadores[$evento->id] ?? null; $v = $valores[$evento->id];
+                $link = route('evento.publico', $evento->slug);
+                $noAr = in_array($evento->status, ['publicado', 'pausado'], true);
+                $vendidos = (int) ($ind->ingressos_vendidos ?? 0); $ofertados = (int) ($ind->ingressos_ofertados ?? 0);
+            @endphp
+            <article class="evento-painel">
+                <div class="evento-painel__topo">
+                    <div>
+                        <a href="{{ route('eventos.show', $evento) }}" class="evento-painel__titulo">{{ $evento->titulo }}</a>
+                        <small class="suave">{{ $evento->local?->enderecoCurto() ?? \App\Models\Evento::FORMATOS[$evento->formato] }}</small><br>
+                        <small><b>{{ data_local($evento->data_inicio, 'd/m/Y H:i') }}</b> até {{ data_local($evento->data_fim, $evento->data_fim && data_local($evento->data_fim, 'd/m/Y') === data_local($evento->data_inicio, 'd/m/Y') ? 'H:i' : 'd/m/Y H:i') }}</small>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <x-status-evento :status="$evento->status" />
+                        <a href="{{ route('eventos.show', $evento) }}" class="botao botao--contorno botao--pequeno">Abrir</a>
+                        @can('evento.criar')@unless (in_array($evento->status, ['encerrado', 'cancelado']))<a href="{{ route('eventos.edit', $evento) }}" class="botao botao--primario botao--pequeno">Editar</a>@endunless @endcan
+                    </div>
+                </div>
+                <div class="evento-painel__numeros">
+                    <div><small>Ingressos vendidos</small><b>{{ numero($vendidos) }}</b><small>de {{ numero($ofertados) }}</small></div>
+                    <div><small>Valor vendido</small><b>{{ moeda($v->vendido) }}</b><small>{{ $v->pedidos }} pedido(s)</small></div>
+                    <div><small>Descontos (cupons)</small><b>{{ moeda($v->descontos) }}</b></div>
+                    <div><small>Taxa da plataforma</small><b>{{ moeda($v->taxa) }}</b></div>
+                    <div><small>Devolvido</small><b>{{ moeda($v->devolvido) }}</b></div>
+                    <div class="destaque"><small>Valor líquido</small><b>{{ moeda($v->liquido) }}</b><small>vendido − taxa − devoluções</small></div>
+                </div>
+                <div class="evento-painel__link">
+                    <div class="copiar"><input id="link-ev-{{ $evento->id }}" value="{{ $link }}" readonly aria-label="Link do evento">
+                        <button type="button" class="botao botao--contorno botao--pequeno" data-copiar="link-ev-{{ $evento->id }}">Copiar</button>
+                        <button type="button" class="botao botao--escuro botao--pequeno" data-compartilhar="{{ $link }}" data-titulo="{{ $evento->titulo }}">Compartilhar</button>
+                        <a class="botao botao--contorno botao--pequeno" target="_blank" rel="noopener" href="https://wa.me/?text={{ rawurlencode($evento->titulo.' — ingressos: '.$link) }}">WhatsApp</a></div>
+                    @unless ($noAr)<small class="suave">O link fica no ar depois de publicar o evento.</small>@endunless
+                </div>
+            </article>
+        @endforeach
         </div>
         {{ $eventos->links() }}
     @endif
