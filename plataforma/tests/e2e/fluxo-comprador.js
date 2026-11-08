@@ -8,6 +8,8 @@ require('fs').mkdirSync(OUT, { recursive: true });
 const ok = (c, m) => { console.log((c ? 'PASSOU ' : 'FALHOU ') + m); if (!c) process.exitCode = 1; };
 const local = (dias, hora = '20:00') => new Date(Date.now() + dias * 864e5).toISOString().slice(0, 10) + 'T' + hora;
 const nav = (p, acao) => Promise.all([p.waitForNavigation(), acao]);
+const sql = (q) => require('child_process').execSync(`mysql --default-character-set=utf8mb4 -uroot foradafila -N -e "${q.replace(/"/g, '\\"')}"`).toString().trim();
+const formularioLegado = require('./_formulario-legado');
 
 (async () => {
   const browser = await chromium.launch();
@@ -22,6 +24,7 @@ const nav = (p, acao) => Promise.all([p.waitForNavigation(), acao]);
     ['documento', '11.222.333/0001-81'], ['razao_social', 'Choperia X Ltda'], ['nome_fantasia', 'Choperia X'], ['email_contato', 'sac@choperia.test']]) await P.fill(`[name=${n}]`, v);
   for (const t of ['uso_organizador', 'responsabilidade_organizador', 'privacidade']) await P.check(`[name="aceites[${t}]"]`);
   await nav(P, P.click('button[type=submit]'));
+  formularioLegado(sql);
   await P.goto(BASE + '/painel/eventos/novo');
   await P.fill('[name=titulo]', 'Noite do Chope');
   await P.fill('[name=resumo]', 'Evento gratuito do piloto.');

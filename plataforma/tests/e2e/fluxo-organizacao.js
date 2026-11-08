@@ -3,6 +3,7 @@
 // Rode contra um banco limpo:  BASE=http://127.0.0.1:8000 IMG=/pasta/com/logo.png node tests/e2e/fluxo-organizacao.js
 const { chromium } = require('playwright');
 const { execSync } = require('child_process');
+const formularioLegado = require('./_formulario-legado');
 const crypto = require('crypto');
 const fs = require('fs');
 const BASE = process.env.BASE || 'http://127.0.0.1:8000';
@@ -23,6 +24,7 @@ const salvar = async (p) => { await p.evaluate(() => { document.querySelector('f
     ['documento', '41.902.878/0001-08'], ['razao_social', 'Estacao Slod Ltda'], ['nome_fantasia', 'Estação Slod'], ['email_contato', 'sac@slod.test']]) await P.fill(`[name=${n}]`, v);
   for (const t of ['uso_organizador', 'responsabilidade_organizador', 'privacidade']) await P.check(`[name="aceites[${t}]"]`);
   await nav(P, P.click('button[type=submit]'));
+  formularioLegado(sql);
   ok((await P.content()).includes('Completar os dados da organização'), 'painel pede os dados obrigatórios');
 
   // obrigatórios

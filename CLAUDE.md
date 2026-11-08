@@ -25,6 +25,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V012__recebimento_pela_plataforma.sql` | Recebimento pela plataforma: `organizador.pix_tipo/pix_chave/recebimento_preferido`, `conta_pagamento.modo` (direta/plataforma), tabela `repasse`, `pagamento.repasse_id`; `organizador.recebimento_modo` e colunas da aplicação própria em `conta_pagamento` (client_id, segredos e token de teste criptografados). Idempotente. Aplicado em produção em 08/11/2026 ("V012 ok"; reaplicado com o modo `propria`). Sem ele completo, o bloco da aplicação própria fica oculto (`Esquema::temPropria()`) |
 | `banco/V013__checkout_pago.sql` | Checkout pago: `pedido.dados_participantes` (JSON até o pagamento ser aprovado) e `ck_pedido_valores` passa a somar `valor_taxa_servico`. Idempotente. Aplicado em produção em 08/11/2026 ("V013 ok") |
 | `banco/V014__lote_exibir.sql` | `lote.exibir` (mostrar/ocultar o ingresso na página do evento, independente de "Ingresso ativo"). Idempotente. **Ainda não aplicado** |
+| `banco/V015__formularios_inscricao.sql` | Formulários de inscrição: `formulario.padrao` e `evento.formulario_id`. Idempotente. **Ainda não aplicado** |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
@@ -307,6 +308,17 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   **No site público não há preenchimento pelo CPF** (qualquer um descobriria nome/e-mail de terceiros pelo CPF — risco LGPD). Pendente:
   citar o cadastro único no termo de privacidade e definir a base legal. Pagamento de teste usa **nome completo** (dividido em
   first_name/last_name para o Mercado Pago).
+- **Formulários de inscrição** (V015, decisão do Bruno 08/11/2026; Gestão → Formulários, `FormulariosController`, `App\Support\Formularios`):
+  a organização cria vários formulários (modelos `formulario.evento_id` NULL) marcando campos do catálogo (`campo_catalogo`: nome, CPF,
+  telefone, endereço, camiseta, aceites…; pedir + obrigatório + rótulo) e campos personalizados (texto, texto longo, número, data, lista
+  de opções separadas por ";", caixa de marcar). **Nome completo é sempre pedido** (um campo só, nunca nome e sobrenome separados).
+  Padrão criado sozinho: **"Padrão — Nome completo e e-mail"** (ambos obrigatórios); "Tornar padrão"; não exclui o padrão, formulário
+  em uso por evento nem com respostas; campo tirado fica `ativo = 0`. O evento escolhe o formulário (`evento.formulario_id`; vazio =
+  padrão) — saíram as opções "Ingresso nominal" e "Exigir CPF" (`exige_cpf_participante` passa a ser "o formulário pede CPF
+  obrigatório", para o limite por CPF). A compra (gratuita e paga) mostra os campos para cada participante, valida por tipo e grava:
+  catálogo → coluna de mesmo nome em `participante`; personalizado → `participante_resposta` (`Formularios::criarParticipante`, também
+  no `Checkout::aprovar`). Sem e-mail no formulário, o 1º participante recebe o do comprador. Testes antigos usam
+  `tests/e2e/_formulario-legado.js` (nome obrigatório, e-mail e CPF opcionais); teste novo `fluxo-formularios.js` (17).
 - **Escolhas em cartões** (decisão do Bruno, 08/11/2026): opções exclusivas (radio) usam `label.opcao-cartao` com `<span><b>título</b><small>descrição</small></span>` em `.grade grade-2` — nunca radio solto.
 - **Regra de tela (decisão do Bruno, 08/11/2026): toda edição de item de lista abre ABAIXO da linha, em largura total, nunca ao
   lado.** Padrão: botão com `data-alternar="<id>"` + `<tr class="linha-acoes" id="<id>" hidden><td colspan="N">` (moldura cinza

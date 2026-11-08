@@ -3,6 +3,7 @@
 //   BASE=http://127.0.0.1:8000 node tests/e2e/fluxo-mensagens.js
 const { chromium } = require('playwright');
 const { execSync } = require('child_process');
+const formularioLegado = require('./_formulario-legado');
 const BASE = process.env.BASE || 'http://127.0.0.1:8000';
 const sql = (q) => execSync(`mysql --default-character-set=utf8mb4 -uroot foradafila -N -e "${q.replace(/"/g, '\\"')}"`).toString().trim();
 const codEv = (slug) => sql(`SELECT SUBSTRING(REPLACE(uuid,'-',''),1,10) FROM evento WHERE slug='${slug}'`);
@@ -19,6 +20,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
     ['documento', '41.902.878/0001-08'], ['razao_social', 'Estacao Slod Ltda'], ['nome_fantasia', 'Estação Slod'], ['email_contato', 'sac@slod.test']]) await P.fill(`[name=${n}]`, v);
   for (const t of ['uso_organizador', 'responsabilidade_organizador', 'privacidade']) await P.check(`[name="aceites[${t}]"]`);
   await nav(P, P.click('button[type=submit]'));
+  formularioLegado(sql);
   await P.goto(BASE + '/painel/eventos/novo');
   await P.fill('[name=titulo]', 'Festa das Mensagens');
   await P.fill('[name=data_inicio]', local(10)); await P.fill('[name=data_fim]', local(11, '02:00'));

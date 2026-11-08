@@ -4,6 +4,7 @@
 //   BASE=http://127.0.0.1:8001 node tests/e2e/fluxo-checkout.js
 const { chromium } = require('playwright');
 const { execSync } = require('child_process');
+const formularioLegado = require('./_formulario-legado');
 const http = require('http');
 const crypto = require('crypto');
 const BASE = process.env.BASE || 'http://127.0.0.1:8001';
@@ -46,6 +47,7 @@ const webhook = async (P, id) => {
     ['documento', '41.902.878/0001-08'], ['razao_social', 'Estacao Slod Ltda'], ['nome_fantasia', 'Estação Slod'], ['email_contato', 'sac@slod.test']]) await P.fill(`[name=${n2}]`, v);
   for (const t of ['uso_organizador', 'responsabilidade_organizador', 'privacidade']) await P.check(`[name="aceites[${t}]"]`);
   await nav(P, P.click('button[type=submit]'));
+  formularioLegado(sql);
   sql("UPDATE webhook_evento SET id=id"); // noop
   // Organização: repassa a taxa; Financeiro: Pix
   sql("UPDATE organizador SET taxa_comprador=1");

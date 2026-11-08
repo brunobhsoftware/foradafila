@@ -33,6 +33,12 @@ class Esquema
         return self::$cache['v010'] ??= Schema::hasColumn('organizador', 'taxa_comprador') && Schema::hasColumn('evento', 'taxa_comprador');
     }
 
+    /** V015: formulários de inscrição (evento.formulario_id, formulario.padrao). */
+    public static function temV015(): bool
+    {
+        return self::$cache['v015'] ??= Schema::hasColumn('evento', 'formulario_id') && Schema::hasColumn('formulario', 'padrao');
+    }
+
     /** V014: lote.exibir (mostrar/ocultar o ingresso na página do evento). */
     public static function temV014(): bool
     {

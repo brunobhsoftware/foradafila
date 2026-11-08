@@ -286,6 +286,15 @@ class EventoController extends Controller
         foreach (['exige_cpf_participante', 'nominal', 'permite_transferencia', 'permite_reentrada'] as $campo) {
             $dadosEvento[$campo] = $request->boolean($campo);
         }
+        // Formulário de inscrição (V015): os campos pedidos vêm dele; "exigir CPF" passa a ser "o formulário pede CPF obrigatório".
+        if (\App\Support\Formularios::ativo()) {
+            $org = app(\App\Support\Tenant::class)->id();
+            $fid = $request->integer('formulario_id') ?: null;
+            $dadosEvento['formulario_id'] = $fid && DB::table('formulario')->where('organizador_id', $org)->whereNull('evento_id')->where('id', $fid)->exists() ? $fid : null;
+            $form = $dadosEvento['formulario_id'] ? DB::table('formulario')->find($dadosEvento['formulario_id']) : \App\Support\Formularios::padrao($org);
+            $dadosEvento['exige_cpf_participante'] = \App\Support\Formularios::exigeCpf(\App\Support\Formularios::campos($form));
+            $dadosEvento['nominal'] = true;
+        }
         // Quem paga a taxa da plataforma (V010): "" = padrão da organização, "0" = embutida, "1" = repassada ao comprador.
         if (\App\Support\Esquema::temV010()) {
             $t = (string) $request->input('taxa_comprador', '');

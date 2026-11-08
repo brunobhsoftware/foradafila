@@ -101,12 +101,27 @@
             <x-campo nome="transferencia_ate_h" rotulo="Transferência até (horas antes)" tipo="number" min="0" :valor="$evento->transferencia_ate_h" obrigatorio classe="col-4" />
             <div class="campo col-12">
                 <div class="opcoes-linha">
-                    @foreach (['nominal' => 'Ingresso nominal (cada ingresso tem um titular)', 'exige_cpf_participante' => 'Exigir CPF do participante', 'permite_transferencia' => 'Permitir transferência de titularidade', 'permite_reentrada' => 'Permitir reentrada (sair e voltar)'] as $campo => $texto)
+                    @foreach ((\App\Support\Formularios::ativo() ? [] : ['nominal' => 'Ingresso nominal (cada ingresso tem um titular)', 'exige_cpf_participante' => 'Exigir CPF do participante']) + ['permite_transferencia' => 'Permitir transferência de titularidade', 'permite_reentrada' => 'Permitir reentrada (sair e voltar)'] as $campo => $texto)
                         <input type="hidden" name="{{ $campo }}" value="0">
                         <label class="opcao"><input type="checkbox" name="{{ $campo }}" value="1" @checked(old($campo, $evento->{$campo}))> {{ $texto }}</label>
                     @endforeach
                 </div>
             </div>
+            @if (\App\Support\Formularios::ativo())
+                @php
+                    $orgForm = app(\App\Support\Tenant::class)->id();
+                    $padraoForm = \App\Support\Formularios::padrao($orgForm);
+                    $listaForms = \Illuminate\Support\Facades\DB::table('formulario')->where('organizador_id', $orgForm)->whereNull('evento_id')->orderByDesc('padrao')->orderBy('nome')->get(['id', 'nome', 'padrao']);
+                @endphp
+                <div class="campo col-12">
+                    <label for="c_formulario_id">Formulário de inscrição <small class="suave">(dados pedidos para cada participante na compra)</small></label>
+                    <select name="formulario_id" id="c_formulario_id">
+                        <option value="">Padrão da organização — {{ $padraoForm?->nome }}</option>
+                        @foreach ($listaForms as $lf)<option value="{{ $lf->id }}" @selected((string) old('formulario_id', $evento->formulario_id) === (string) $lf->id)>{{ $lf->nome }}</option>@endforeach
+                    </select>
+                    <small class="suave">Crie e edite os formulários em <a href="{{ route('formularios.index') }}" target="_blank">Gestão → Formulários</a>.</small>
+                </div>
+            @endif
             @if (\App\Support\Esquema::temV010())
                 @php
                     $orgTaxa = app(\App\Support\Tenant::class)->organizador();

@@ -47,7 +47,7 @@ const BOTAO = 'button:has-text("Usar endereço da organização")';
   ok(await v('nome') === 'Estação Slod', 'confirmar substitui pelo endereço da organização');
 
   // término e abertura dos portões acompanham a data do início; CPF do participante começa desmarcado
-  ok(!(await P.isChecked('input[type=checkbox][name=exige_cpf_participante]')), 'novo evento: "Exigir CPF do participante" desmarcado');
+  ok(await P.locator('select[name=formulario_id]').count() === 1 && await P.locator('input[name=exige_cpf_participante]').count() === 0, 'novo evento: escolhe o formulário de inscrição (sem "Exigir CPF")');
   await P.fill('[name=data_inicio]', '2027-03-20T21:00');
   ok(await P.inputValue('[name=data_fim]') === '2027-03-20T21:00' && await P.inputValue('[name=abertura_portoes]') === '2027-03-20T21:00', 'término e portões recebem a data do início');
   await P.fill('[name=data_fim]', '2027-03-21T03:00'); await P.fill('[name=abertura_portoes]', '2027-03-20T19:30');

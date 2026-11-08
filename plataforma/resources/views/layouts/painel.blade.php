@@ -19,6 +19,7 @@
         ],
         'Gestão' => [
             ['rota' => 'financeiro', 'ativo' => 'financeiro*', 'icone' => 'financeiro', 'texto' => 'Financeiro', 'pode' => ['financeiro.ver']],
+            ['rota' => 'formularios.index', 'ativo' => 'formularios*', 'icone' => 'editar', 'texto' => 'Formulários', 'pode' => ['evento.ver']],
             ['rota' => 'equipe.index', 'ativo' => 'equipe.*', 'icone' => 'equipe', 'texto' => 'Equipe', 'pode' => ['equipe.gerenciar']],
             ['rota' => 'perfis.index', 'ativo' => 'perfis.*', 'icone' => 'perfil', 'texto' => 'Níveis de acesso', 'pode' => ['equipe.gerenciar']],
             ['rota' => 'organizacao.edit', 'ativo' => 'organizacao.*', 'icone' => 'organizacao', 'texto' => 'Organização', 'pode' => ['organizador.editar']],

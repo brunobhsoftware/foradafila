@@ -3,6 +3,7 @@
 //   BASE=http://127.0.0.1:8000 node tests/e2e/fluxo-checkin.js
 const { chromium } = require('playwright');
 const { execSync } = require('child_process');
+const formularioLegado = require('./_formulario-legado');
 const crypto = require('crypto');
 const fs = require('fs');
 const BASE = process.env.BASE || 'http://127.0.0.1:8000';
@@ -22,6 +23,7 @@ const qr = (codigo) => `FF1.${codigo}.${crypto.createHmac('sha256', APP_KEY).upd
     ['documento', '41.902.878/0001-08'], ['razao_social', 'Estacao Slod Ltda'], ['nome_fantasia', 'Estação Slod'], ['email_contato', 'sac@slod.test']]) await P.fill(`[name=${n}]`, v);
   for (const t of ['uso_organizador', 'responsabilidade_organizador', 'privacidade']) await P.check(`[name="aceites[${t}]"]`);
   await nav(P, P.click('button[type=submit]'));
+  formularioLegado(sql);
   await P.goto(BASE + '/painel/eventos/novo');
   await P.fill('[name=titulo]', 'Show da Portaria');
   await P.fill('[name=data_inicio]', local(3)); await P.fill('[name=data_fim]', local(4, '02:00'));
