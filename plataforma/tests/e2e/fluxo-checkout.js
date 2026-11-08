@@ -12,7 +12,7 @@ const ok = (c, m) => { console.log((c ? 'PASSOU ' : 'FALHOU ') + m); if (!c) pro
 const local = (d, h = '20:00') => new Date(Date.now() + d * 864e5).toISOString().slice(0, 10) + 'T' + h;
 const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
 
-let n = 0; const orders = {}; let ultimoCorpo = null;
+let n = 0; const orders = {}; let ultimoCorpo = null; const reembolsos = [];
 const falso = http.createServer((req, res) => {
   let corpo = ''; req.on('data', (d) => { corpo += d; }); req.on('end', () => {
     const json = (s, o) => { res.writeHead(s, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(o)); };
@@ -21,6 +21,8 @@ const falso = http.createServer((req, res) => {
       const id = 'ORD' + (++n); ultimoCorpo = JSON.parse(corpo); orders[id] = { status: 'action_required', status_detail: 'waiting_payment' };
       return json(201, { id, status: 'action_required', checkout_url: 'http://127.0.0.1:8099/pagar/' + id });
     }
+    const rf = req.url.match(/^\/v1\/orders\/(ORD\d+)\/refund/);
+    if (rf && req.method === 'POST') { reembolsos.push({ id: rf[1], corpo: corpo ? JSON.parse(corpo) : null, token: req.headers.authorization }); return json(201, { id: rf[1], status: 'refunded' }); }
     const m = req.url.match(/^\/v1\/orders\/(ORD\d+)/);
     if (m && orders[m[1]]) return json(200, { id: m[1], ...orders[m[1]], transactions: { payments: [{ id: 'PAY' + m[1], payment_method: { type: 'bank_transfer', installments: 1 } }] } });
     if (req.url.startsWith('/pagar/')) { res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end('<h1>Checkout falso do Mercado Pago</h1>'); }
@@ -147,6 +149,24 @@ const webhook = async (P, id) => {
   ok(sql("SELECT COUNT(*) FROM pagamento WHERE repasse_id IS NOT NULL") === '1' && (await P.content()).includes('Nada a repassar'), 'pagamento fechado no repasse; nada mais a repassar');
   await P.goto(BASE + '/painel/financeiro');
   ok((await P.content()).includes('E2E123456'), 'produtora vê o repasse recebido');
+
+  // ---- cancelar ingresso pago devolve pelo Mercado Pago (parcial: 1 de 2) ----
+  const ev = sql("SELECT uuid FROM evento");
+  await P.goto(BASE + '/painel/participantes?evento=' + ev);
+  await P.locator('tr:not(.linha-acoes):has-text("Pedro Amigo") button:has-text("Ações")').click();
+  await nav(P, P.locator('tr.linha-acoes:visible button:has-text("Cancelar ingresso")').click());
+  ok(reembolsos.length === 1 && reembolsos[0].id === 'ORD1' && reembolsos[0].corpo.transactions[0].amount === '105.00' && reembolsos[0].corpo.transactions[0].id === 'PAYORD1',
+    'cancelar 1 ingresso devolve R$ 105 pelo Mercado Pago (devolução parcial da order)');
+  ok(sql("SELECT status FROM pagamento WHERE gateway_pedido_id='ORD1'") === 'estorno_parcial' && sql("SELECT status FROM reembolso") === 'concluido', 'pagamento com estorno parcial e devolução concluída');
+  // ---- homologação por empresa ----
+  await P.goto(BASE + '/painel/financeiro');
+  await P.check('input[name=ambiente_vendas][value=homologacao]', { force: true });
+  await nav(P, P.click('button:has-text("Salvar ambiente")'));
+  ok((await P.content()).includes('Vendas em HOMOLOGAÇÃO') && sql("SELECT valor FROM parametro_sistema WHERE chave LIKE 'mp_vendas_teste_org_%'") === '1', 'empresa coloca as vendas em homologação');
+  sql("UPDATE evento SET data_inicio = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 5 DAY), data_fim = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 6 DAY)");
+  sql("UPDATE lote SET venda_fim = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 6 DAY)");
+  await C.goto(BASE + '/e/show-pago');
+  ok((await C.content()).includes('Ambiente de teste (homologação)'), 'página do evento avisa que é teste');
 
   sql("UPDATE taxa_regra SET percentual=0, valor_fixo=0, valor_minimo=0 WHERE operacao='ingresso_pago'");
   ok(erros.length === 0, 'sem erros de JavaScript ' + erros.join(' | '));

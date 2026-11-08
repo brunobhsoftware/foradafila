@@ -65,6 +65,9 @@
         <small>O ingresso é emitido pelo organizador <b>{{ $evento->organizador->nomeExibicao() }}</b>, responsável pelo evento.</small>
       </div>
 
+      @if ($pago && \App\Support\Checkout::modoTeste($evento->organizador_id))
+        <p style="margin:0 0 10px;padding:10px 12px;background:#FFF4D6;border:1px solid var(--amarelo);border-radius:8px"><small><b>Ambiente de teste:</b> pague com a conta compradora de teste do Mercado Pago. Nada é cobrado.</small></p>
+      @endif
       @if ($pago)
         <button class="botao botao--amarelo botao--largo">Ir para o pagamento — {{ moeda($valorTotal) }}</button>
         <p style="margin:10px 0 0;text-align:center"><small>Você será levado ao Mercado Pago (Pix ou cartão). Os ingressos ficam reservados por {{ \App\Support\Checkout::RESERVA_MIN }} minutos e são emitidos assim que o pagamento é aprovado. Cupom de desconto é aplicado no total.</small></p>

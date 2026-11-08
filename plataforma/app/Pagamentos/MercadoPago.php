@@ -217,6 +217,22 @@ class MercadoPago
         return $conteudo;
     }
 
+    /** Devolução da order (total sem $pedido; parcial com transactions.payments[{id, amount}]). */
+    public static function reembolsarOrder(string $accessToken, string $id, ?array $pedido = null): array
+    {
+        self::sdk($accessToken);
+        $opcoes = new \MercadoPago\Client\Common\RequestOptions();
+        $opcoes->setCustomHeaders(['X-Idempotency-Key: '.\Illuminate\Support\Str::uuid()]);
+        try {
+            return (new \MercadoPago\Client\Order\OrderClient())->refund($id, $pedido, $opcoes)->getResponse()->getContent();
+        } catch (\MercadoPago\Exceptions\MPApiException $e) {
+            $j = $e->getApiResponse()?->getContent() ?? [];
+            $msg = $j['message'] ?? collect((array) ($j['errors'] ?? []))->pluck('message')->filter()->implode('; ');
+            \Illuminate\Support\Facades\Log::warning('Mercado Pago recusou devolução', ['order' => $id, 'resposta' => $j]);
+            throw new RuntimeException('O Mercado Pago recusou a devolução (HTTP '.$e->getStatusCode().($msg ? ': '.mb_substr((string) $msg, 0, 300) : '').').');
+        }
+    }
+
     public static function order(string $accessToken, string $id): array
     {
         self::sdk($accessToken);

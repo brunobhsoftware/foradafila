@@ -81,6 +81,20 @@
     $webhookPropria = $propria ? route('webhook.mercadopago.empresa', $propria->uuid) : null;
 @endphp
 <section class="cartao" style="padding:22px 24px;margin-top:18px">
+    <h2 style="margin-top:0">Ambiente das vendas</h2>
+    @if ($homologacaoGeral && ! $homologacao)<p class="suave">A plataforma está toda em modo de teste.</p>@endif
+    <form method="post" action="{{ route('financeiro.ambiente') }}">@csrf @method('PUT')
+        <div class="grade grade-2" style="gap:12px">
+            <label class="opcao-cartao"><input type="radio" name="ambiente_vendas" value="producao" @checked(! $homologacao)>
+                <span><b>Produção</b><small>Vendas reais: o comprador paga de verdade (Pix ou cartão) e o dinheiro entra na conta de recebimento.</small></span></label>
+            <label class="opcao-cartao"><input type="radio" name="ambiente_vendas" value="homologacao" @checked($homologacao)>
+                <span><b>Homologação (teste)</b><small>Para testar o caminho todo: comprar, receber o ingresso, fazer o check-in e cancelar com devolução. Usa as credenciais de teste; pague com a conta compradora de teste. Nada é cobrado. A página do evento mostra o aviso de teste.</small></span></label>
+        </div>
+        @can('financeiro.contas')<div style="margin-top:12px"><button class="botao botao--escuro botao--pequeno">Salvar ambiente</button></div>@endcan
+    </form>
+</section>
+
+<section class="cartao" style="padding:22px 24px;margin-top:18px">
     <h2 style="margin-top:0">Onde as vendas são recebidas</h2>
     @error('recebimento_modo')<div class="alerta alerta--erro"><p>{{ $message }}</p></div>@enderror
     <form method="post" action="{{ route('financeiro.modo') }}" class="pilha">@csrf @method('PUT')

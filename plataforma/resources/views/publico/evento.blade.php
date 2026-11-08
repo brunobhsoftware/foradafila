@@ -82,6 +82,9 @@
     </div>
 
     <aside class="pub-cartao pub-compra" aria-labelledby="titulo-ingressos">
+      @if ($vendePago && \App\Support\Checkout::modoTeste($evento->organizador_id))
+        <p style="margin:0 0 12px;padding:10px 12px;background:#FFF4D6;border:1px solid var(--amarelo);border-radius:8px"><small><b>Ambiente de teste (homologação):</b> os pagamentos usam credenciais de teste do Mercado Pago e nada é cobrado de verdade.</small></p>
+      @endif
       <h2 id="titulo-ingressos" style="margin:0 0 6px">Ingressos</h2>
       @if ($lotes->isEmpty())
         <p>O organizador ainda não disponibilizou ingressos.</p>

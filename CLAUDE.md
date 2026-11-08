@@ -109,9 +109,15 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   pedido aguardando com "Pagar ou conferir pagamento". **Administração → Mercado Pago → "Vendas em modo de teste"** (`mp_vendas_teste`):
   o checkout usa as credenciais de teste. **Repasses** (`/admin/repasses`, `App\Support\Repasses`): por produtora, liberado (fim do
   evento + 3 dias úteis), aguardando e taxa; "Registrar repasse" (data, E2E/TED) grava `repasse` e fecha os pagamentos (`repasse_id`).
-  Financeiro da produtora mostra o **extrato** (vendas, taxa, liberado, aguardando, repasses recebidos). Ainda não: reembolso pela API,
+  **Homologação por empresa** (decisão do Bruno, 08/11/2026): Financeiro → "Ambiente das vendas" (cartões Produção/Homologação;
+  `parametro_sistema` `mp_vendas_teste_org_<id>`; `Checkout::modoTeste($orgId)` = geral OU da empresa): o checkout usa as credenciais de
+  teste da conta de recebimento e a página do evento/compra mostra "Ambiente de teste". **Devolução pelo Mercado Pago**: cancelar
+  ingresso pago (Participantes/Pedidos) chama `Checkout::reembolsar()` → `POST /v1/orders/{id}/refund` (total, ou parcial com
+  `transactions[{id: gateway_pagamento_id, amount}]`) com o token do ambiente em que foi pago (`tokenDoAmbiente`); pagamento vira
+  `estornado`/`estorno_parcial` e o reembolso fica `concluido`; se o MP recusar, nada é cancelado e aparece o erro.
+  Financeiro da produtora mostra o **extrato** (vendas, taxa, liberado, aguardando, repasses recebidos). Ainda não:
   parcelamento configurável, cupom de desconto no checkout pago já aplica o desconto (`Cupom::desconto`). Teste `fluxo-checkout.js`
-  (26, porta 8001 + MP falso).
+  (31, porta 8001 + MP falso).
 - Sem cron ainda: lote `agendado` abre quando chega `venda_inicio`; lote com `lote_anterior_id` só abre quando o
   anterior esgota, encerra ou passa do fim (`EventoPublicoController::loteAVenda`).
 - **Imagem de divulgação do evento** (opcional): JPEG/GIF/PNG até 2 MB, recomendada 1600 x 838, campo "clique ou

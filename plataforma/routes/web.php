@@ -141,6 +141,7 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::post('/financeiro/mercadopago/propria/verificar', [FinanceiroController::class, 'verificarPropria'])->name('financeiro.mp.propria.verificar')->middleware('throttle:10,1,mp-propria-verificar');
     Route::post('/financeiro/mercadopago/propria/teste', [FinanceiroController::class, 'testePropria'])->name('financeiro.mp.propria.teste')
         ->middleware('throttle:10,10,mp-propria-teste');
+    Route::put('/financeiro/ambiente-vendas', [FinanceiroController::class, 'ambienteVendas'])->name('financeiro.ambiente');
     Route::put('/financeiro/modo', [FinanceiroController::class, 'modoRecebimento'])->name('financeiro.modo');
     Route::put('/financeiro/recebimento', [FinanceiroController::class, 'salvarRecebimento'])->name('financeiro.recebimento');
     Route::post('/financeiro/mercadopago/conectar', [FinanceiroController::class, 'conectar'])->name('financeiro.mp.conectar');

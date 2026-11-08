@@ -31,7 +31,7 @@ class Checkout
     /** Token da conta: aplicação da BH (plataforma) ou da própria empresa; em modo de teste, o token de teste. */
     public static function token(ContaPagamento $conta): string
     {
-        $teste = self::modoTeste();
+        $teste = self::modoTeste($conta->organizador_id);
         if ($conta->modo === 'propria') {
             $cript = $teste ? $conta->teste_access_token_cript : $conta->access_token_cript;
             if (! $cript) {
@@ -48,10 +48,51 @@ class Checkout
         return $t;
     }
 
-    /** Administração → Mercado Pago: "Vendas em modo de teste" (cobra com as credenciais de teste). */
-    public static function modoTeste(): bool
+    /**
+     * Vendas em homologação: geral (Administração → Mercado Pago) ou só da empresa (Financeiro → "Ambiente das vendas").
+     * Em homologação o checkout usa as credenciais de TESTE: nada é cobrado de verdade.
+     */
+    public static function modoTeste(?int $organizadorId = null): bool
     {
-        return DB::table('parametro_sistema')->where('chave', 'mp_vendas_teste')->value('valor') === '1';
+        $chaves = array_filter(['mp_vendas_teste', $organizadorId ? 'mp_vendas_teste_org_'.$organizadorId : null]);
+
+        return DB::table('parametro_sistema')->whereIn('chave', $chaves)->where('valor', '1')->exists();
+    }
+
+    /** Token da conta conforme o ambiente em que o pagamento foi feito ('teste' ou 'producao'). */
+    public static function tokenDoAmbiente(ContaPagamento $conta, string $ambiente): string
+    {
+        $t = $ambiente === 'teste'
+            ? ($conta->modo === 'propria' ? ($conta->teste_access_token_cript ? decrypt($conta->teste_access_token_cript, false) : null) : MercadoPago::tokenTeste())
+            : ($conta->modo === 'propria' ? ($conta->access_token_cript ? decrypt($conta->access_token_cript, false) : null) : MercadoPago::tokenAplicacao());
+        if (! $t) {
+            throw new RuntimeException('Sem o Access Token '.($ambiente === 'teste' ? 'de teste' : 'de produção').' da conta de recebimento.');
+        }
+
+        return $t;
+    }
+
+    /**
+     * Devolve ao comprador pelo Mercado Pago (cancelamento pela organização). Devolve o que foi devolvido;
+     * null quando o pedido não foi pago pelo checkout (aí a devolução é manual, como antes).
+     */
+    public static function reembolsar(Pedido $pedido, float $valor): ?array
+    {
+        $pg = DB::table('pagamento')->where('pedido_id', $pedido->id)->where('status', 'aprovado')->whereNotNull('gateway_pedido_id')->orderByDesc('id')->first();
+        if (! $pg || $valor <= 0) {
+            return null;
+        }
+        $conta = ContaPagamento::withoutGlobalScopes()->findOrFail($pg->conta_pagamento_id);
+        $ambiente = json_decode((string) $pg->resposta_gateway, true)['ambiente'] ?? 'producao';
+        $total = round($valor, 2) >= round((float) $pg->valor, 2);
+        $corpo = $total || ! $pg->gateway_pagamento_id ? null
+            : ['transactions' => [['id' => $pg->gateway_pagamento_id, 'amount' => number_format($valor, 2, '.', '')]]];
+        $r = MercadoPago::reembolsarOrder(self::tokenDoAmbiente($conta, $ambiente), $pg->gateway_pedido_id, $corpo);
+        DB::table('pagamento')->where('id', $pg->id)->update(['status' => $total ? 'estornado' : 'estorno_parcial',
+            'status_gateway' => mb_substr((string) ($r['status'] ?? ''), 0, 60)]);
+        Auditoria::registrar('pedido.reembolso_mercadopago', $pedido, null, ['valor' => $valor, 'total' => $total, 'order' => $pg->gateway_pedido_id, 'ambiente' => $ambiente]);
+
+        return ['valor' => $valor, 'ambiente' => $ambiente];
     }
 
     public static function contaDoEvento(Evento $evento): ?ContaPagamento
@@ -121,7 +162,7 @@ class Checkout
             'status_gateway' => mb_substr((string) ($order['status'] ?? ''), 0, 60), 'valor' => $pedido->valor_total,
             'comissao_retida' => self::comissao($pedido), 'valor_liquido_org' => round((float) $pedido->valor_total - self::comissao($pedido), 2),
             'link_pagamento' => mb_substr($link, 0, 500), 'expira_em' => $pedido->expira_em,
-            'resposta_gateway' => json_encode(['ambiente' => self::modoTeste() ? 'teste' : 'producao', 'order' => $order['id']]),
+            'resposta_gateway' => json_encode(['ambiente' => self::modoTeste($pedido->organizador_id) ? 'teste' : 'producao', 'order' => $order['id']]),
         ]);
 
         return $link;
@@ -152,9 +193,7 @@ class Checkout
         }
         $ambiente = json_decode((string) $pg->resposta_gateway, true)['ambiente'] ?? 'producao';
         try {
-            $token = $ambiente === 'teste'
-                ? ($conta->modo === 'propria' ? decrypt((string) $conta->teste_access_token_cript, false) : MercadoPago::tokenTeste())
-                : ($conta->modo === 'propria' ? decrypt((string) $conta->access_token_cript, false) : MercadoPago::tokenAplicacao());
+            $token = self::tokenDoAmbiente($conta, $ambiente);
             $order = MercadoPago::order((string) $token, $pg->gateway_pedido_id);
         } catch (\Throwable $e) {
             Log::warning('Checkout: não consultou a order '.$pg->gateway_pedido_id.': '.$e->getMessage());
