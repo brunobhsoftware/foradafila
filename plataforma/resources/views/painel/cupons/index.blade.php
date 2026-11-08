@@ -33,7 +33,7 @@
                 <td><span class="selo {{ $cl }}">{{ $tx }}</span></td>
                 <td class="num"><div class="acoes-linha">
                     <form method="post" action="{{ route('cupons.alternar', $c) }}">@csrf<button class="botao botao--contorno botao--pequeno">{{ $c->ativo ? 'Desativar' : 'Ativar' }}</button></form>
-                    @php $link = $c->evento ? route('evento.publico', ['slug' => $c->evento->slug, 'cupom' => $c->codigo]) : route('organizador.publico', ['slug' => $org->slug, 'cupom' => $c->codigo]); @endphp
+                    @php $link = $c->evento ? $c->evento->linkPublico(['cupom' => $c->codigo]) : route('organizador.publico', ['slug' => $org->slug, 'cupom' => $c->codigo]); @endphp
                     <input type="hidden" id="link-cupom-{{ $c->id }}" value="{{ $link }}">
                     <button type="button" class="botao botao--escuro botao--pequeno" data-copiar="link-cupom-{{ $c->id }}" title="{{ $link }}">Copiar link</button>
                     <button type="button" class="botao botao--contorno botao--pequeno" data-alternar="cupom-{{ $c->id }}">Editar</button>

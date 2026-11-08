@@ -48,7 +48,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   ok((await linha.innerText()).includes('Divulgação') && (await linha.innerText()).includes('sem limite'), 'lista mostra "Divulgação" e "sem limite"');
   await linha.locator('button:has-text("Copiar link")').click();
   const link = await P.evaluate(() => navigator.clipboard.readText());
-  ok(link.endsWith('/e/festa-divulgada?cupom=JOAO'), 'copia o link do evento com o código: ' + link);
+  ok(/\/e\/[0-9a-f]{10}\?cupom=JOAO$/.test(link), 'copia o link do evento (código fixo) com o cupom: ' + link);
 
   // ---- inscrição pelo link ----
   const V = await (await b.newContext()).newPage();

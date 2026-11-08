@@ -30,7 +30,7 @@
       <article class="pub-pedido">
         <div class="pub-pedido__topo">
           <div>
-            <h2><a href="{{ route('evento.publico', $evento->slug) }}" style="color:var(--tinta)">{{ $evento->titulo }}</a></h2>
+            <h2><a href="{{ $evento->linkPublico() }}" style="color:var(--tinta)">{{ $evento->titulo }}</a></h2>
             <small>{{ data_local($evento->data_inicio, 'd/m/Y \à\s H:i') }} · {{ $evento->local?->enderecoCurto() ?? \App\Models\Evento::FORMATOS[$evento->formato] }}</small>
           </div>
           <div style="text-align:right">

@@ -296,7 +296,7 @@ class InscricaoController extends Controller
             report($e);
             \App\Support\Checkout::liberar($pedido->fresh(), 'cancelado');
 
-            return redirect()->route('evento.publico', $evento->slug)
+            return redirect()->$evento->linkPublico()
                 ->withErrors(['q' => 'Não foi possível abrir o pagamento agora. Tente de novo em alguns minutos.']);
         }
 

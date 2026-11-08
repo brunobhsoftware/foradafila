@@ -162,6 +162,11 @@ const webhook = async (P, id) => {
   t = (await P.locator('.evento-painel').first().innerText()).replace(/\s+/g, ' ');
   ok(t.includes('Valor vendido R$ 210,00') && t.includes('Taxa da plataforma R$ 5,00') && t.includes('Devolvido R$ 105,00') && t.includes('Valor líquido R$ 100,00')
     && (await P.locator('.evento-painel [data-compartilhar]').count()) === 1, 'Meus eventos: vendido, taxa dos válidos, devolvido, líquido e botão de compartilhar');
+  const linkCodigo = await P.inputValue('.evento-painel input[id^=link-ev-]');
+  ok(/\/e\/[0-9a-f]{10}$/.test(linkCodigo), 'link para compartilhar usa código fixo: ' + linkCodigo);
+  sql("UPDATE evento SET titulo='Show Renomeado', slug='show-renomeado'");
+  await C.goto(linkCodigo);
+  ok((await C.content()).includes('Show Renomeado'), 'link com código continua abrindo o evento depois de mudar o nome');
   // ---- homologação por empresa ----
   await P.goto(BASE + '/painel/financeiro');
   await P.check('input[name=ambiente_vendas][value=homologacao]', { force: true });
@@ -169,7 +174,7 @@ const webhook = async (P, id) => {
   ok((await P.content()).includes('Vendas em HOMOLOGAÇÃO') && sql("SELECT valor FROM parametro_sistema WHERE chave LIKE 'mp_vendas_teste_org_%'") === '1', 'empresa coloca as vendas em homologação');
   sql("UPDATE evento SET data_inicio = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 5 DAY), data_fim = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 6 DAY)");
   sql("UPDATE lote SET venda_fim = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 6 DAY)");
-  await C.goto(BASE + '/e/show-pago');
+  await C.goto(linkCodigo);
   ok((await C.content()).includes('Ambiente de teste (homologação)'), 'página do evento avisa que é teste');
 
   sql("UPDATE taxa_regra SET percentual=0, valor_fixo=0, valor_minimo=0 WHERE operacao='ingresso_pago'");

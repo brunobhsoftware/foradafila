@@ -20,7 +20,7 @@
       <input type="hidden" name="chave" value="{{ old('chave', $chave) }}">
       @foreach ($selecao as $s)<input type="hidden" name="q[{{ $s['lote']->uuid }}]" value="{{ $s['quantidade'] }}">@endforeach
 
-      <div class="pub-trilha" style="margin-bottom:4px"><a href="{{ route('evento.publico', $evento->slug) }}" style="color:var(--laranja)">‹ Voltar ao evento</a></div>
+      <div class="pub-trilha" style="margin-bottom:4px"><a href="{{ $evento->linkPublico() }}" style="color:var(--laranja)">‹ Voltar ao evento</a></div>
       <h1 style="font-size:1.7rem;margin-bottom:18px">{{ $pago ? 'Comprar ingresso' : 'Garantir ingresso' }}</h1>
 
       <h2 style="font-size:1.15rem">1. Seus dados</h2>

@@ -19,7 +19,7 @@
     </div>
     <div class="cabecalho__acoes">
         @if (in_array($evento->status, \App\Http\Controllers\Publico\EventoPublicoController::STATUS_PUBLICOS) && $evento->visibilidade !== 'privado')
-            <a href="{{ route('evento.publico', $evento->slug) }}" class="botao botao--contorno" target="_blank" rel="noopener"><x-icone nome="olho" /> Ver página pública</a>
+            <a href="{{ $evento->linkPublico() }}" class="botao botao--contorno" target="_blank" rel="noopener"><x-icone nome="olho" /> Ver página pública</a>
         @endif
         @can('evento.criar')
             @unless (in_array($evento->status, ['encerrado', 'cancelado']))
@@ -190,7 +190,7 @@
             <p><b>Término:</b> {{ data_local($evento->data_fim) }} · <b>Portões:</b> {{ data_local($evento->abertura_portoes) }}</p>
             <p><b>Por pedido:</b> até {{ $evento->max_ingressos_pedido }} ingressos{{ $evento->max_ingressos_cpf ? ' · até '.$evento->max_ingressos_cpf.' por CPF' : '' }}</p>
             <p><b>Ingresso:</b> {{ $evento->nominal ? 'nominal' : 'ao portador' }}{{ $evento->exige_cpf_participante ? ', com CPF' : '' }}{{ $evento->permite_transferencia ? ', transferível até '.$evento->transferencia_ate_h.' h antes' : '' }}{{ $evento->permite_reentrada ? ', com reentrada' : '' }}</p>
-            <p style="margin:0"><b>Endereço da página:</b> {{ route('evento.publico', $evento->slug) }}@if ($evento->status === 'rascunho') <small>(no ar depois de publicar)</small>@endif</p>
+            <p style="margin:0"><b>Endereço da página:</b> {{ $evento->linkPublico() }}@if ($evento->status === 'rascunho') <small>(no ar depois de publicar)</small>@endif</p>
         </div>
     </section>
     @if (isset($transicoes['cancelado']) && auth()->user()->can('evento.cancelar'))

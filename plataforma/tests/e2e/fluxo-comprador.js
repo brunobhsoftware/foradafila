@@ -44,7 +44,7 @@ const nav = (p, acao) => Promise.all([p.waitForNavigation(), acao]);
   await nav(P, f.locator('button:has-text("Adicionar lote")').click());
   ok((await P.content()).includes('Lote “Lote VIP” criado'), 'lote pago criado');
   const linkPublico = await P.getAttribute('a:has-text("Ver página pública")', 'href');
-  ok(!!linkPublico && linkPublico.includes('/e/noite-do-chope'), 'painel mostra o link da página pública');
+  ok(!!linkPublico && /\/e\/[0-9a-f]{10}$/.test(linkPublico), 'painel mostra o link da página pública');
   const menuProdutor = await (await P.goto(BASE + '/')) && await P.locator('#menu').innerText();
   ok(menuProdutor.includes('Meus eventos') && menuProdutor.includes('Novo evento'), 'menu superior do produtor mostra Meus eventos e Novo');
 

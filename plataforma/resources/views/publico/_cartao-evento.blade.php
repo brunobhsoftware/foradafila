@@ -1,4 +1,4 @@
-<a href="{{ route('evento.publico', $evento->slug) }}" class="pub-evento-card">
+<a href="{{ $evento->linkPublico() }}" class="pub-evento-card">
   @if ($evento->imagem_capa_url)
     <img class="pub-evento-card__img" src="{{ $evento->imagem_capa_url }}" alt="" width="1600" height="838" loading="lazy">
   @endif
