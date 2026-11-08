@@ -45,6 +45,13 @@ class Esquema
         return self::$cache['v012'] ??= Schema::hasColumn('conta_pagamento', 'modo') && Schema::hasTable('repasse');
     }
 
+    /** V012 completo: modo "propria" (aplicação Mercado Pago da empresa) e os campos das chaves. */
+    public static function temPropria(): bool
+    {
+        return self::$cache['propria'] ??= self::temV012() && Schema::hasColumn('conta_pagamento', 'teste_access_token_cript')
+            && str_contains((string) (\Illuminate\Support\Facades\DB::selectOne("SHOW COLUMNS FROM conta_pagamento LIKE 'modo'")->Type ?? ''), 'propria');
+    }
+
     /** V011: cadastro único de pessoas por CPF. */
     public static function temV011(): bool
     {

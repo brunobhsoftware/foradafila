@@ -91,6 +91,10 @@
     </form>
 </section>
 
+@if (! $temPropria)
+<section class="cartao" style="padding:18px 24px;margin-top:18px"><b>Mercado Pago da empresa (aplicação própria)</b>
+    <p class="suave" style="margin:6px 0 0">Disponível depois que a plataforma atualizar o banco de dados (V012 completo).</p></section>
+@else
 <details class="cartao" style="padding:18px 24px;margin-top:18px" @if (request('mp') || $verificacao || $errors->hasAny(['client_id','client_secret','access_token','public_key','webhook_secret'])) open @endif>
     <summary style="cursor:pointer"><b style="font-size:1.1rem">Mercado Pago da empresa (aplicação própria)</b>
         @if ($propriaAtiva)<span class="selo selo--verde" style="margin-left:8px">Ativa{{ $propria->email_conta ? ' — '.$propria->email_conta : '' }}</span>
@@ -154,6 +158,7 @@
     @endif
     @endcan
 </details>
+@endif
 @endif
 
 @if ($v012 && $saldo)
