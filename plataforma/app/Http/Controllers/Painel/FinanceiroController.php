@@ -27,7 +27,7 @@ class FinanceiroController extends Controller
             'org' => $org,
             'v012' => \App\Support\Esquema::temV012(),
             'recebimento' => \App\Support\Recebimento::conta($org->id),
-            'propria' => \App\Support\Esquema::temV012() ? \App\Support\Recebimento::conta($org->id, 'propria') : null,
+            'propria' => \App\Support\Esquema::temV012() && Gate::allows('financeiro.contas') ? \App\Support\Recebimento::contaPropria($org) : (\App\Support\Esquema::temV012() ? \App\Support\Recebimento::conta($org->id, 'propria') : null),
             'verificacao' => session('verificacao_mp'),
             'saldo' => \App\Support\Esquema::temV012() ? \App\Support\Repasses::resumo($org->id) : null,
             'repasses' => \App\Support\Esquema::temV012() ? DB::table('repasse')->where('organizador_id', $org->id)->orderByDesc('id')->limit(20)->get() : collect(),
@@ -152,6 +152,57 @@ class FinanceiroController extends Controller
         Auditoria::registrar('financeiro.mp_propria_verificar', $conta, null, ['producao' => $r['producao']['ok'] ?? null, 'teste' => $r['teste']['ok'] ?? null]);
 
         return redirect()->route('financeiro', ['mp' => 1])->with('verificacao_mp', $r);
+    }
+
+    /** Pagamento de teste com a aplicação própria da empresa (homologação ou produção), como na Administração. */
+    public function testePropria(Request $request, string $ambiente)
+    {
+        Gate::authorize('financeiro.contas');
+        abort_unless(in_array($ambiente, ['teste', 'producao'], true), 404);
+        $d = $request->validate([
+            'cpf' => ['required', new \App\Rules\DocumentoValido('PF')],
+            'nome' => ['required', 'string', 'max:150'],
+            'email' => ['required', 'email:filter', 'max:150'],
+            'telefone' => ['nullable', 'string', 'regex:/^\D*(\d\D*){10,11}$/'],
+            'valor' => ['required', 'numeric', 'min:1', 'max:100'],
+        ], ['telefone.regex' => 'Telefone com DDD (10 ou 11 números).'], ['nome' => 'nome completo', 'email' => 'e-mail']);
+        $org = \App\Models\Organizador::findOrFail(app(Tenant::class)->id());
+        $conta = \App\Support\Recebimento::conta($org->id, 'propria');
+        $cript = $ambiente === 'teste' ? $conta?->teste_access_token_cript : $conta?->access_token_cript;
+        if (! $cript) {
+            return redirect()->route('financeiro', ['mp' => 1])->withErrors(['teste_'.$ambiente => 'Salve primeiro o Access Token '.($ambiente === 'teste' ? 'de teste' : 'de produção').'.']);
+        }
+        $cpf = preg_replace('/\D/', '', $d['cpf']);
+        $fone = preg_replace('/\D/', '', (string) ($d['telefone'] ?? ''));
+        $partes = preg_split('/\s+/', trim($d['nome']), 2);
+        \App\Support\CadastroPessoa::registrar($cpf, $d['nome'], $d['email'], $fone ?: null, 'pagamento_teste');
+        $valor = number_format((float) $d['valor'], 2, '.', '');
+        $ref = 'teste-'.Str::uuid();
+        $volta = fn (string $r) => route('admin.mercadopago.teste.retorno', ['ref' => $ref, 'resultado' => $r]);
+        $dados = [
+            'type' => 'online', 'processing_mode' => 'automatic', 'total_amount' => $valor, 'external_reference' => $ref,
+            'description' => 'Teste de integração — '.$org->nomeExibicao(),
+            'payer' => array_filter(['email' => $d['email'], 'first_name' => $partes[0], 'last_name' => $partes[1] ?? $partes[0],
+                'identification' => ['type' => 'CPF', 'number' => $cpf],
+                'phone' => $fone ? ['area_code' => substr($fone, 0, 2), 'number' => substr($fone, 2)] : null]),
+            'items' => [['external_code' => 'teste-ff', 'title' => 'Ingresso de teste — '.$org->nomeExibicao(),
+                'description' => 'Ingresso de teste para validar a integração com o Fora da Fila', 'category_id' => 'tickets',
+                'quantity' => 1, 'unit_price' => $valor]],
+            'config' => ['statement_descriptor' => 'FORADAFILA',
+                'online' => ['success_url' => $volta('sucesso'), 'failure_url' => $volta('falha'), 'pending_url' => $volta('pendente')]],
+            'additional_info' => ['payer.authentication_type' => 'WEB', 'payer.registration_date' => now()->toIso8601String(),
+                'payer.is_first_purchase_online' => true, 'payer.last_purchase' => now()->toIso8601String()],
+        ];
+        try {
+            $order = MercadoPago::criarOrder(decrypt($cript, false), $dados);
+        } catch (\Throwable $e) {
+            return redirect()->route('financeiro', ['mp' => 1])->withErrors(['teste_'.$ambiente => $e->getMessage()]);
+        }
+        \Illuminate\Support\Facades\Cache::put('mp_teste_'.$ref, ['order' => $order['id'], 'ambiente' => $ambiente, 'conta' => $conta->id], now()->addHours(6));
+        Auditoria::registrar('financeiro.mp_propria_teste', $conta, null, ['ambiente' => $ambiente, 'valor' => $valor, 'order' => $order['id']]);
+
+        return view('painel.financeiro.teste-link', ['link' => $order['checkout_url'] ?? '', 'valor' => (float) $valor,
+            'teste' => $ambiente === 'teste', 'orderId' => $order['id'], 'empresa' => $org->nomeExibicao(), 'linkSandbox' => null]);
     }
 
     /** Escolhe como as vendas são recebidas: pela plataforma (repasse) ou na aplicação própria da empresa. */

@@ -158,11 +158,11 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   **Aplicação Mercado Pago própria da empresa** (decisão do Bruno, 08/11/2026): no Financeiro, "Mercado Pago da empresa (aplicação
   própria)" com blocos TESTE e PRODUÇÃO (Client ID, Client Secret, Access Token, Public Key, assinatura dos webhooks; segredos
   criptografados, em branco mantém), endereço de webhook **por empresa** (`/webhooks/mercadopago/{uuid da conta}`, confere com a
-  assinatura dela e grava `webhook_evento.conta_pagamento_id`) e "Verificar de quem é o token" (`/users/me`; o de produção válido
+  assinatura dela e grava `webhook_evento.conta_pagamento_id`) a conta própria é criada ao abrir o Financeiro (mostra logo a URL do webhook, o site e o tipo de solução para copiar); **pagamento de teste** em cada bloco (homologação com o token de teste e produção com o de produção; CPF primeiro, nome completo, e-mail, telefone, valor; `financeiro.mp.propria.teste`, link + QR em `painel/financeiro/teste-link`, retorno público `admin.mercadopago.teste.retorno` que usa o token da empresa quando o cache `mp_teste_<ref>` traz `conta`) e "Verificar de quem é o token" (`/users/me`; o de produção válido
   ativa a conta `modo = propria`, preenchendo `homologada_em` por causa do gatilho `trg_conta_bu`). "Onde as vendas são recebidas":
   **pela plataforma, com repasse** (padrão) ou **direto na conta da empresa** (`organizador.recebimento_modo`; só com a aplicação
   ativa; troca a conta dos eventos não encerrados; nesse modo a taxa da plataforma é cobrada em fatura). `Recebimento::contaAtual()`
-  escolhe a conta na publicação e no checkout. Teste `fluxo-mp-propria.js` (14, porta 8001 + MP falso na 8099). **Próximo:** checkout pago com o token da BH,
+  escolhe a conta na publicação e no checkout. Teste `fluxo-mp-propria.js` (18, porta 8001 + MP falso na 8099). **Próximo:** checkout pago com o token da BH,
   webhook confirmando pedido e emitindo ingressos, saldo e repasses na Administração.
 - **Financeiro / Mercado Pago (OAuth pronto, aguardando a aplicação no MP):** `/painel/financeiro` (`FinanceiroController`)
   conecta a conta do organizador por OAuth com PKCE (`state` na sessão), grava em `conta_pagamento` (status `conectada`,

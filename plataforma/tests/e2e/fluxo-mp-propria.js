@@ -19,8 +19,16 @@ const falso = http.createServer((req, res) => {
     if (tok === 'APP_USR-teste-slod') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ id: 888, email: 'test_user_1@testuser.com', nickname: 'TESTUSER1', tags: ['test_user'] })); }
     res.writeHead(401); return res.end('{}');
   }
+  if (req.url === '/v1/orders' && req.method === 'POST') {
+    let corpo = ''; req.on('data', (d) => { corpo += d; }); req.on('end', () => {
+      ordem = { token: tok, corpo: JSON.parse(corpo) };
+      res.writeHead(201, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ id: 'ORDSLOD1', status: 'action_required', checkout_url: 'http://127.0.0.1:8099/pagar/ORDSLOD1' }));
+    }); return;
+  }
+  if (req.url.startsWith('/v1/orders/ORDSLOD1')) { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ id: 'ORDSLOD1', status: 'processed', status_detail: 'accredited', total_amount: '5.00', transactions: { payments: [{ id: 'PAYSLOD1' }] } })); }
   res.writeHead(404); res.end('{}');
 }).listen(8099);
+let ordem = null;
 
 (async () => {
   const b = await chromium.launch(); const erros = [];
@@ -52,12 +60,29 @@ const falso = http.createServer((req, res) => {
   await nav(P, P.locator('form:has(button:has-text("Salvar chaves de produção")) button').click());
   ok(sql("SELECT access_token_cript IS NOT NULL FROM conta_pagamento WHERE modo='propria'") === '1', 'salvar em branco mantém o token');
   const webhook = await P.inputValue('#mp-prop-webhook');
+  ok((await P.inputValue('#mp-prop-site')).startsWith('http'), 'mostra o site para cadastrar na aplicação');
   ok(/\/webhooks\/mercadopago\/[0-9a-f-]{36}$/.test(webhook), 'mostra o endereço de webhooks da empresa: ' + webhook);
 
   await nav(P, P.click('button:has-text("Verificar de quem é o token")'));
   let t = await P.content();
   ok(t.includes('estacaoslod@gmail.com (ESTACAOSLOD) — conta real') && t.includes('test_user_1@testuser.com (TESTUSER1) — conta de teste'), 'verificação mostra a conta de cada token');
   ok(sql("SELECT CONCAT_WS('|', status, conta_externa_id) FROM conta_pagamento WHERE modo='propria'") === 'ativa|777', 'token de produção válido ativa a aplicação própria');
+
+  // pagamento de teste (homologação) com o token de teste da empresa
+  const ft = P.locator('form:has(button:has-text("Pagar teste no Mercado Pago"))');
+  await ft.locator('[name=email]').fill('test_user_comprador@testuser.com');
+  await nav(P, ft.locator('button').click());
+  ok(ordem && ordem.token === 'APP_USR-teste-slod' && ordem.corpo.total_amount === '5.00' && ordem.corpo.payer.first_name === 'APRO'
+    && (await P.inputValue('#link-teste')) === 'http://127.0.0.1:8099/pagar/ORDSLOD1', 'pagamento de teste usa o token de TESTE da empresa e mostra o link');
+  const R = await (await b.newContext()).newPage();
+  await R.goto(ordem.corpo.config.online.success_url);
+  ok((await R.content()).includes('ORDSLOD1') && (await R.content()).includes('Aprovado'), 'retorno do teste (sem login) mostra a order aprovada');
+  await P.goto(BASE + '/painel/financeiro?mp=1');
+  const fp = P.locator('form:has(button:has-text("Pagar de verdade no Mercado Pago"))');
+  await fp.locator('[name=cpf]').fill('529.982.247-25'); await fp.locator('[name=nome]').fill('Maria Silva'); await fp.locator('[name=email]').fill('maria@real.test');
+  await nav(P, fp.locator('button').click());
+  ok(ordem.token === 'APP_USR-prod-slod', 'pagamento de produção usa o token de PRODUÇÃO da empresa');
+  await P.goto(BASE + '/painel/financeiro');
 
   // escolher receber direto
   await P.check('input[name=recebimento_modo][value=propria]', { force: true });
