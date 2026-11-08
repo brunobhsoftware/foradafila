@@ -77,16 +77,18 @@ const falso = http.createServer((req, res) => {
 
   await nav(P, P.click('button:has-text("Salvar dados da aplicação")'));
   ok((await P.content()).includes('Preencha pelo menos um campo'), 'tudo em branco é recusado');
-  ok(await P.locator('#aplicacao [name=client_id]').count() === 1 && await P.locator('#ambiente-teste [name=teste_client_id]').count() === 0
+  ok(await P.locator('#aplicacao [name=client_id]').count() === 1 && await P.locator('#aplicacao [name=webhook_secret]').count() === 0 && await P.locator('#ambiente-teste [name=teste_webhook_secret]').count() === 1
     && await P.locator('#ambiente-producao [name=client_id]').count() === 0, 'Client ID, Client Secret e assinatura ficam só no bloco da aplicação');
-  await P.fill('[name=client_id]', '1234567890123456'); await P.fill('[name=client_secret]', 'SegredoDaBH-abcdWXYZ'); await P.fill('[name=webhook_secret]', 'assinatura-wh-9876');
+  await P.fill('[name=client_id]', '1234567890123456'); await P.fill('[name=client_secret]', 'SegredoDaBH-abcdWXYZ');
   await nav(P, P.click('button:has-text("Salvar dados da aplicação")'));
+  await P.fill('#ambiente-producao [name=webhook_secret]', 'assinatura-wh-9876');
+  await nav(P, P.click('button:has-text("Salvar chaves de produção")'));
   const tela = await P.content();
   ok(tela.includes('Chaves do Mercado Pago salvas') && tela.includes('Configurada'), 'chaves salvas');
   ok(sql("SELECT valor FROM parametro_sistema WHERE chave='mp_client_id'") === '1234567890123456', 'Client ID gravado');
   ok(sql("SELECT COUNT(*) FROM parametro_sistema WHERE chave IN ('mp_client_secret','mp_webhook_secret') AND valor NOT LIKE '%Segredo%' AND valor NOT LIKE '%assinatura%'") === '2', 'segredos criptografados no banco');
   ok(!tela.includes('SegredoDaBH-abcdWXYZ') && tela.includes('••••WXYZ'), 'segredo não volta para a tela (só os 4 últimos)');
-  ok(sql("SELECT COUNT(*) FROM auditoria WHERE acao='plataforma.mercadopago_credenciais' AND depois NOT LIKE '%Segredo%'") === '1', 'auditoria registra sem os valores');
+  ok(sql("SELECT COUNT(*) FROM auditoria WHERE acao='plataforma.mercadopago_credenciais' AND depois NOT LIKE '%Segredo%'") === '2', 'auditoria registra sem os valores');
 
   // em branco mantém
   await P.fill('[name=client_id]', '9999999999999999');
@@ -100,10 +102,10 @@ const falso = http.createServer((req, res) => {
 
   // pagamento de teste: Teste (padrão) exige o Access Token de teste
   await P.goto(BASE + '/admin/mercadopago');
-  ok(await P.inputValue('#adm-valor-teste') === '5.00' && await P.locator('#ambiente-teste').count() === 1 && await P.locator('#ambiente-producao input[name=access_token]').count() === 1
+  ok(await P.inputValue('#adm-valor') === '5.00' && await P.locator('#ambiente-teste').count() === 1 && await P.locator('#ambiente-producao input[name=access_token]').count() === 1
     && await P.locator('#ambiente-teste input[name=teste_access_token]').count() === 1, 'dois blocos (teste e produção), cada um com seus 4 campos e R$ 5,00');
-  await P.fill('#ambiente-teste [name=email]', 'test_user_comprador@testuser.com');
-  await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
+  await P.fill('#pagamento-teste [name=email]', 'test_user_comprador@testuser.com');
+  await P.check('#pagamento-teste input[name=ambiente][value=teste]', { force: true }); await nav(P, P.click('button:has-text("Gerar pagamento no Mercado Pago")'));
   ok((await P.content()).includes('Cadastre primeiro as chaves de teste'), 'sem credenciais de teste, avisa');
   await P.fill('[name=teste_access_token]', 'token-errado');
   await nav(P, P.click('button:has-text("Salvar chaves de teste")'));
@@ -111,8 +113,8 @@ const falso = http.createServer((req, res) => {
   await P.fill('[name=teste_access_token]', 'APP_USR-teste-123');
   await nav(P, P.click('button:has-text("Salvar chaves de teste")'));
   ok(sql("SELECT valor NOT LIKE '%APP_USR%' FROM parametro_sistema WHERE chave='mp_teste_access_token'") === '1', 'Access Token de teste gravado criptografado');
-  await P.fill('#ambiente-teste [name=email]', 'test_user_comprador@testuser.com');
-  await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
+  await P.fill('#pagamento-teste [name=email]', 'test_user_comprador@testuser.com');
+  await P.check('#pagamento-teste input[name=ambiente][value=teste]', { force: true }); await nav(P, P.click('button:has-text("Gerar pagamento no Mercado Pago")'));
   ok(await P.locator('.link-teste__qr svg').count() === 1 && (await P.inputValue('#link-teste')).includes('/admin/mercadopago/teste/retorno'), 'mostra o link para copiar e o QR Code');
   await P.goto(await P.inputValue('#link-teste'));
   const it = preferencia.items[0];
@@ -143,8 +145,8 @@ const falso = http.createServer((req, res) => {
 
   // Produção usa o token da aplicação (client_credentials)
   await P.goto(BASE + '/admin/mercadopago');
-  for (const [n, v] of [['email', 'comprador@real.test'], ['nome', 'Maria Silva'], ['cpf', '529.982.247-25'], ['telefone', '(31) 98888-7777']]) await P.fill(`#ambiente-producao [name=${n}]`, v);
-  await nav(P, P.click('button:has-text("Pagar de verdade no Mercado Pago")'));
+  for (const [n, v] of [['email', 'comprador@real.test'], ['nome', 'Maria Silva'], ['cpf', '529.982.247-25'], ['telefone', '(31) 98888-7777']]) await P.fill(`#pagamento-teste [name=${n}]`, v);
+  await P.check('#pagamento-teste input[name=ambiente][value=producao]', { force: true }); await nav(P, P.click('button:has-text("Gerar pagamento no Mercado Pago")'));
   await P.goto(await P.inputValue('#link-teste'));
   ret = await P.content();
   ok(autorizacaoPref === 'Bearer APP-TOKEN-BH' && preferencia.payer.phone.area_code === '31' && preferencia.payer.phone.number === '988887777' && ret.includes('Produção') && ret.includes('Aprovado'), 'Produção: token da aplicação e telefone do comprador');
@@ -152,10 +154,10 @@ const falso = http.createServer((req, res) => {
   ok(preferencia.payer.first_name === 'Maria' && preferencia.payer.last_name === 'Silva', 'nome completo é dividido em nome e sobrenome para o Mercado Pago');
   ok(sql("SELECT CONCAT_WS('|', nome, email, telefone) FROM pessoa WHERE cpf='52998224725'") === 'Maria Silva|comprador@real.test|31988887777', 'cadastro único gravou a pessoa pelo CPF');
   await P.goto(BASE + '/admin/mercadopago');
-  await P.fill('#ambiente-producao [name=nome]', ''); await P.fill('#ambiente-producao [name=email]', '');
-  await P.fill('#ambiente-producao [name=cpf]', '529.982.247-25');
-  await P.waitForFunction(() => document.querySelector('#ambiente-producao [name=nome]').value !== '');
-  ok(await P.inputValue('#ambiente-producao [name=nome]') === 'Maria Silva' && await P.inputValue('#ambiente-producao [name=email]') === 'comprador@real.test', 'digitar o CPF preenche nome e e-mail');
+  await P.fill('#pagamento-teste [name=nome]', ''); await P.fill('#pagamento-teste [name=email]', '');
+  await P.fill('#pagamento-teste [name=cpf]', '529.982.247-25');
+  await P.waitForFunction(() => document.querySelector('#pagamento-teste [name=nome]').value !== '');
+  ok(await P.inputValue('#pagamento-teste [name=nome]') === 'Maria Silva' && await P.inputValue('#pagamento-teste [name=email]') === 'comprador@real.test', 'digitar o CPF preenche nome e e-mail');
   const semLogin = await (await b.newContext()).newPage();
   await semLogin.goto(BASE + '/cadastro-unico/52998224725');
   ok(!(await semLogin.content()).includes('Maria'), 'sem login a busca por CPF não revela nada');
@@ -174,8 +176,8 @@ const falso = http.createServer((req, res) => {
   await P.fill('#ambiente-producao [name=access_token]', 'APP_USR-producao-999');
   await nav(P, P.click('button:has-text("Salvar chaves de produção")'));
   ok(sql("SELECT valor NOT LIKE '%producao-999%' FROM parametro_sistema WHERE chave='mp_access_token'") === '1', 'Access Token de produção gravado criptografado');
-  for (const [n, v] of [['email', 'comprador@real.test'], ['nome', 'Maria Silva'], ['cpf', '529.982.247-25'], ['telefone', '(31) 98888-7777']]) await P.fill(`#ambiente-producao [name=${n}]`, v);
-  await nav(P, P.click('button:has-text("Pagar de verdade no Mercado Pago")'));
+  for (const [n, v] of [['email', 'comprador@real.test'], ['nome', 'Maria Silva'], ['cpf', '529.982.247-25'], ['telefone', '(31) 98888-7777']]) await P.fill(`#pagamento-teste [name=${n}]`, v);
+  await P.check('#pagamento-teste input[name=ambiente][value=producao]', { force: true }); await nav(P, P.click('button:has-text("Gerar pagamento no Mercado Pago")'));
   ok(autorizacaoPref === 'Bearer APP_USR-producao-999', 'Produção usa o Access Token de produção cadastrado');
 
   ok(erros.length === 0, 'sem erros de JavaScript ' + erros.join(' | '));

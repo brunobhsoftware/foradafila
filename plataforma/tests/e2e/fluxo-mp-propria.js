@@ -49,13 +49,14 @@ let ordem = null;
   ok((await P.content()).includes('começa com APP_USR-'), 'Access Token em formato errado é recusado');
   ok(await teste.locator('[name=client_id]').count() === 0 && await prod.locator('[name=client_id]').count() === 0, 'ambientes só pedem Access Token e Public Key');
   const app = P.locator('form:has(button:has-text("Salvar dados da aplicação"))');
-  await app.locator('[name=client_id]').fill('2222'); await app.locator('[name=client_secret]').fill('segredo-slod'); await app.locator('[name=webhook_secret]').fill('wh-slod');
+  await app.locator('[name=client_id]').fill('2222'); await app.locator('[name=client_secret]').fill('segredo-slod');
+  ok(await app.locator('[name=webhook_secret]').count() === 0 && await teste.locator('[name=webhook_secret]').count() === 1, 'aplicação só com Client ID e Secret; assinatura em cada ambiente');
   await nav(P, app.locator('button').click());
   ok((await P.content()).includes('Dados da aplicação salvos'), 'dados da aplicação (Client ID, Secret, assinatura) salvos uma vez');
   await P.locator('form:has(button:has-text("Salvar chaves de teste")) [name=access_token]').fill('APP_USR-teste-slod');
   await nav(P, P.locator('form:has(button:has-text("Salvar chaves de teste")) button:has-text("Salvar")').click());
   const pr = P.locator('form:has(button:has-text("Salvar chaves de produção"))');
-  await pr.locator('[name=access_token]').fill('APP_USR-prod-slod');
+  await pr.locator('[name=access_token]').fill('APP_USR-prod-slod'); await pr.locator('[name=webhook_secret]').fill('wh-slod');
   await nav(P, pr.locator('button:has-text("Salvar")').click());
   ok((await P.content()).includes('Chaves de produção salvas') && sql("SELECT CONCAT_WS('|', modo, client_id, status) FROM conta_pagamento WHERE modo='propria'") === 'propria|2222|em_homologacao', 'chaves salvas (produção aguardando verificação)');
   ok(sql("SELECT access_token_cript NOT LIKE '%APP_USR%' AND client_secret_cript NOT LIKE '%segredo%' FROM conta_pagamento WHERE modo='propria'") === '1', 'segredos gravados criptografados');
@@ -72,18 +73,21 @@ let ordem = null;
   ok(sql("SELECT CONCAT_WS('|', status, conta_externa_id) FROM conta_pagamento WHERE modo='propria'") === 'ativa|777', 'token de produção válido ativa a aplicação própria');
 
   // pagamento de teste (homologação) com o token de teste da empresa
-  const ft = P.locator('form:has(button:has-text("Pagar teste no Mercado Pago"))');
+  const ft = P.locator('form:has(button:has-text("Gerar pagamento no Mercado Pago"))');
+  await ft.locator('input[name=ambiente][value=teste]').check({ force: true });
+  await ft.locator('[name=cpf]').fill('123.456.789-09'); await ft.locator('[name=nome]').fill('APRO Teste');
   await ft.locator('[name=email]').fill('test_user_comprador@testuser.com');
-  await nav(P, ft.locator('button').click());
+  await nav(P, ft.locator('button:has-text("Gerar")').click());
   ok(ordem && ordem.token === 'APP_USR-teste-slod' && ordem.corpo.total_amount === '5.00' && ordem.corpo.payer.first_name === 'APRO'
     && (await P.inputValue('#link-teste')) === 'http://127.0.0.1:8099/pagar/ORDSLOD1', 'pagamento de teste usa o token de TESTE da empresa e mostra o link');
   const R = await (await b.newContext()).newPage();
   await R.goto(ordem.corpo.config.online.success_url);
   ok((await R.content()).includes('ORDSLOD1') && (await R.content()).includes('Aprovado'), 'retorno do teste (sem login) mostra a order aprovada');
   await P.goto(BASE + '/painel/financeiro?mp=1');
-  const fp = P.locator('form:has(button:has-text("Pagar de verdade no Mercado Pago"))');
+  const fp = P.locator('form:has(button:has-text("Gerar pagamento no Mercado Pago"))');
+  await fp.locator('input[name=ambiente][value=producao]').check({ force: true });
   await fp.locator('[name=cpf]').fill('529.982.247-25'); await fp.locator('[name=nome]').fill('Maria Silva'); await fp.locator('[name=email]').fill('maria@real.test');
-  await nav(P, fp.locator('button').click());
+  await nav(P, fp.locator('button:has-text("Gerar")').click());
   ok(ordem.token === 'APP_USR-prod-slod', 'pagamento de produção usa o token de PRODUÇÃO da empresa');
   await P.goto(BASE + '/painel/financeiro');
 

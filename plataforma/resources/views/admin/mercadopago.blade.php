@@ -54,19 +54,19 @@
     ];
     $prefixo = ['teste' => 'teste_', 'producao' => ''];
     // Client ID, Client Secret e assinatura dos webhooks são da APLICAÇÃO (um só); cada ambiente tem só o Access Token.
-    $nomesApp = ['client_id' => ['Client ID', 'text'], 'client_secret' => ['Client Secret', 'password'], 'webhook_secret' => ['Assinatura secreta dos webhooks', 'password']];
-    $nomes = ['access_token' => ['Access Token', 'password']];
+    $nomesApp = ['client_id' => ['Client ID', 'text'], 'client_secret' => ['Client Secret', 'password']];
+    $nomes = ['access_token' => ['Access Token', 'password'], 'webhook_secret' => ['Assinatura secreta dos webhooks', 'password']];
     $v = session('verificacao');
 @endphp
 
 <section class="cartao chaves" style="padding:20px;margin-top:18px" id="aplicacao">
     <div class="chaves__topo"><h2 style="margin:0">1. Aplicação</h2><span class="selo selo--cinza">Vale para teste e produção</span></div>
-    <p class="suave">No Mercado Pago, Client ID e Client Secret ficam em <b>Credenciais de produção</b> e a assinatura secreta em <b>Webhooks</b>. São um só para a aplicação.</p>
+    <p class="suave">No Mercado Pago, Client ID e Client Secret ficam em <b>Credenciais de produção</b>. São um só para a aplicação.</p>
     <form method="post" action="{{ route('admin.mercadopago.salvar') }}" autocomplete="off">
         @csrf @method('PUT')
         <div class="form-grade">
             @foreach ($nomesApp as $campo => [$rotulo, $tipo])
-                <div class="campo {{ $campo === 'webhook_secret' ? 'col-12' : 'col-6' }}">
+                <div class="campo col-6">
                     <label for="adm-{{ $campo }}">{{ $rotulo }}</label>
                     <input id="adm-{{ $campo }}" name="{{ $campo }}" type="{{ $tipo }}" autocomplete="off" spellcheck="false"
                         placeholder="{{ $credenciais[$campo]['definida'] ? 'Atual: '.$credenciais[$campo]['dica'].' — em branco mantém' : 'Cole aqui' }}">
@@ -118,23 +118,32 @@
             </span>
         @endif
     </div>
-    <form method="post" action="{{ route('admin.mercadopago.teste') }}" class="form-grade" style="margin-top:12px">
-        @csrf
-        <input type="hidden" name="ambiente" value="{{ $amb }}">
-        @php $o = fn ($k, $p = '') => old('ambiente') === $amb ? old($k, $p) : $p; $err = old('ambiente') === $amb; @endphp
-        <div class="campo col-4"><label>CPF</label><input name="cpf" required data-mascara="cpf" data-busca-cpf value="{{ $o('cpf', $amb === 'teste' ? '123.456.789-09' : '') }}">@if ($err)@error('cpf')<small class="erro">{{ $message }}</small>@enderror @endif</div>
-        <div class="campo col-8"><label>Nome completo</label><input name="nome" required data-pessoa="nome" value="{{ $o('nome', $amb === 'teste' ? 'APRO Teste' : '') }}">@if ($err)@error('nome')<small class="erro">{{ $message }}</small>@enderror @endif</div>
-        <div class="campo col-4"><label>E-mail do comprador</label><input name="email" type="email" required data-pessoa="email" value="{{ $o('email') }}"
-            placeholder="{{ $amb === 'teste' ? 'e-mail da conta compradora de teste' : 'e-mail de quem vai pagar' }}">@if ($err)@error('email')<small class="erro">{{ $message }}</small>@enderror @endif</div>
-        <div class="campo col-4"><label>Telefone com DDD</label><input name="telefone" data-mascara="telefone" data-pessoa="telefone" value="{{ $o('telefone') }}">@if ($err)@error('telefone')<small class="erro">{{ $message }}</small>@enderror @endif</div>
-        <div class="campo col-2"><label for="adm-valor-{{ $amb }}">Valor (R$)</label>
-            <input id="adm-valor-{{ $amb }}" name="valor" type="number" step="0.01" min="1" max="100" value="{{ $o('valor', '5.00') }}" required></div>
-        <div class="col-12">@if ($err)@error('valor')<p class="erro" style="color:var(--vermelho);margin:0 0 8px">{{ $message }}</p>@enderror @endif
-            <button class="botao {{ $amb === 'teste' ? 'botao--primario' : 'botao--escuro' }}">{{ $a['pagar'] }} ↗</button></div>
-    </form>
-    <p><small class="suave">{{ $a['pagarAjuda'] }} Você recebe o link e o QR Code para abrir fora da conta logada.</small></p>
 </section>
 @endforeach
+
+@php $o = fn ($k, $p = '') => old($k, $p); $ambTeste = old('ambiente', 'teste'); @endphp
+<section class="cartao" style="padding:20px;margin-top:18px" id="pagamento-teste">
+    <h2 style="margin-top:0">4. Pagamento de teste</h2>
+    <form method="post" action="{{ route('admin.mercadopago.teste') }}" class="form-grade">
+        @csrf
+        <div class="campo col-12"><div class="grade grade-2" style="gap:12px">
+            <label class="opcao-cartao"><input type="radio" name="ambiente" value="teste" @checked($ambTeste === 'teste')>
+                <span><b>Teste (homologação)</b><small>{{ $ambientes['teste']['pagarAjuda'] }}</small></span></label>
+            <label class="opcao-cartao"><input type="radio" name="ambiente" value="producao" @checked($ambTeste === 'producao')>
+                <span><b>Produção (cobrança real)</b><small>{{ $ambientes['producao']['pagarAjuda'] }}</small></span></label>
+        </div></div>
+        <div class="campo col-4"><label>CPF</label><input name="cpf" required data-mascara="cpf" data-busca-cpf value="{{ $o('cpf', '123.456.789-09') }}">@error('cpf')<small class="erro">{{ $message }}</small>@enderror</div>
+        <div class="campo col-8"><label>Nome completo</label><input name="nome" required data-pessoa="nome" value="{{ $o('nome', 'APRO Teste') }}">@error('nome')<small class="erro">{{ $message }}</small>@enderror</div>
+        <div class="campo col-6"><label>E-mail do comprador</label><input name="email" type="email" required data-pessoa="email" value="{{ $o('email') }}"
+            placeholder="no teste, o e-mail da conta compradora de teste">@error('email')<small class="erro">{{ $message }}</small>@enderror</div>
+        <div class="campo col-3"><label>Telefone com DDD</label><input name="telefone" data-mascara="telefone" data-pessoa="telefone" value="{{ $o('telefone') }}">@error('telefone')<small class="erro">{{ $message }}</small>@enderror</div>
+        <div class="campo col-3"><label for="adm-valor">Valor (R$)</label>
+            <input id="adm-valor" name="valor" type="number" step="0.01" min="1" max="100" value="{{ $o('valor', '5.00') }}" required></div>
+        <div class="col-12">@error('valor')<p class="erro" style="color:var(--vermelho);margin:0 0 8px">{{ $message }}</p>@enderror
+            <button class="botao botao--primario">Gerar pagamento no Mercado Pago ↗</button>
+            <small class="suave">Você recebe o link e o QR Code para abrir fora da conta logada.</small></div>
+    </form>
+</section>
 
 <form method="post" action="{{ route('admin.mercadopago.vendas') }}" class="cartao" style="padding:20px;margin-top:18px">
     @csrf @method('PUT')
