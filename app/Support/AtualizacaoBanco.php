@@ -21,7 +21,7 @@ class AtualizacaoBanco
     {
         $aplicados = DB::table('parametro_sistema')->where('chave', 'like', 'banco:%')->pluck('valor', 'chave');
 
-        return collect(glob(self::pasta().'/V*.sql') ?: [])->sort()->map(function ($caminho) use ($aplicados) {
+        return collect(glob(self::pasta().'/V*.sql') ?: [])->sort()->reverse()->map(function ($caminho) use ($aplicados) {
             $arquivo = basename($caminho);
             $versao = strtok($arquivo, '_');
             $conteudo = (string) file_get_contents($caminho);
