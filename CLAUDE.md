@@ -20,7 +20,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V007__administrador_plataforma.sql` | Só dados: cria o administrador da plataforma (Bruno, bruno@bhsoftware.com.br, `admin_plataforma = 1`, sem senha). Idempotente. Importado em produção em 07/11/2026 ("V007 ok") |
 | `banco/V008__administracao_taxas_impersonacao.sql` | Motor de taxas (`taxa_regra` com faixas por volume, `taxa_organizador` com isenções/validade), `impersonacao_log` e `auditoria.admin_impersonando_id`/`impersonacao_id`. Idempotente. Importado em produção em 07/11/2026 ("V008 ok") |
 | `banco/V009__cupom_divulgacao.sql` | `cupom.tipo_desconto` ganha `divulgacao` (valor 0; ajusta o CHECK `ck_cupom_valor`). Idempotente. Importado em produção em 08/11/2026 ("V009 ok") |
-| `banco/V010__taxa_servico_comprador.sql` | Quem paga a taxa: `organizador.taxa_comprador` (padrão), `evento.taxa_comprador` (NULL = padrão), `pedido.valor_taxa_servico`, `pedido_item.taxa_unitaria`. Idempotente. Pode ser aplicado em Administração → Atualizações do banco. **Ainda não aplicado em produção** |
+| `banco/V010__taxa_servico_comprador.sql` | Quem paga a taxa: `organizador.taxa_comprador` (padrão), `evento.taxa_comprador` (NULL = padrão), `pedido.valor_taxa_servico`, `pedido_item.taxa_unitaria`. Idempotente. Aplicado em produção em 08/11/2026 ("V010 ok") |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
