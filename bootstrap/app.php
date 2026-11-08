@@ -28,7 +28,15 @@ $app = Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo(fn ($request) => $request->is('minha-conta*') ? route('comprador.ingressos') : route('painel'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Sessão expirada (419): volta ao formulário com o que foi digitado, em vez da página "Page Expired".
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, \Illuminate\Http\Request $request) {
+            if ($e->getStatusCode() !== 419 || $request->expectsJson()) {
+                return null;
+            }
+
+            return redirect()->back()->withInput($request->except(['_token', 'senha', 'senha_confirmation', 'password']))
+                ->withErrors(['sessao' => 'A página ficou muito tempo aberta e a sessão expirou. Confira os dados e envie de novo.']);
+        });
     })->create();
 
 // Em produção (Hostinger) o .env fica FORA do public_html, uma pasta acima da
