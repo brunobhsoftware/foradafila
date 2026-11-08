@@ -24,6 +24,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V011__cadastro_unico_pessoa.sql` | Cadastro único de pessoas (`pessoa`, chave CPF: nome, e-mail, telefone, origem). Idempotente. Aplicado em produção em 08/11/2026 ("V011 ok") |
 | `banco/V012__recebimento_pela_plataforma.sql` | Recebimento pela plataforma: `organizador.pix_tipo/pix_chave/recebimento_preferido`, `conta_pagamento.modo` (direta/plataforma), tabela `repasse`, `pagamento.repasse_id`; `organizador.recebimento_modo` e colunas da aplicação própria em `conta_pagamento` (client_id, segredos e token de teste criptografados). Idempotente. Aplicado em produção em 08/11/2026 ("V012 ok"; reaplicado com o modo `propria`). Sem ele completo, o bloco da aplicação própria fica oculto (`Esquema::temPropria()`) |
 | `banco/V013__checkout_pago.sql` | Checkout pago: `pedido.dados_participantes` (JSON até o pagamento ser aprovado) e `ck_pedido_valores` passa a somar `valor_taxa_servico`. Idempotente. Aplicado em produção em 08/11/2026 ("V013 ok") |
+| `banco/V014__lote_exibir.sql` | `lote.exibir` (mostrar/ocultar o ingresso na página do evento, independente de "Ingresso ativo"). Idempotente. **Ainda não aplicado** |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
@@ -148,7 +149,9 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   esgota, encerra ou passa do fim; recusa dependência circular) e **Quem pode comprar**: `publico` = todo o público,
   `convidados` = restrito a convidados (link por e-mail/WhatsApp, futuro), `oculto` = **adicionado manualmente** pela
   equipe (o enum do banco não mudou; só o significado de `oculto`). Só `publico` aparece na página do evento.
-  Lote pago só publica com conta de recebimento ativa (Mercado Pago, próxima fase).
+  Lote pago só publica com conta de recebimento ativa. **Exibir na página** (V014, `lote.exibir`, decisão do Bruno 08/11/2026):
+  interruptor no formulário + botão Ocultar/Exibir na lista (`lotes.exibir`); oculto não aparece na página do evento, não entra no
+  "A partir de" e não é vendido pela página (`loteAVenda`), sem mudar o status de venda.
   **Taxa da plataforma** (V010, `App\Support\TaxaServico`): `repassada()` (evento → organização) e `paraPreco()` (taxa do
   `MotorTaxas`, comprador paga, produtor recebe). Organização tem a seção "Taxa da plataforma" (embutida/repassada, com exemplo
   de R$ 50); o formulário do evento tem "Taxa da plataforma nos ingressos pagos" (padrão da organização/embutida/repassada), com exemplo de R$ 50 que muda na hora conforme a opção (`data-exemplo-taxa`; sem taxa configurada, ilustrativo de 5%). A taxa não é gravada no lote: é calculada na hora, então mudar o modelo atualiza todos os ingressos do evento.
@@ -317,7 +320,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (24), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-divulgacao.js` (16), `fluxo-convidados.js` (19), `fluxo-mensagens.js` (13), `fluxo-taxa.js` (16), `fluxo-admin.js` (41, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (27), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-divulgacao.js` (16), `fluxo-convidados.js` (19), `fluxo-mensagens.js` (13), `fluxo-taxa.js` (16), `fluxo-admin.js` (41, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.

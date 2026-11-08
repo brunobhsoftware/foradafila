@@ -97,6 +97,16 @@ const lote = (nome) => sql(`SELECT CONCAT_WS('|', preco, modalidade, IFNULL(lote
   const pub = await V.content();
   ok(pub.includes('Primeiro') && !pub.includes('Segundo') && !pub.includes('Equipe'), 'página do evento mostra só o lote para todo o público');
 
+  // ocultar da página sem mexer na venda
+  await P.goto(BASE + '/painel/eventos'); await nav(P, P.click('a:has-text("Festa dos Lotes")'));
+  await nav(P, linha('Primeiro').locator('button:has-text("Ocultar")').click());
+  ok(sql("SELECT CONCAT(exibir,'|',status) FROM lote WHERE nome='Primeiro'") === '0|ativo' && (await linha('Primeiro').innerText()).includes('Oculto da página'), 'Ocultar: some da página mas continua ativo');
+  await V.goto(BASE + '/e/' + codEv('festa-dos-lotes'));
+  ok(!(await V.content()).includes('Primeiro'), 'lote oculto não aparece na página do evento');
+  await nav(P, linha('Primeiro').locator('button:has-text("Exibir")').click());
+  await V.reload();
+  ok((await V.content()).includes('Primeiro'), 'Exibir: volta a aparecer');
+
   // mudar a data do evento: o fim das vendas dos lotes acompanha o novo término
   const fimAntes = sql("SELECT data_fim FROM evento WHERE slug='festa-dos-lotes'");
   await P.goto(BASE + '/painel/eventos'); await nav(P, P.click('a:has-text("Festa dos Lotes")'));

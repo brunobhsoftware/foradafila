@@ -38,7 +38,8 @@ class EventoPublicoController extends Controller
         $evento->load(['local', 'categoria', 'tipos' => fn ($q) => $q->where('ativo', 1), 'tipos.lotes']);
 
         // Só os lotes públicos aparecem; ocultos e de convidados dependem de link próprio (fase futura).
-        $lotes = $evento->tipos->flatMap->lotes->where('visibilidade', 'publico')->values();
+        $lotes = $evento->tipos->flatMap->lotes->where('visibilidade', 'publico')
+            ->filter(fn ($l) => ! \App\Support\Esquema::temV014() || $l->exibir)->values();
         $aVenda = $lotes->filter(fn ($l) => self::loteAVenda($evento, $l));
 
         $vendePago = (bool) \App\Support\Checkout::contaDoEvento($evento);
@@ -73,6 +74,7 @@ class EventoPublicoController extends Controller
     {
         $precos = $eventos->isEmpty() ? collect() : \App\Models\Lote::withoutGlobalScope('organizador')->whereIn('evento_id', $eventos->pluck('id'))
             ->where('visibilidade', 'publico')->whereIn('status', ['ativo', 'agendado'])
+            ->when(\App\Support\Esquema::temV014(), fn ($q) => $q->where('exibir', 1))
             ->groupBy('evento_id')->selectRaw('evento_id, MIN(preco) AS menor')->pluck('menor', 'evento_id');
         $eventos->each(fn ($e) => $e->setAttribute('preco_minimo', $precos[$e->id] ?? null));
     }
@@ -106,7 +108,7 @@ class EventoPublicoController extends Controller
      */
     public static function loteAVenda(Evento $evento, $lote): bool
     {
-        if ($evento->status !== 'publicado' || $lote->visibilidade !== 'publico'
+        if ($evento->status !== 'publicado' || $lote->visibilidade !== 'publico' || (\App\Support\Esquema::temV014() && ! $lote->exibir)
             || ! in_array($lote->status, ['ativo', 'agendado'], true)
             || ! $lote->venda_inicio->isPast() || ! $lote->venda_fim->isFuture()
             || ($evento->data_fim && $evento->data_fim->isPast())

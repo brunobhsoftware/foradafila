@@ -163,6 +163,7 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::put('/lotes/{lote}', [LoteController::class, 'update'])->name('lotes.update');
     Route::delete('/lotes/{lote}', [LoteController::class, 'destroy'])->name('lotes.destroy');
     Route::post('/lotes/{lote}/alternar', [LoteController::class, 'alternar'])->name('lotes.alternar');
+    Route::post('/lotes/{lote}/exibir', [LoteController::class, 'exibir'])->name('lotes.exibir');
 
     Route::get('/equipe', [EquipeController::class, 'index'])->name('equipe.index');
     Route::post('/equipe', [EquipeController::class, 'store'])->name('equipe.store');
