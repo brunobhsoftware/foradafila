@@ -105,7 +105,7 @@ class EmpresasController extends Controller implements \Illuminate\Routing\Contr
 
     // ---------- Taxas específicas da empresa ----------
 
-    public function salvarTaxa(Request $request, Organizador $organizador)
+    public function salvarTaxa(Request $request, Organizador $organizador, ?int $taxa = null)
     {
         $d = $request->validate([
             'operacao' => ['required', 'in:todas,'.implode(',', array_keys(MotorTaxas::OPERACOES))],
@@ -120,11 +120,19 @@ class EmpresasController extends Controller implements \Illuminate\Routing\Contr
         if (! $isento && $d['percentual'] === null && $d['valor_fixo'] === null && $d['valor_minimo'] === null) {
             return back()->withInput()->withErrors(['percentual' => 'Marque a isenção ou informe pelo menos um valor (percentual, tarifa fixa ou mínima).']);
         }
-        $id = DB::table('taxa_organizador')->insertGetId([
-            'organizador_id' => $organizador->id, 'operacao' => $d['operacao'], 'isento' => $isento,
+        $valores = ['operacao' => $d['operacao'], 'isento' => $isento,
             'percentual' => $isento ? null : $d['percentual'], 'valor_fixo' => $isento ? null : $d['valor_fixo'], 'valor_minimo' => $isento ? null : $d['valor_minimo'],
-            'inicio' => $d['inicio'], 'fim' => $d['fim'] ?? null, 'observacao' => $d['observacao'] ?? null, 'criado_por' => $request->user()->id,
-        ]);
+            'inicio' => $d['inicio'], 'fim' => $d['fim'] ?? null, 'observacao' => $d['observacao'] ?? null];
+        if ($taxa) {
+            // Editar a taxa existente (sem criar outra): vale do início informado até o fim (em branco = sempre ativa).
+            $antes = DB::table('taxa_organizador')->where('organizador_id', $organizador->id)->where('id', $taxa)->first();
+            abort_unless($antes, 404);
+            DB::table('taxa_organizador')->where('id', $taxa)->update($valores);
+            Auditoria::registrar('plataforma.taxa_empresa_editar', $organizador, (array) $antes, ['taxa_organizador_id' => $taxa] + $valores);
+
+            return redirect()->to(route('admin.empresas.show', $organizador).'#taxas')->with('ok', 'Taxa da empresa atualizada.');
+        }
+        $id = DB::table('taxa_organizador')->insertGetId($valores + ['organizador_id' => $organizador->id, 'criado_por' => $request->user()->id]);
         Auditoria::registrar('plataforma.taxa_empresa_criar', $organizador, null, ['taxa_organizador_id' => $id] + $d);
 
         return redirect()->to(route('admin.empresas.show', $organizador).'#taxas')->with('ok', $isento ? 'Isenção registrada.' : 'Taxa específica registrada.');

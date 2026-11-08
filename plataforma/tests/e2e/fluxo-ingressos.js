@@ -96,6 +96,7 @@ const lote = (nome) => sql(`SELECT CONCAT_WS('|', preco, modalidade, IFNULL(lote
   await V.goto(BASE + '/e/' + codEv('festa-dos-lotes'));
   const pub = await V.content();
   ok(pub.includes('Primeiro') && !pub.includes('Segundo') && !pub.includes('Equipe'), 'página do evento mostra só o lote para todo o público');
+  ok(!pub.includes('abre quando o lote anterior encerrar'), 'lote seguinte da sequência não aparece antes da vez dele');
 
   // ocultar da página sem mexer na venda
   await P.goto(BASE + '/painel/eventos'); await nav(P, P.click('a:has-text("Festa dos Lotes")'));

@@ -77,16 +77,22 @@ const cadastrar = async (P, nome, email, doc, razao, fantasia) => {
   // ---- taxa específica da empresa: simulação ----
   await P.goto(BASE + '/admin/empresas/' + uuidA);
   ok((await P.locator('#taxas').innerText()).includes('R$ 6,00'), 'simulação usa a regra padrão: R$ 100 → R$ 6,00');
-  await P.check('#taxas input[type=checkbox][name=isento]', { force: true }); await P.fill('#taxas [name=observacao]', 'Parceria de lançamento');
+  await P.check('#taxas details input[type=checkbox][name=isento]', { force: true }); await P.fill('#taxas details [name=observacao]', 'Parceria de lançamento');
   await nav(P, P.click('#taxas button:has-text("Registrar")'));
   t = await P.locator('#taxas').innerText();
   ok(t.includes('Isenta') && t.includes('vigente') && t.includes('R$ 0,00') && t.includes('Isenção da empresa'), 'isenção registrada e aplicada na simulação');
   P.once('dialog', (d) => d.accept());
   await nav(P, P.click('#taxas button:has-text("Encerrar")'));
   ok((await P.locator('#taxas').innerText()).includes('R$ 6,00'), 'encerrar a isenção volta para a regra padrão');
-  await P.fill('#taxas [name=percentual]', '2');
+  await P.fill('#taxas details [name=percentual]', '2');
   await nav(P, P.click('#taxas button:has-text("Registrar")'));
   ok((await P.locator('#taxas').innerText()).includes('R$ 3,00'), 'taxa específica (2% + fixo padrão R$ 1) → R$ 3,00');
+  // editar a mesma taxa (sem criar outra)
+  await P.click('#taxas button:has-text("Editar")');
+  await P.fill('#taxas tr.linha-acoes:visible [name=percentual]', '5');
+  await nav(P, P.click('#taxas tr.linha-acoes:visible button:has-text("Salvar alterações")'));
+  ok((await P.content()).includes('Taxa da empresa atualizada') && (await P.locator('#taxas').innerText()).includes('R$ 6,00')
+    && sql(`SELECT COUNT(*) FROM taxa_organizador WHERE organizador_id=(SELECT id FROM organizador WHERE uuid='${uuidA}') AND (fim IS NULL OR fim >= CURDATE())`) === '1', 'editar a taxa altera a mesma (5% + R$ 1 → R$ 6,00), sem criar outra');
 
   // ---- assumir conta ----
   await P.goto(BASE + '/admin/empresas');

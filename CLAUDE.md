@@ -224,7 +224,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   `admin_impersonando_id` e `impersonacao_id`, e `impersonacao_log.acoes` conta as ações. **Taxas** (`/admin/taxas`,
   `App\Support\MotorTaxas::calcular()`): regras padrão por operação com faixas de volume mensal (sem sobreposição), % + fixo,
   mínimo, carência para conta nova; taxa específica da empresa (isenção ou valores próprios; vazio = padrão) com início/fim;
-  encerrar = fim ontem (ou remove se ainda não valeu). Sem o V008, essas telas mostram aviso (`admin.precisa-v008`).
+  encerrar = fim ontem (ou remove se ainda não valeu); **Editar** a taxa existente abre embaixo da linha (`admin.empresas.taxas.editar`,
+  auditoria `plataforma.taxa_empresa_editar`) — fim em branco = sempre ativa; "Nova taxa" fica recolhido quando já existe uma. Sem o V008, essas telas mostram aviso (`admin.precisa-v008`).
   Ainda não há cobrança aplicada: o motor só calcula (simulação na tela da empresa).
   **E-mails enviados** (`/admin/emails`): últimos 100 de `mensagem_envio` (para, assunto, situação, erro; sem o corpo), busca e filtro; ao buscar, mostra "Quem tem esse e-mail" (login de produtor ativo/desativado/sem senha ou só e-mail de contato da organização) e o botão "Enviar link de nova senha" (também no detalhe da empresa, `admin.empresas.senha`, auditoria `admin.senha_link_enviado`).
   **Convite pendente + "Esqueci a senha"**: ao salvar a nova senha, convites `convidado` não vencidos viram `ativo` (auditoria `equipe.aceitar_convite` via nova_senha); antes o login caía em "acesso não está ativo". Teste `fluxo-senha-convite.js`.

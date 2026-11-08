@@ -41,6 +41,9 @@ class EventoPublicoController extends Controller
         $lotes = $evento->tipos->flatMap->lotes->where('visibilidade', 'publico')
             ->filter(fn ($l) => ! \App\Support\Esquema::temV014() || $l->exibir)->values();
         $aVenda = $lotes->filter(fn ($l) => self::loteAVenda($evento, $l));
+        // Sequência "Por lote" (1º, 2º, 3º…): o próximo só aparece quando chega a vez dele (decisão do Bruno, 08/11/2026).
+        $lotes = $lotes->reject(fn ($l) => $l->lote_anterior_id && ! $aVenda->contains('id', $l->id)
+            && in_array($l->status, ['ativo', 'agendado'], true) && ($l->quantidade - $l->reservado - $l->vendido) > 0)->values();
 
         $vendePago = (bool) \App\Support\Checkout::contaDoEvento($evento);
 
