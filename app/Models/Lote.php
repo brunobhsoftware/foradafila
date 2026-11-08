@@ -16,7 +16,6 @@ class Lote extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'exibir',
         'evento_id', 'ingresso_tipo_id', 'lote_anterior_id', 'nome', 'modalidade', 'preco', 'quantidade',
         'min_por_pedido', 'max_por_pedido', 'venda_inicio', 'venda_fim', 'virada', 'visibilidade', 'status', 'ordem',
     ];

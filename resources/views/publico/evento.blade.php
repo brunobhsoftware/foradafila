@@ -87,7 +87,11 @@
       @endif
       <h2 id="titulo-ingressos" style="margin:0 0 6px">Ingressos</h2>
       @if ($lotes->isEmpty())
-        <p>O organizador ainda não disponibilizou ingressos.</p>
+        @if (! empty($proximaAbertura))
+          <p>As vendas abrem em {{ data_local($proximaAbertura) }}.</p>
+        @else
+          <p>Nenhum ingresso à venda no momento.</p>
+        @endif
       @else
         <form method="get" action="{{ route('inscricao.create', $evento->codigoPublico()) }}">
           @foreach ($lotes as $lote)
