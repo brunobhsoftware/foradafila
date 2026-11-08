@@ -24,8 +24,8 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V011__cadastro_unico_pessoa.sql` | Cadastro único de pessoas (`pessoa`, chave CPF: nome, e-mail, telefone, origem). Idempotente. Aplicado em produção em 08/11/2026 ("V011 ok") |
 | `banco/V012__recebimento_pela_plataforma.sql` | Recebimento pela plataforma: `organizador.pix_tipo/pix_chave/recebimento_preferido`, `conta_pagamento.modo` (direta/plataforma), tabela `repasse`, `pagamento.repasse_id`; `organizador.recebimento_modo` e colunas da aplicação própria em `conta_pagamento` (client_id, segredos e token de teste criptografados). Idempotente. Aplicado em produção em 08/11/2026 ("V012 ok"; reaplicado com o modo `propria`). Sem ele completo, o bloco da aplicação própria fica oculto (`Esquema::temPropria()`) |
 | `banco/V013__checkout_pago.sql` | Checkout pago: `pedido.dados_participantes` (JSON até o pagamento ser aprovado) e `ck_pedido_valores` passa a somar `valor_taxa_servico`. Idempotente. Aplicado em produção em 08/11/2026 ("V013 ok") |
-| `banco/V014__lote_exibir.sql` | `lote.exibir` (mostrar/ocultar o ingresso na página do evento, independente de "Ingresso ativo"). Idempotente. **Ainda não aplicado** |
-| `banco/V015__formularios_inscricao.sql` | Formulários de inscrição: `formulario.padrao` e `evento.formulario_id`. Idempotente. **Ainda não aplicado** |
+| `banco/V014__lote_exibir.sql` | `lote.exibir` (mostrar/ocultar o ingresso na página do evento, independente de "Ingresso ativo"). Idempotente. Aplicado em produção em 08/11/2026 ("V014 ok") |
+| `banco/V015__formularios_inscricao.sql` | Formulários de inscrição: `formulario.padrao` e `evento.formulario_id`. Idempotente. Aplicado em produção em 08/11/2026 ("V015 ok") |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
