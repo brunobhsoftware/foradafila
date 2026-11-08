@@ -1,6 +1,6 @@
 @extends('layouts.publico')
 @section('titulo', 'Preços')
-@section('descricao', 'Preços do Fora da Fila: o produtor escolhe se absorve a taxa ou se a repassa ao comprador. Para o produtor, 1% no primeiro evento, com percentual progressivo por faixa de vendas.')
+@section('descricao', 'Preços do Fora da Fila: o produtor escolhe se absorve a taxa ou se a repassa ao comprador. Criar evento é grátis e evento gratuito não tem taxa.')
 
 @section('conteudo')
 <section class="pub-cabecalho">
@@ -27,9 +27,9 @@
       </article>
       <article class="pub-cartao">
         <span class="pub-selo pub-selo--amarelo">Para o produtor</span>
-        <h3>1% no primeiro evento</h3>
-        <p>No primeiro evento do produtor, a comissão é de <b>1% sobre o valor das vendas de ingressos</b>.
-        O percentual aumenta de forma progressiva <b>a cada R$ 1.000 em vendas</b>.</p>
+        <h3>Taxa justa por ingresso pago</h3>
+        <p>Criar conta e publicar evento é grátis, sem mensalidade. Cobramos só uma <b>taxa por ingresso pago</b>; ingressos gratuitos e cortesias não pagam nada.
+        A tabela de valores será publicada em breve.</p>
       </article>
     </div>
   </div>
@@ -37,24 +37,12 @@
 
 <section class="pub-secao pub-secao--creme">
   <div class="container">
-    <h2>Faixas de comissão</h2>
-    <div style="overflow-x:auto">
-      <table class="pub-tabela">
-        <thead><tr><th>Vendas do evento</th><th>Comissão</th></tr></thead>
-        <tbody>
-          <tr><td>Primeiro evento do produtor</td><td>1% sobre o valor das vendas de ingressos</td></tr>
-          <tr><td>A cada R$ 1.000 em vendas</td><td>O percentual aumenta progressivamente. <span class="pub-selo pub-selo--breve">tabela em definição</span></td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3 style="margin:28px 0 10px">O que ainda será confirmado e publicado</h3>
+    <h2>Como funciona</h2>
     <ul class="pub-texto">
-      <li>Os percentuais de cada faixa de R$ 1.000.</li>
-      <li>Se a regra vale por evento, por produtor ou por período, e como se define o “primeiro evento”.</li>
-      <li>A base de cálculo exata (valor de venda dos ingressos, com ou sem descontos).</li>
-      <li>Como e quando a comissão é cobrada: retida pelo meio de pagamento na própria venda ou cobrada em fatura mensal.</li>
-      <li>As condições a partir do segundo evento e para ingressos gratuitos e cortesias.</li>
+      <li>Criar a conta, cadastrar e publicar eventos é grátis.</li>
+      <li>Evento gratuito não tem taxa.</li>
+      <li>Nos ingressos pagos há uma taxa por ingresso. Você escolhe se ela fica embutida no preço ou se é repassada ao comprador.</li>
+      <li>O valor das vendas cai direto na sua conta no meio de pagamento.</li>
     </ul>
     <p style="margin-top:20px"><a href="{{ route('cadastro') }}" class="botao botao--amarelo">Criar conta de produtor</a>
        <a href="{{ route('ajuda') }}" class="botao botao--borda" style="margin-left:8px">Dúvidas frequentes</a></p>
