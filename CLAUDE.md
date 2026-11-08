@@ -156,7 +156,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   publicar evento liga `evento.conta_pagamento_id` a ela. "Conectar Mercado Pago" fica **em breve/desativado** (`MP_CONEXAO_DIRETA`,
   padrão false; o código do OAuth continua). Teste `fluxo-recebimento.js` (15).
   **Aplicação Mercado Pago própria da empresa** (decisão do Bruno, 08/11/2026): no Financeiro, "Mercado Pago da empresa (aplicação
-  própria)" com blocos TESTE e PRODUÇÃO (Client ID, Client Secret, Access Token, Public Key, assinatura dos webhooks; segredos
+  própria)" com o bloco **1. Aplicação** (Client ID, Client Secret e assinatura dos webhooks — um só por aplicação, decisão do Bruno 08/11/2026) e os blocos **2. TESTE** e **3. PRODUÇÃO** só com Access Token e Public Key (segredos
   criptografados, em branco mantém), endereço de webhook **por empresa** (`/webhooks/mercadopago/{uuid da conta}`, confere com a
   assinatura dela e grava `webhook_evento.conta_pagamento_id`) a conta própria é criada ao abrir o Financeiro (mostra logo a URL do webhook, o site e o tipo de solução para copiar); **pagamento de teste** em cada bloco (homologação com o token de teste e produção com o de produção; CPF primeiro, nome completo, e-mail, telefone, valor; `financeiro.mp.propria.teste`, link + QR em `painel/financeiro/teste-link`, retorno público `admin.mercadopago.teste.retorno` que usa o token da empresa quando o cache `mp_teste_<ref>` traz `conta`) e "Verificar de quem é o token" (`/users/me`; o de produção válido
   ativa a conta `modo = propria`, preenchendo `homologada_em` por causa do gatilho `trg_conta_bu`). "Onde as vendas são recebidas":
@@ -186,9 +186,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   07/11/2026:** pagamento de R$ 5 por Pix aprovado (payment_id 187277190645, merchant_order_id 45909646019). O pagamento de teste
   tem ambiente **Teste** (padrão; usa o Access Token de teste `mp_teste_access_token` ou, sem ele, client_credentials com
   `mp_teste_client_id`/`mp_teste_client_secret` — `MercadoPago::tokenTeste()`; segredos criptografados — exigido pela Qualidade da
-  integração; pagar com a conta de teste compradora) ou **Produção** (token client_credentials). A página tem dois blocos completos:
-  **"1. Ambiente de TESTE"** e **"2. Ambiente de PRODUÇÃO"**, cada um com os 4 campos (Client ID, Client Secret, Access Token,
-  assinatura dos webhooks), salvar, "Verificar de quem é o token" e o botão de pagamento (teste / de verdade). Access Token de
+  integração; pagar com a conta de teste compradora) ou **Produção** (token client_credentials). A página tem o bloco **"1. Aplicação"** (Client ID, Client Secret,
+  assinatura dos webhooks — um só, ficam nas credenciais de produção do MP) e **"2. Ambiente de TESTE"** / **"3. Ambiente de PRODUÇÃO"** só com o Access Token (os campos `teste_client_*`/`teste_webhook_secret` continuam aceitos no código, sem tela), salvar, "Verificar de quem é o token" e o botão de pagamento (teste / de verdade). Access Token de
   produção (`mp_access_token`, opcional) tem prioridade sobre o client_credentials. **SDK oficial `mercadopago/dx-php` (^3.0, no composer)** cria e consulta as orders (`MercadoPago::sdk()` ajusta token e `BASE_URL`; recomendação "SDK do backend" da Qualidade da integração). **O pagamento de teste usa a API de Orders**
   (`POST /v1/orders`, a aplicação é "Checkout Pro com Orders"; `MercadoPago::criarOrder()`/`order()`), com o que a Qualidade da
   integração pede: payer (e-mail, nome, sobrenome, CPF, telefone), items (title, description, category_id `tickets`, external_code,

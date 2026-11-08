@@ -45,17 +45,38 @@
 
 @php
     $ambientes = [
-        'teste' => ['n' => 1, 'titulo' => 'Ambiente de TESTE', 'classe' => 'chaves--teste', 'selo' => ['selo--azul', 'Sem dinheiro real'],
+        'teste' => ['n' => 2, 'titulo' => 'Ambiente de TESTE', 'classe' => 'chaves--teste', 'selo' => ['selo--azul', 'Sem dinheiro real'],
             'ajuda' => 'No painel do Mercado Pago: Credenciais com o seletor em "Teste" e Webhooks no modo teste. Usado para validar a integração (Qualidade da integração).',
             'pagar' => 'Pagar teste no Mercado Pago', 'pagarAjuda' => 'Abra o link numa janela anônima, sem entrar em conta nenhuma, e pague com cartão de teste (titular APRO, CPF 12345678909).'],
-        'producao' => ['n' => 2, 'titulo' => 'Ambiente de PRODUÇÃO', 'classe' => 'chaves--producao', 'selo' => ['selo--verde', 'Vendas reais'],
+        'producao' => ['n' => 3, 'titulo' => 'Ambiente de PRODUÇÃO', 'classe' => 'chaves--producao', 'selo' => ['selo--verde', 'Vendas reais'],
             'ajuda' => 'No painel do Mercado Pago: Credenciais com o seletor em "Produção" e Webhooks no modo produção. Usado no "Conectar Mercado Pago" dos produtores e nas vendas.',
             'pagar' => 'Pagar de verdade no Mercado Pago', 'pagarAjuda' => 'Cobrança real: pague com uma conta diferente da BH Software. O valor cai na conta da BH Software.'],
     ];
     $prefixo = ['teste' => 'teste_', 'producao' => ''];
-    $nomes = ['client_id' => ['Client ID', 'text'], 'client_secret' => ['Client Secret', 'password'], 'access_token' => ['Access Token', 'password'], 'webhook_secret' => ['Assinatura secreta dos webhooks', 'password']];
+    // Client ID, Client Secret e assinatura dos webhooks são da APLICAÇÃO (um só); cada ambiente tem só o Access Token.
+    $nomesApp = ['client_id' => ['Client ID', 'text'], 'client_secret' => ['Client Secret', 'password'], 'webhook_secret' => ['Assinatura secreta dos webhooks', 'password']];
+    $nomes = ['access_token' => ['Access Token', 'password']];
     $v = session('verificacao');
 @endphp
+
+<section class="cartao chaves" style="padding:20px;margin-top:18px" id="aplicacao">
+    <div class="chaves__topo"><h2 style="margin:0">1. Aplicação</h2><span class="selo selo--cinza">Vale para teste e produção</span></div>
+    <p class="suave">No Mercado Pago, Client ID e Client Secret ficam em <b>Credenciais de produção</b> e a assinatura secreta em <b>Webhooks</b>. São um só para a aplicação.</p>
+    <form method="post" action="{{ route('admin.mercadopago.salvar') }}" autocomplete="off">
+        @csrf @method('PUT')
+        <div class="form-grade">
+            @foreach ($nomesApp as $campo => [$rotulo, $tipo])
+                <div class="campo {{ $campo === 'webhook_secret' ? 'col-12' : 'col-6' }}">
+                    <label for="adm-{{ $campo }}">{{ $rotulo }}</label>
+                    <input id="adm-{{ $campo }}" name="{{ $campo }}" type="{{ $tipo }}" autocomplete="off" spellcheck="false"
+                        placeholder="{{ $credenciais[$campo]['definida'] ? 'Atual: '.$credenciais[$campo]['dica'].' — em branco mantém' : 'Cole aqui' }}">
+                    @error($campo)<small class="erro">{{ $message }}</small>@enderror
+                </div>
+            @endforeach
+        </div>
+        <div class="acoes-form"><button class="botao botao--escuro">Salvar dados da aplicação</button></div>
+    </form>
+</section>
 
 @foreach ($ambientes as $amb => $a)
 <section class="cartao chaves {{ $a['classe'] }}" style="padding:20px;margin-top:18px" id="ambiente-{{ $amb }}">
@@ -66,7 +87,7 @@
         @csrf @method('PUT')
         <h3 style="margin:6px 0 0">Chaves</h3>
         <p class="suave" style="margin-top:2px"><small>Os segredos ficam criptografados e só mostram os 4 últimos caracteres. Campo em branco mantém o valor atual.
-            @if ($amb === 'producao') O Access Token de produção é opcional: sem ele, o token é gerado com o Client ID e o Client Secret.@else O Access Token de teste é opcional se informar o Client ID e o Client Secret de teste.@endif</small></p>
+            @if ($amb === 'producao') O Access Token de produção é opcional: sem ele, o token é gerado com o Client ID e o Client Secret da aplicação.@else Cole o Access Token de teste (TEST-… ou APP_USR- da conta de teste).@endif</small></p>
         <div class="form-grade">
             @foreach ($nomes as $base => [$rotulo, $tipo])
                 @php $campo = $prefixo[$amb].$base; @endphp

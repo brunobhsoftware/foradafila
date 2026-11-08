@@ -75,10 +75,12 @@ const falso = http.createServer((req, res) => {
     'prompt de IA pede os três valores e traz os endereços');
   ok(await P.getAttribute('a:has-text("painel de desenvolvedores")', 'href') === 'https://www.mercadopago.com.br/developers/panel/app', 'botão do painel de desenvolvedores');
 
-  await nav(P, P.click('button:has-text("Salvar chaves de produção")'));
+  await nav(P, P.click('button:has-text("Salvar dados da aplicação")'));
   ok((await P.content()).includes('Preencha pelo menos um campo'), 'tudo em branco é recusado');
+  ok(await P.locator('#aplicacao [name=client_id]').count() === 1 && await P.locator('#ambiente-teste [name=teste_client_id]').count() === 0
+    && await P.locator('#ambiente-producao [name=client_id]').count() === 0, 'Client ID, Client Secret e assinatura ficam só no bloco da aplicação');
   await P.fill('[name=client_id]', '1234567890123456'); await P.fill('[name=client_secret]', 'SegredoDaBH-abcdWXYZ'); await P.fill('[name=webhook_secret]', 'assinatura-wh-9876');
-  await nav(P, P.click('button:has-text("Salvar chaves de produção")'));
+  await nav(P, P.click('button:has-text("Salvar dados da aplicação")'));
   const tela = await P.content();
   ok(tela.includes('Chaves do Mercado Pago salvas') && tela.includes('Configurada'), 'chaves salvas');
   ok(sql("SELECT valor FROM parametro_sistema WHERE chave='mp_client_id'") === '1234567890123456', 'Client ID gravado');
@@ -88,7 +90,7 @@ const falso = http.createServer((req, res) => {
 
   // em branco mantém
   await P.fill('[name=client_id]', '9999999999999999');
-  await nav(P, P.click('button:has-text("Salvar chaves de produção")'));
+  await nav(P, P.click('button:has-text("Salvar dados da aplicação")'));
   ok(sql("SELECT COUNT(*) FROM parametro_sistema WHERE chave='mp_client_secret' AND valor<>''") === '1' && sql("SELECT valor FROM parametro_sistema WHERE chave='mp_client_id'") === '9999999999999999', 'campo em branco mantém o valor atual');
 
   // o Conectar do produtor usa as chaves do banco (no lugar do .env)
@@ -103,14 +105,6 @@ const falso = http.createServer((req, res) => {
   await P.fill('#ambiente-teste [name=email]', 'test_user_comprador@testuser.com');
   await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
   ok((await P.content()).includes('Cadastre primeiro as chaves de teste'), 'sem credenciais de teste, avisa');
-  await P.fill('[name=teste_client_id]', 'teste-id'); await P.fill('[name=teste_client_secret]', 'teste-segredo');
-  await nav(P, P.click('button:has-text("Salvar chaves de teste")'));
-  ok(sql("SELECT COUNT(*) FROM parametro_sistema WHERE chave='mp_teste_client_secret' AND valor NOT LIKE '%teste-segredo%'") === '1', 'Client Secret de teste gravado criptografado');
-  await P.fill('#ambiente-teste [name=email]', 'test_user_comprador@testuser.com');
-  await nav(P, P.click('button:has-text("Pagar teste no Mercado Pago")'));
-  await P.goto(await P.inputValue('#link-teste'));
-  ok(autorizacaoPref === 'Bearer APP_USR-teste-cc', 'Teste com Client ID/Secret de teste: gera o token de teste e cria a preferência com ele');
-  await P.goto(BASE + '/admin/mercadopago');
   await P.fill('[name=teste_access_token]', 'token-errado');
   await nav(P, P.click('button:has-text("Salvar chaves de teste")'));
   ok((await P.content()).includes('começa com APP_USR-'), 'Access Token de teste em formato errado é recusado');
@@ -166,18 +160,14 @@ const falso = http.createServer((req, res) => {
   await semLogin.goto(BASE + '/cadastro-unico/52998224725');
   ok(!(await semLogin.content()).includes('Maria'), 'sem login a busca por CPF não revela nada');
 
-  // assinatura secreta de teste dos webhooks (mesma URL)
+  // assinatura secreta dos webhooks (uma só, da aplicação)
   await P.goto(BASE + '/admin/mercadopago');
-  await P.fill('[name=teste_webhook_secret]', 'wh-segredo-de-teste');
-  await nav(P, P.click('button:has-text("Salvar chaves de teste")'));
   const assinar = (segredo, id, rid) => { const ts = String(Date.now()); return `ts=${ts},v1=${crypto.createHmac('sha256', segredo).update(`id:${id};request-id:${rid};ts:${ts};`).digest('hex')}`; };
-  for (const [idEv, segredo] of [['ev-teste', 'wh-segredo-de-teste'], ['ev-prod', 'assinatura-wh-9876'], ['ev-falso', 'outro']]) {
+  for (const [idEv, segredo] of [['ev-prod', 'assinatura-wh-9876'], ['ev-falso', 'outro']]) {
     await P.request.post(BASE + '/webhooks/mercadopago?data.id=77&type=payment', { data: { id: idEv, type: 'payment', data: { id: '77' } }, headers: { 'x-request-id': 'r-' + idEv, 'x-signature': assinar(segredo, '77', 'r-' + idEv) } });
   }
-  ok(sql("SELECT GROUP_CONCAT(CONCAT(id_evento_externo, ':', assinatura_valida) ORDER BY id_evento_externo) FROM webhook_evento WHERE id_evento_externo LIKE 'ev-%'") === 'ev-falso:0,ev-prod:1,ev-teste:1',
-    'aviso aceito com a assinatura de produção ou a de teste; outra é ignorada');
-  await P.reload();
-  ok((await P.content()).includes('Válida (teste)'), 'lista marca o aviso assinado com a assinatura de teste');
+  ok(sql("SELECT GROUP_CONCAT(CONCAT(id_evento_externo, ':', assinatura_valida) ORDER BY id_evento_externo) FROM webhook_evento WHERE id_evento_externo LIKE 'ev-%'") === 'ev-falso:0,ev-prod:1',
+    'aviso aceito com a assinatura da aplicação; outra é ignorada');
 
   // Access Token de produção cadastrado passa a ser usado no lugar do client_credentials
   await P.goto(BASE + '/admin/mercadopago');
