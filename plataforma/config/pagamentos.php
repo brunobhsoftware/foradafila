@@ -6,6 +6,8 @@
 return [
     'mercadopago' => [
         'ambiente' => env('MP_AMBIENTE', 'sandbox'),
+        // Conectar a conta do Mercado Pago do produtor (OAuth): desligado até o Mercado Pago liberar a aplicação.
+        'conexao_direta' => (bool) env('MP_CONEXAO_DIRETA', false),
         'client_id' => env('MP_CLIENT_ID'),
         'client_secret' => env('MP_CLIENT_SECRET'),
         'webhook_secret' => env('MP_WEBHOOK_SECRET'),

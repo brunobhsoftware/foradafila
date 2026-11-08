@@ -116,7 +116,8 @@ class Evento extends Model
         $termoAceito = DB::table('termo_aceite as ta')->join('termo as t', 't.id', '=', 'ta.termo_id')
             ->where('ta.organizador_id', $this->organizador_id)
             ->where('t.tipo', 'responsabilidade_organizador')->where('t.vigente', 1)->exists();
-        $contaAtiva = $this->conta_pagamento_id && ContaPagamento::whereKey($this->conta_pagamento_id)
+        $contaId = $this->conta_pagamento_id ?: \App\Support\Recebimento::conta($this->organizador_id)?->id;
+        $contaAtiva = $contaId && ContaPagamento::withoutGlobalScopes()->whereKey($contaId)
             ->where('status', 'ativa')->where('ambiente', 'producao')->exists();
 
         $itens = [
@@ -129,7 +130,7 @@ class Evento extends Model
             ['ok' => $this->data_inicio?->isFuture() ?? false, 'texto' => 'Data de início no futuro'],
         ];
         if ($temPago) {
-            $itens[] = ['ok' => $contaAtiva, 'texto' => 'Conta de recebimento ativa (obrigatória para ingresso pago)'];
+            $itens[] = ['ok' => $contaAtiva, 'texto' => 'Dados para o repasse cadastrados em Financeiro (obrigatório para ingresso pago)'];
         }
 
         return $itens;

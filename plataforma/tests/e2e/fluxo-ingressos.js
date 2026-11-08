@@ -87,7 +87,7 @@ const lote = (nome) => sql(`SELECT CONCAT_WS('|', preco, modalidade, IFNULL(lote
   ok((await salvar(fe)).includes('Esse lote já começa depois deste'), 'recusa lotes que dependem um do outro');
 
   // página pública: só o público aparece; convidados e manual não
-  ok((await P.content()).includes('Conta de recebimento ativa (obrigatória para ingresso pago)'), 'com lote pago, publicar pede conta de recebimento');
+  ok((await P.content()).includes('Dados para o repasse cadastrados em Financeiro'), 'com lote pago, publicar pede conta de recebimento');
   sql("UPDATE lote SET preco=0 WHERE nome='Primeiro'"); // sem Mercado Pago ainda: publica como gratuito
   await P.reload();
   await nav(P, P.click('button:has-text("Publicar evento")'));

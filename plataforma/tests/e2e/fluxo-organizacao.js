@@ -26,16 +26,14 @@ const salvar = async (p) => { await p.evaluate(() => { document.querySelector('f
 
   // obrigatórios
   await P.goto(BASE + '/painel/organizacao');
-  for (const t of ['Representante legal', 'CPF do representante legal', 'Banco', 'Agência', 'Conta', 'Favorecido', 'Logo', 'Chave de acesso da API'])
+  for (const t of ['Representante legal', 'CPF do representante legal', 'Financeiro → Dados para o repasse', 'Logo', 'Chave de acesso da API'])
     ok((await P.content()).includes(t), `campo "${t}" na tela`);
   ok((await P.content()).includes('Dimensão recomendada 136x136. Formato JPEG, GIF ou PNG. Tamanho máximo de 2MB.'), 'texto da logo como pedido');
-  await P.fill('[name=favorecido]', '');
   await salvar(P);
   const c1 = await P.content();
   ok(c1.includes('O campo representante legal é obrigatório') && c1.includes('Informe o CPF do representante legal')
     && !c1.includes('O campo banco é obrigatório'), 'salvar sem representante é recusado; dados bancários são opcionais');
   await P.fill('[name=representante_nome]', 'Bruno da Silva'); await P.fill('[name=representante_cpf]', '111.111.111-11');
-  await P.fill('[name=banco]', '341 - Itaú Unibanco'); await P.fill('[name=agencia]', '1234'); await P.fill('[name=conta]', '12345-6'); await P.fill('[name=favorecido]', 'Estacao Slod Ltda');
   await salvar(P);
   ok((await P.content()).includes('CPF inválido'), 'CPF do representante inválido é recusado');
   await P.fill('[name=representante_cpf]', '529.982.247-25');
@@ -43,11 +41,11 @@ const salvar = async (p) => { await p.evaluate(() => { document.querySelector('f
   await P.waitForFunction(() => document.querySelector('[data-upload-status]').textContent.includes('136 x 136'));
   await salvar(P);
   ok((await P.content()).includes('Dados da organização salvos'), 'dados salvos');
-  const linha = sql("SELECT CONCAT_WS('|', representante_nome, representante_cpf, banco, agencia, conta, favorecido, logo_url, uuid) FROM organizador WHERE documento='41902878000108'").split('|');
-  ok(linha[1] === '52998224725' && linha[3] === '1234' && linha[4] === '12345-6', 'banco gravado (CPF só dígitos, agência e conta)');
-  const nomeLogo = linha[6].split('/').pop().split('?')[0];
-  ok(nomeLogo === `estacao-slod_${linha[7]}.png` && fs.readdirSync(MIDIA).includes(nomeLogo), 'logo gravada como logomarcas/' + nomeLogo);
-  ok((await P.request.get(BASE + linha[6])).headers()['content-type'] === 'image/png', 'logo servida em /midia/logomarcas');
+  const linha = sql("SELECT CONCAT_WS('|', representante_nome, representante_cpf, logo_url, uuid) FROM organizador WHERE documento='41902878000108'").split('|');
+  ok(linha[1] === '52998224725', 'CPF do representante gravado só com dígitos');
+  const nomeLogo = linha[2].split('/').pop().split('?')[0];
+  ok(nomeLogo === `estacao-slod_${linha[3]}.png` && fs.readdirSync(MIDIA).includes(nomeLogo), 'logo gravada como logomarcas/' + nomeLogo);
+  ok((await P.request.get(BASE + linha[2])).headers()['content-type'] === 'image/png', 'logo servida em /midia/logomarcas');
   ok(await P.locator('img.conta-menu__logo').count() === 1, 'logo aparece no alto do painel');
   ok(!(await P.content()).includes('Completar os campos obrigatórios'), 'aviso de obrigatórios some depois de completar');
 

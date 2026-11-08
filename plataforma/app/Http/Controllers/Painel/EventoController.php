@@ -163,6 +163,9 @@ class EventoController extends Controller
             ])['cancelamento_motivo'];
         }
 
+        if ($novo === 'publicado' && ! $evento->conta_pagamento_id && ($rec = \App\Support\Recebimento::conta($evento->organizador_id))) {
+            $dados['conta_pagamento_id'] = $rec->id; // ingresso pago recebido pela plataforma
+        }
         RegraDoBanco::executar(function () use ($evento, $dados) {
             $antes = $evento->getAttributes();
             $evento->forceFill($dados)->save();

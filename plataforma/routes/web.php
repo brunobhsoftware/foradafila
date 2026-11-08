@@ -130,6 +130,7 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::get('/', DashboardController::class)->name('painel');
 
     Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro');
+    Route::put('/financeiro/recebimento', [FinanceiroController::class, 'salvarRecebimento'])->name('financeiro.recebimento');
     Route::post('/financeiro/mercadopago/conectar', [FinanceiroController::class, 'conectar'])->name('financeiro.mp.conectar');
     Route::get('/financeiro/mercadopago/retorno', [FinanceiroController::class, 'retorno'])->name('financeiro.mp.retorno');
     Route::post('/financeiro/mercadopago/desconectar', [FinanceiroController::class, 'desconectar'])->name('financeiro.mp.desconectar');
