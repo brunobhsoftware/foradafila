@@ -20,7 +20,7 @@
         ],
         'Para produtores' => [
             ['Como acesso e gerencio meus eventos?', '<p>Crie a conta em <a href="'.route('cadastro').'">Criar conta de produtor</a> e entre pela <a href="'.route('entrar').'">Área do produtor</a>. Em <b>Meus eventos</b> você vê os eventos, cria um novo, cadastra tipos de ingresso e lotes, publica, pausa e encerra. A equipe entra por convite, com o nível de acesso que você definir.</p>'],
-            ['Como funciona o preço?', '<p>No primeiro evento do produtor a comissão é de 1% sobre o valor das vendas de ingressos, com percentual que aumenta a cada R$ 1.000 em vendas. A tabela completa das faixas ainda está em definição. Veja os detalhes e o que falta confirmar em <a href="'.route('precos').'">Preços</a>.</p>'],
+            ['Como funciona o preço?', '<p>Criar evento é grátis e evento gratuito não tem taxa. Nos ingressos pagos há uma taxa por ingresso, que o produtor escolhe absorver ou repassar ao comprador. A tabela de valores será publicada em breve. Veja mais em <a href="'.route('precos').'">Preços</a>.</p>'],
             ['O dinheiro das vendas passa pelo Fora da Fila?', '<p>O modelo previsto é que o pagamento do comprador caia diretamente na conta de recebimento do organizador no meio de pagamento escolhido. Essa integração (Mercado Pago primeiro) está em desenvolvimento; até lá, só eventos gratuitos emitem ingressos.</p>'],
         ],
     ];

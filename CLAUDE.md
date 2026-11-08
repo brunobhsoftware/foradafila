@@ -309,7 +309,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 
 - [ ] Configurar o cron do agendador no hPanel (expirar reservas, virar lotes) quando houver vendas
 - [ ] Área administrativa da plataforma (equipe BH Software) — futuro próximo
-- [ ] **Preços:** tabela completa das faixas (1% no primeiro evento, progressivo a cada R$ 1.000): percentuais de
+- [ ] **Preços:** tabela de valores (o site não cita mais "1% no primeiro evento"; aguarda definição do Bruno): percentuais de
   cada faixa, base de cálculo, o que é "primeiro evento", demais eventos, gratuitos/cortesias. O schema atual (`plano`:
   percentual + fixo + mínimo por ingresso) **não representa faixas progressivas** — vai exigir V003. O plano
   "Lançamento" no banco está com 0%.
