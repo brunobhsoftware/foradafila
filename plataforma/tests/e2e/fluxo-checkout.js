@@ -77,10 +77,10 @@ const webhook = async (P, id) => {
   await nav(C, C.click('button:has-text("Comprar ingresso")'));
   let t = await C.content();
   ok(t.includes('Comprar ingresso') && t.includes('R$ 210,00') && t.includes('R$ 100,00 + R$ 5,00 de taxa'), 'resumo com taxa repassada: 2 × R$ 105 = R$ 210');
-  for (const [k, v] of [['nome', 'Ana Compradora'], ['email', 'ana@compra.test'], ['senha', 'Ingresso1'], ['senha_confirmation', 'Ingresso1']]) await C.fill(`[name=${k}]`, v);
+  await C.fill('[name=cpf]', '18609139034'); await C.waitForSelector('[name=nome]:visible'); await C.fill('[name=nome]', 'Ana Compradora'); await C.fill('[name=email]', 'ana@compra.test');
   await C.fill('[name="participantes[0][nome]"]', 'Ana Compradora'); await C.fill('[name="participantes[0][cpf]"]', '529.982.247-25');
   await C.fill('[name="participantes[1][nome]"]', 'Pedro Amigo');
-  for (const k of ['compra_comprador', 'privacidade']) await C.check(`[name="aceites[${k}]"]`);
+  await C.check('[name=aceite_termos]');
   await nav(C, C.click('button:has-text("Ir para o pagamento")'));
   ok(C.url() === 'http://127.0.0.1:8099/pagar/ORD1', 'vai para o checkout do Mercado Pago');
   ok(sql("SELECT CONCAT_WS('|', status, valor_bruto, valor_taxa_servico, valor_total) FROM pedido") === 'aguardando_pagamento|200.00|10.00|210.00', 'pedido aguardando pagamento (R$ 200 + R$ 10 de taxa)');
@@ -115,7 +115,7 @@ const webhook = async (P, id) => {
   await C.selectOption('select[name^="q["]', '1');
   await nav(C, C.click('button:has-text("Comprar ingresso")'));
   await C.fill('[name="participantes[0][nome]"]', 'Ana Compradora');
-  for (const k of ['compra_comprador', 'privacidade']) await C.check(`[name="aceites[${k}]"]`);
+  await C.check('[name=aceite_termos]');
   await nav(C, C.click('button:has-text("Ir para o pagamento")'));
   ok(sql("SELECT reservado FROM lote") === '1', 'segunda compra reserva 1');
   orders.ORD2 = { status: 'failed', status_detail: 'rejected_by_issuer' };
@@ -129,7 +129,7 @@ const webhook = async (P, id) => {
   await C.selectOption('select[name^="q["]', '3');
   await nav(C, C.click('button:has-text("Comprar ingresso")'));
   for (let i = 0; i < 3; i++) await C.fill(`[name="participantes[${i}][nome]"]`, 'P' + i);
-  for (const k of ['compra_comprador', 'privacidade']) await C.check(`[name="aceites[${k}]"]`);
+  await C.check('[name=aceite_termos]');
   await nav(C, C.click('button:has-text("Ir para o pagamento")'));
   sql("UPDATE pedido SET expira_em = DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 MINUTE) WHERE status='aguardando_pagamento'");
   await C.goto(BASE + '/e/' + codEv('show-pago'));

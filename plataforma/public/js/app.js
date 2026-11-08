@@ -59,6 +59,52 @@
   });
 
   // Cadastro único: ao completar o CPF, preenche nome/e-mail/telefone vazios do mesmo formulário
+  // Compra: CPF primeiro. Conhecido → mostra nome e e-mail mascarado; novo → libera nome, e-mail e celular.
+  $$('[data-compra-cpf]').forEach((box) => {
+    const cpf = box.querySelector('[name=cpf]'), achado = box.querySelector('[data-cpf-achado]'), novo = box.querySelector('[data-cpf-novo]');
+    const campos = ['nome', 'email'].map((n) => box.querySelector(`[name=${n}]`));
+    let conhecido = null, ultimo = '';
+    const mostrar = (modo) => {
+      achado.hidden = modo !== 'achado'; novo.hidden = modo !== 'novo';
+      campos.forEach((c) => { c.required = modo === 'novo'; });
+    };
+    const buscar = async () => {
+      const d = cpf.value.replace(/\D/g, '');
+      if (d.length !== 11) { if (!campos[0].value) mostrar(''); return; }
+      if (d === ultimo) return; ultimo = d;
+      try {
+        const r = await fetch(box.dataset.url + '/' + d, { headers: { Accept: 'application/json' } });
+        const j = r.ok ? await r.json() : { encontrado: false };
+        conhecido = j.encontrado ? j : null;
+        if (conhecido) {
+          achado.querySelector('[data-achado-nome]').textContent = j.nome;
+          achado.querySelector('[data-achado-email]').textContent = j.email;
+          achado.querySelector('[data-achado-tel]').textContent = j.telefone ? ' e o celular é ' + j.telefone : '';
+          mostrar('achado');
+        } else mostrar('novo');
+      } catch (e) { mostrar('novo'); }
+    };
+    cpf.addEventListener('input', buscar); cpf.addEventListener('blur', buscar);
+    if (campos[0].value || campos[1].value) mostrar('novo'); else mostrar('');
+    buscar();
+    window.ffCompradorCompra = () => ({ conhecido, cpf: cpf.value, nome: campos[0].value, email: campos[1].value, telefone: box.querySelector('[name=telefone]').value });
+  });
+  $$('[data-usar-meus-dados]').forEach((bt) => {
+    bt.addEventListener('click', () => {
+      const bloco = bt.closest('.pub-participante'), marca = bloco.querySelector('[data-usar-comprador]');
+      const c = window.ffCompradorCompra ? window.ffCompradorCompra() : null;
+      marca.value = '1';
+      const pre = (k, v) => { const el = bloco.querySelector(`[name="participantes[0][${k}]"]`); if (el && v && !el.value) el.value = v; return el; };
+      if (c) {
+        pre('nome', c.conhecido ? c.conhecido.nome : c.nome);
+        pre('cpf', c.cpf);
+        if (!c.conhecido) { pre('email', c.email); pre('telefone', c.telefone); }
+        else ['email', 'telefone'].forEach((k) => { const el = bloco.querySelector(`[name="participantes[0][${k}]"]`); if (el && !el.value) { el.required = false; el.placeholder = 'O mesmo do seu cadastro'; } });
+      }
+      bt.textContent = 'Seus dados foram usados neste ingresso';
+    });
+  });
+
   $$('[data-busca-cpf]').forEach((cpf) => {
     let ultimo = '';
     // Como no CEP: ao completar os 11 números ou ao sair do campo, consulta e preenche tudo o que encontrar.

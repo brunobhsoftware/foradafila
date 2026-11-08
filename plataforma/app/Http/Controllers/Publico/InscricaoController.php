@@ -80,19 +80,48 @@ class InscricaoController extends Controller
             'aceites.*' => ['accepted'],
             'cupom' => ['nullable', 'string', 'max:30'],
         ];
+        // Um aceite só ("Li e concordo com os Termos de compra e a Política de privacidade") vale para os dois termos.
+        if ($request->boolean('aceite_termos')) {
+            $request->merge(['aceites' => array_fill_keys(self::TERMOS, '1')]);
+        }
+        // Comprador sem login: CPF primeiro, sem senha (decisão do Bruno, 08/11/2026). Com CPF já conhecido,
+        // os dados vêm do cadastro; senão pede nome e e-mail (celular opcional).
+        $conhecido = null;
         if (! $comprador) {
-            $request->merge(['email' => mb_strtolower(trim((string) $request->input('email')))]);
-            $regras += CompradorAuthController::regrasConta();
+            $request->merge(['email' => mb_strtolower(trim((string) $request->input('email'))), 'cpf' => Documento::digitos((string) $request->input('cpf'))]);
+            $conhecido = self::dadosDoCpf($request->input('cpf'));
+            $regras += [
+                'cpf' => ['required', new DocumentoValido('PF')],
+                'nome' => [$conhecido ? 'nullable' : 'required', 'string', 'max:150'],
+                'email' => [$conhecido && $conhecido['email'] ? 'nullable' : 'required', 'email:filter', 'max:150'],
+                'telefone' => ['nullable', 'string', 'max:20'],
+            ];
+        }
+        // "Usar meus dados neste ingresso": completa o 1º participante com os dados do comprador.
+        if ($request->boolean('participantes.0.usar_comprador')) {
+            $base = $comprador ? ['nome' => $comprador->nome, 'email' => $comprador->email, 'telefone' => $comprador->telefone, 'cpf' => $comprador->cpf]
+                : ['nome' => $request->input('nome') ?: ($conhecido['nome'] ?? null), 'email' => $request->input('email') ?: ($conhecido['email'] ?? null),
+                    'telefone' => $request->input('telefone') ?: ($conhecido['telefone'] ?? null), 'cpf' => $request->input('cpf')];
+            $p0 = (array) $request->input('participantes.0', []);
+            foreach ($base as $k => $v) {
+                if (($p0[$k] ?? '') === '' && $v) {
+                    $p0[$k] = $k === 'cpf' ? Documento::formatar($v) : $v;
+                }
+            }
+            $parts = (array) $request->input('participantes', []); $parts[0] = $p0;
+            $request->merge(['participantes' => $parts]);
         }
         $dados = $request->validate($regras, [
-            'email.unique' => 'Já existe uma conta com este e-mail. Entre em “Meus ingressos” para continuar.',
+            'cpf.required' => 'Informe o seu CPF.',
+            'nome.required' => 'Informe o seu nome completo.',
+            'email.required' => 'Informe o seu e-mail para receber os ingressos.',
             'participantes.*.nome.required' => 'Informe o nome de cada participante.',
             'participantes.*.cpf.required' => 'Este evento exige o CPF de cada participante.',
         ], ['participantes.*.cpf' => 'CPF do participante'] + \App\Support\Formularios::nomes($campos));
 
         $termos = Termo::vigente()->whereIn('tipo', self::TERMOS)->get();
         if ($termos->count() < count(self::TERMOS) || $termos->contains(fn ($t) => ! isset($dados['aceites'][$t->tipo]))) {
-            throw ValidationException::withMessages(['aceites' => 'É preciso aceitar os Termos de compra e a Política de privacidade.']);
+            throw ValidationException::withMessages(['aceite_termos' => 'É preciso concordar com os Termos de compra e a Política de privacidade.']);
         }
 
         // Pedido já criado com esta chave (clique duplo, voltar e reenviar): leva ao mesmo pedido.
@@ -114,11 +143,7 @@ class InscricaoController extends Controller
         try {
             $pedido = DB::transaction(function () use ($evento, $selecao, $total, $participantes, $termos, $dados, $request, $comprador, $cupom, $campos) {
                 if (! $comprador) {
-                    $comprador = Comprador::create([
-                        'nome' => $dados['nome'], 'email' => $dados['email'],
-                        'telefone' => preg_replace('/\D/', '', (string) ($dados['telefone'] ?? '')) ?: null,
-                        'senha_hash' => Hash::make($dados['senha']),
-                    ]);
+                    $comprador = self::compradorDaCompra($dados);
                 }
 
                 // Baixa do estoque: um UPDATE condicional por lote, sempre em ordem crescente de id.
@@ -192,7 +217,7 @@ class InscricaoController extends Controller
         }
 
         $compradorFinal = $pedido->getRelation('comprador_modelo');
-        if (! Auth::guard('comprador')->check()) {
+        if (! Auth::guard('comprador')->check() && $compradorFinal->wasRecentlyCreated) {
             Auth::guard('comprador')->login($compradorFinal);
             $request->session()->regenerate();
         }
@@ -201,6 +226,12 @@ class InscricaoController extends Controller
         $pedido->load(['ingressos.participante', 'ingressos.tipo', 'ingressos.lote']);
         Notificacoes::ingressosConfirmados($pedido, $compradorFinal, $evento->loadMissing('local'), $evento->organizador, $pedido->ingressos);
         Notificacoes::novaCompraParaEquipe($pedido, $compradorFinal, $evento, $evento->organizador, $pedido->ingressos->count());
+
+        if (! Auth::guard('comprador')->check()) {
+            // Cadastro que já existia: não entra na conta só com o CPF; os ingressos vão para o e-mail cadastrado.
+            return redirect()->to($evento->linkPublico())
+                ->with('ok', "Pronto! Pedido {$pedido->codigo} confirmado. Os ingressos foram enviados para ".self::mascararEmail($compradorFinal->email).'.');
+        }
 
         return redirect()->route('comprador.ingressos')
             ->with('ok', "Pronto! Pedido {$pedido->codigo} confirmado. Seus ingressos estão abaixo.");
@@ -218,11 +249,7 @@ class InscricaoController extends Controller
         try {
             $pedido = DB::transaction(function () use ($request, $evento, $selecao, $participantes, $termos, $dados, $comprador, $cupom, $conta, $org, $subtotal) {
                 if (! $comprador) {
-                    $comprador = Comprador::create([
-                        'nome' => $dados['nome'], 'email' => $dados['email'],
-                        'telefone' => preg_replace('/\D/', '', (string) ($dados['telefone'] ?? '')) ?: null,
-                        'senha_hash' => Hash::make($dados['senha']),
-                    ]);
+                    $comprador = self::compradorDaCompra($dados);
                 }
                 foreach ($selecao->sortBy(fn ($s) => $s['lote']->id) as $s) {
                     $ok = DB::update("UPDATE lote SET reservado = reservado + ?
@@ -287,7 +314,7 @@ class InscricaoController extends Controller
         }
 
         $compradorFinal = $pedido->getRelation('comprador_modelo');
-        if (! Auth::guard('comprador')->check()) {
+        if (! Auth::guard('comprador')->check() && $compradorFinal->wasRecentlyCreated) {
             Auth::guard('comprador')->login($compradorFinal);
             $request->session()->regenerate();
         }
@@ -303,6 +330,70 @@ class InscricaoController extends Controller
         }
 
         return redirect()->away($link);
+    }
+
+    /** Dados já conhecidos pelo CPF: conta de comprador ou cadastro único (pessoa). */
+    public static function dadosDoCpf(?string $cpf): ?array
+    {
+        $cpf = Documento::digitos((string) $cpf);
+        if (strlen($cpf) !== 11) {
+            return null;
+        }
+        if ($c = Comprador::where('cpf', $cpf)->whereNull('anonimizado_em')->first()) {
+            return ['nome' => $c->nome, 'email' => $c->email, 'telefone' => $c->telefone, 'comprador' => $c];
+        }
+        $p = \App\Support\CadastroPessoa::buscar($cpf);
+
+        return $p && $p['nome'] ? $p + ['comprador' => null] : null;
+    }
+
+    /** Busca do CPF na compra (site público): só nome e e-mail/celular mascarados — o resto fica no servidor. */
+    public function cpf(string $cpf)
+    {
+        $d = self::dadosDoCpf($cpf);
+
+        return response()->json($d ? ['encontrado' => true, 'nome' => $d['nome'], 'email' => self::mascararEmail($d['email']),
+            'telefone' => self::mascararTelefone($d['telefone'])] : ['encontrado' => false]);
+    }
+
+    /** Comprador da compra sem login: o do CPF, o do e-mail ou um novo, sem senha (cria depois por "Esqueci a senha"). */
+    private static function compradorDaCompra(array $dados): Comprador
+    {
+        $cpf = Documento::digitos((string) ($dados['cpf'] ?? ''));
+        $tel = preg_replace('/\D/', '', (string) ($dados['telefone'] ?? '')) ?: null;
+        $conhecido = self::dadosDoCpf($cpf);
+        if ($conhecido && $conhecido['comprador']) {
+            return $conhecido['comprador'];
+        }
+        $nome = trim((string) ($dados['nome'] ?? '')) ?: ($conhecido['nome'] ?? '');
+        $email = ($dados['email'] ?? '') ?: ($conhecido['email'] ?? '');
+        \App\Support\CadastroPessoa::registrar($cpf, $nome, $email, $tel ?: ($conhecido['telefone'] ?? null), 'compra');
+        if ($c = Comprador::where('email', $email)->first()) {
+            if (! $c->cpf) {
+                $c->forceFill(['cpf' => $cpf])->save();
+            }
+
+            return $c;
+        }
+
+        return Comprador::create(['nome' => $nome, 'email' => $email, 'cpf' => $cpf, 'telefone' => $tel ?: ($conhecido['telefone'] ?? null), 'senha_hash' => null]);
+    }
+
+    public static function mascararEmail(?string $e): ?string
+    {
+        if (! $e || ! str_contains($e, '@')) {
+            return $e;
+        }
+        [$u, $d] = explode('@', $e, 2);
+
+        return mb_substr($u, 0, 2).str_repeat('*', max(3, mb_strlen($u) - 2)).'@'.$d;
+    }
+
+    public static function mascararTelefone(?string $t): ?string
+    {
+        $t = preg_replace('/\D/', '', (string) $t);
+
+        return strlen($t) >= 10 ? '('.substr($t, 0, 2).') *****-'.substr($t, -4) : null;
     }
 
     /**

@@ -89,15 +89,14 @@ const formularioLegado = require('./_formulario-legado');
   await V.selectOption('select[name^="q["]', '2');
   await nav(V, V.click('button:has-text("Garantir ingresso")'));
   ok(V.url().includes('/inscricao'), 'vai para a inscrição');
-  for (const [n, v] of [['nome', 'Ana Compradora'], ['email', 'ana@publico.test'], ['senha', 'Ingresso1'], ['senha_confirmation', 'Ingresso1']]) await V.fill(`[name=${n}]`, v);
+  await V.fill('[name=cpf]', '62819482112'); await V.waitForSelector('[name=nome]:visible'); await V.fill('[name=nome]', 'Ana Compradora'); await V.fill('[name=email]', 'ana@publico.test');
   await V.fill('[name="participantes[0][nome]"]', 'Ana Compradora'); await V.fill('[name="participantes[0][cpf]"]', '529.982.247-25');
   await V.fill('[name="participantes[1][nome]"]', 'Pedro Amigo'); await V.fill('[name="participantes[1][cpf]"]', '111.111.111-11');
-  for (const t of ['compra_comprador', 'privacidade']) await V.check(`[name="aceites[${t}]"]`);
+  await V.check('[name=aceite_termos]');
   await nav(V, V.click('button:has-text("Confirmar inscrição")'));
   ok((await V.content()).includes('CPF inválido'), 'CPF inválido do participante é recusado');
   await V.fill('[name="participantes[1][cpf]"]', '153.509.460-56');
-  for (const [n, v] of [['senha', 'Ingresso1'], ['senha_confirmation', 'Ingresso1']]) await V.fill(`[name=${n}]`, v);
-  for (const t of ['compra_comprador', 'privacidade']) await V.check(`[name="aceites[${t}]"]`);
+  await V.check('[name=aceite_termos]');
   await nav(V, V.click('button:has-text("Confirmar inscrição")'));
   const meus = await V.content();
   ok(V.url().endsWith('/minha-conta') && meus.includes('confirmado'), 'inscrição confirmada e leva a Meus ingressos');
@@ -144,11 +143,26 @@ const formularioLegado = require('./_formulario-legado');
   await V.selectOption('select[name^="q["]', '1');
   await nav(V, V.click('button:has-text("Garantir ingresso")'));
   await V.fill('[name="participantes[0][cpf]"]', '529.982.247-25');
-  for (const t of ['compra_comprador', 'privacidade']) await V.check(`[name="aceites[${t}]"]`);
+  await V.check('[name=aceite_termos]');
   const form = await V.evaluate(() => { const f = document.querySelector('form[action*="inscricao"]'); return { action: f.action, dados: Object.fromEntries(new FormData(f)) }; });
   const r1 = await V.request.post(form.action, { form: form.dados, maxRedirects: 0 });
   const r2 = await V.request.post(form.action, { form: form.dados, maxRedirects: 0 });
   ok(r1.status() === 302 && r2.status() === 302, 'dois envios iguais respondem sem erro');
+
+  // CPF já cadastrado: mostra os dados (e-mail mascarado), sem senha e sem entrar na conta
+  const Z = await ctx();
+  await Z.goto(linkPublico); await Z.selectOption('select[name^="q["]', '1');
+  await nav(Z, Z.click('button:has-text("Garantir ingresso")'));
+  ok(!(await Z.locator('[name=nome]').isVisible()) && (await Z.locator('[name=senha]').count()) === 0, 'compra pede o CPF primeiro, sem senha');
+  await Z.fill('[name=cpf]', '62819482112');
+  await Z.waitForSelector('[data-cpf-achado]:visible');
+  const achado = await Z.locator('[data-cpf-achado]').innerText();
+  ok(achado.includes('Ana Compradora') && achado.includes('an***') && !achado.includes('ana@publico.test'), 'CPF conhecido: mostra o nome e o e-mail mascarado');
+  await Z.click('[data-usar-meus-dados]');
+  ok(await Z.inputValue('[name="participantes[0][nome]"]') === 'Ana Compradora', '"Usar meus dados" preenche o 1º ingresso');
+  await Z.check('[name=aceite_termos]');
+  await nav(Z, Z.click('button:has-text("Confirmar inscrição")'));
+  ok((await Z.content()).includes('enviados para an***@publico.test') && (await Z.goto(BASE + '/minha-conta')).url().includes('/entrar'), 'compra confirmada no cadastro existente, sem entrar na conta');
 
   // celular
   const M = await (await browser.newContext({ ...devices['iPhone 13'] })).newPage();

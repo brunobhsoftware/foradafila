@@ -42,11 +42,11 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   await V.goto(BASE + '/e/' + codEv('festa-das-vendas'));
   await V.selectOption('select[name^="q["]', '3');
   await nav(V, V.click('button:has-text("Garantir ingresso")'));
-  for (const [n, v] of [['nome', 'Ana Compradora'], ['email', 'ana@publico.test'], ['senha', 'Ingresso1'], ['senha_confirmation', 'Ingresso1']]) await V.fill(`[name=${n}]`, v);
+  await V.fill('[name=cpf]', '52601815906'); await V.waitForSelector('[name=nome]:visible'); await V.fill('[name=nome]', 'Ana Compradora'); await V.fill('[name=email]', 'ana@publico.test');
   for (const [i, nome, cpf] of [[0, 'Ana Compradora', '529.982.247-25'], [1, 'Pedro Amigo', '153.509.460-56'], [2, 'Carla Prima', '111.444.777-35']]) {
     await V.fill(`[name="participantes[${i}][nome]"]`, nome); await V.fill(`[name="participantes[${i}][cpf]"]`, cpf);
   }
-  for (const t of ['compra_comprador', 'privacidade']) await V.check(`[name="aceites[${t}]"]`);
+  await V.check('[name=aceite_termos]');
   await nav(V, V.click('button:has-text("Confirmar inscrição")'));
   ok(V.url().endsWith('/minha-conta'), 'comprador inscrito com 3 ingressos');
   // simula ingresso pago (venda paga ainda não existe): Pedro pagou R$ 80

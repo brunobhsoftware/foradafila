@@ -81,9 +81,9 @@ const salvar = async (p) => { await p.evaluate(() => { document.querySelector('f
   ok(await V.locator('img[alt^="Logo de"]').count() === 1, 'logo do organizador na página do evento');
   await V.selectOption('select[name^="q["]', '1');
   await nav(V, V.click('button:has-text("Garantir ingresso")'));
-  for (const [n, v] of [['nome', 'Clara'], ['email', 'clara@pub.test'], ['senha', 'Ingresso1'], ['senha_confirmation', 'Ingresso1']]) await V.fill(`[name=${n}]`, v);
+  await V.fill('[name=cpf]', '08301661305'); await V.waitForSelector('[name=nome]:visible'); await V.fill('[name=nome]', 'Clara'); await V.fill('[name=email]', 'clara@pub.test');
   await V.fill('[name="participantes[0][nome]"]', 'Clara'); await V.fill('[name="participantes[0][cpf]"]', '153.509.460-56');
-  for (const t of ['compra_comprador', 'privacidade']) await V.check(`[name="aceites[${t}]"]`);
+  await V.check('[name=aceite_termos]');
   await nav(V, V.click('button:has-text("Confirmar inscrição")'));
   await V.waitForTimeout(500);
   ok(sql("SELECT COUNT(*) FROM mensagem_envio WHERE tipo='aviso_compra_equipe' AND destinatario='bruno@slod.test' AND status='enviado'") === '1', 'produtor recebe o aviso de compra (noreply@)');

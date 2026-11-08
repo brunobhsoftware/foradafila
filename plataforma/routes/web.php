@@ -126,6 +126,7 @@ Route::post('/admin/sair-da-conta', [\App\Http\Controllers\Admin\EmpresasControl
 
 // ---------- Área do produtor ----------
 // Cadastro único (V011): busca pelo CPF, só para a equipe logada; cada consulta vai para a auditoria.
+Route::get('/compra/cpf/{cpf}', [\App\Http\Controllers\Publico\InscricaoController::class, 'cpf'])->middleware('throttle:10,1,compra-cpf')->where('cpf', '[0-9]{11}')->name('compra.cpf');
 Route::get('/cadastro-unico/{cpf}', function (string $cpf) {
     $p = \App\Support\CadastroPessoa::buscar($cpf);
     \App\Support\Auditoria::registrar('pessoa.consulta', auth()->user(), null, ['cpf_final' => substr(preg_replace('/\D/', '', $cpf), -4), 'encontrado' => (bool) $p]);

@@ -27,8 +27,20 @@
       @if ($comprador)
         <p>Você está em <b>Meus ingressos</b> como <b>{{ $comprador->nome }}</b> ({{ $comprador->email }}). Os ingressos ficarão nesta conta.</p>
       @else
-        <p>Crie a sua conta para acessar os ingressos depois. Já tem conta? <a href="{{ route('comprador.entrar') }}">Entre primeiro</a> e volte para esta página.</p>
-        <div class="form-grade" style="margin-bottom:8px">@include('comprador._campos-conta')</div>
+        <div class="form-grade" style="margin-bottom:8px" data-compra-cpf data-url="{{ url('/compra/cpf') }}">
+          <x-campo nome="cpf" rotulo="Seu CPF" obrigatorio classe="col-4" data-mascara="cpf" inputmode="numeric" autocomplete="off" ajuda="Comece pelo CPF: se você já comprou com a gente, seus dados aparecem." />
+          <div class="col-12" data-cpf-achado hidden>
+            <p style="margin:0;padding:12px 14px;background:#F2F4F7;border-left:4px solid var(--laranja);border-radius:8px">
+              Olá, <b data-achado-nome></b>! Os ingressos vão para <b data-achado-email></b><span data-achado-tel></span>.<br>
+              <small>Não é você? Confira o CPF digitado.</small></p>
+          </div>
+          <div class="col-12" data-cpf-novo hidden><div class="form-grade">
+            <x-campo nome="nome" rotulo="Seu nome completo" obrigatorio autocomplete="name" classe="col-12" />
+            <x-campo nome="email" rotulo="E-mail" tipo="email" obrigatorio autocomplete="email" classe="col-6" ajuda="Os ingressos chegam neste e-mail." />
+            <x-campo nome="telefone" rotulo="Celular (opcional)" tipo="tel" data-mascara="telefone" autocomplete="tel" classe="col-6" />
+          </div></div>
+          <div class="col-12"><small>Não precisa criar senha. Se quiser acessar “Meus ingressos” depois, use “Esqueci a senha” com este e-mail.</small></div>
+        </div>
       @endif
 
       <h2 style="font-size:1.15rem;margin-top:24px">2. Quem vai usar {{ $total > 1 ? 'os ingressos' : 'o ingresso' }}</h2>
@@ -38,6 +50,10 @@
           @for ($n = 0; $n < $s['quantidade']; $n++, $i++)
             <div class="pub-participante">
               <h3>Ingresso {{ $i + 1 }} · {{ $s['lote']->tipo->nome }} — {{ $s['lote']->nome }}</h3>
+              @if ($i === 0)
+                <input type="hidden" name="participantes[0][usar_comprador]" value="{{ old('participantes.0.usar_comprador') }}" data-usar-comprador>
+                <button type="button" class="botao botao--contorno botao--pequeno" style="margin:0 0 10px" data-usar-meus-dados>Usar meus dados neste ingresso</button>
+              @endif
               <div class="form-grade">
                 @if ($campos)
                   @foreach ($campos as $cp)
@@ -84,12 +100,10 @@
 
       <h2 style="font-size:1.15rem;margin-top:24px">3. Termos</h2>
       <div style="display:grid;gap:10px;margin-bottom:20px">
-        @foreach (['compra_comprador' => 'os Termos de compra', 'privacidade' => 'a Política de privacidade'] as $tipo => $rotulo)
-          @isset($termos[$tipo])
-            <label class="opcao"><input type="checkbox" name="aceites[{{ $tipo }}]" value="1" @checked(old('aceites.'.$tipo)) required>
-              <span>Li e aceito {{ $rotulo }} (<a href="{{ route('termo', $tipo) }}" target="_blank" rel="noopener">ler, versão {{ $termos[$tipo]->versao }}</a>).</span></label>
-          @endisset
-        @endforeach
+        <label class="opcao"><input type="checkbox" name="aceite_termos" value="1" @checked(old('aceite_termos')) required>
+          <span>Li e concordo com os <a href="{{ route('termo', 'compra_comprador') }}" target="_blank" rel="noopener">Termos de compra</a>
+            e a <a href="{{ route('termo', 'privacidade') }}" target="_blank" rel="noopener">Política de privacidade</a>.</span></label>
+        @error('aceite_termos')<small class="erro">{{ $message }}</small>@enderror
         <small>O ingresso é emitido pelo organizador <b>{{ $evento->organizador->nomeExibicao() }}</b>, responsável pelo evento.</small>
       </div>
 

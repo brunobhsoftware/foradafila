@@ -63,10 +63,10 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   await V.goto(BASE + '/e/' + codEv('festa-das-mensagens'));
   await V.selectOption('select[name^="q["]', '2');
   await nav(V, V.click('button:has-text("Garantir ingresso")'));
-  for (const [n, v] of [['nome', 'Ana Compradora'], ['email', 'ana@publico.test'], ['senha', 'Ingresso1'], ['senha_confirmation', 'Ingresso1']]) await V.fill(`[name=${n}]`, v);
+  await V.fill('[name=cpf]', '99351819019'); await V.waitForSelector('[name=nome]:visible'); await V.fill('[name=nome]', 'Ana Compradora'); await V.fill('[name=email]', 'ana@publico.test');
   await V.fill('[name="participantes[0][nome]"]', 'Ana Compradora'); await V.fill('[name="participantes[0][cpf]"]', '529.982.247-25');
   await V.fill('[name="participantes[1][nome]"]', 'Pedro Amigo'); await V.fill('[name="participantes[1][cpf]"]', '153.509.460-56');
-  for (const t of ['compra_comprador', 'privacidade']) await V.check(`[name="aceites[${t}]"]`);
+  await V.check('[name=aceite_termos]');
   await nav(V, V.click('button:has-text("Confirmar inscrição")'));
   ok(sql("SELECT assunto FROM mensagem_envio WHERE tipo='confirmacao_compra' ORDER BY id DESC LIMIT 1") === 'Confirmado: Festa das Mensagens'
     && sql("SELECT corpo_renderizado LIKE '%Evento especial para Ana Compradora%' FROM mensagem_envio WHERE tipo='confirmacao_compra' ORDER BY id DESC LIMIT 1") === '1', 'e-mail de confirmação usa o texto do evento');

@@ -106,6 +106,13 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   numeração por `evento.ultimo_numero_ingresso`, `codigo_qr` 256 bits + HMAC (`Ingresso::conteudoQr()`),
   participante por ingresso, aceite de `compra_comprador` e `privacidade`, chave de idempotência.
   Lotes pagos: vendidos pelo **checkout pago** (abaixo) quando a organização tem conta de recebimento ativa; senão "venda online em breve".
+- **Compra sem senha, CPF primeiro** (decisão do Bruno, 08/11/2026): em "1. Seus dados" o comprador sem login digita só o CPF
+  (`GET /compra/cpf/{cpf}`, throttle `compra-cpf` 10/min, `InscricaoController::cpf`): conhecido (comprador ou `pessoa`) → mostra o nome e
+  e-mail/celular **mascarados** e usa o cadastro; novo → libera nome e e-mail (obrigatórios) e celular (opcional). Sem senha
+  (`compradorDaCompra`: comprador do CPF, do e-mail ou novo com `senha_hash` NULL; senha depois por "Esqueci a senha"). Só o comprador
+  **novo** entra na conta; cadastro existente não entra só com o CPF (volta à página do evento com "enviados para an***@..."). Botão
+  "Usar meus dados neste ingresso" (`participantes[0][usar_comprador]`, completa no servidor). Termos: **um aceite só**
+  (`aceite_termos` → grava os dois termos). Testes usam `[name=cpf]` + `[name=aceite_termos]`.
 - **Checkout pago** (`App\Support\Checkout`, 08/11/2026): a mesma tela de inscrição vira "Comprar ingresso" com o resumo (preço + taxa
   repassada) e "Ir para o pagamento". `InscricaoController::reservarPago` reserva o estoque (`lote.reservado`, UPDATE condicional) por
   `RESERVA_MIN` (30) min, cria o pedido `aguardando_pagamento` (participantes em `dados_participantes`; `pedido_item.taxa_unitaria` =
