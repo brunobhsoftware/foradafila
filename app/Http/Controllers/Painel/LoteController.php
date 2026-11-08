@@ -58,6 +58,9 @@ class LoteController extends Controller
         $this->autorizar($evento);
         $dados = $this->validarLote($request, $evento);
 
+        if (\App\Support\Esquema::temV014()) {
+            $dados['exibir'] = $request->boolean('exibir', true);
+        }
         $lote = RegraDoBanco::executar(fn () => $evento->lotes()->create($dados + [
             'ordem' => $evento->lotes()->count(),
             'status' => $request->boolean('ativo', true) ? self::statusAtivo($dados['venda_inicio']) : 'pausado',
@@ -74,6 +77,9 @@ class LoteController extends Controller
         $dados = $this->validarLote($request, $evento, $lote);
         if ($request->has('ativo')) {
             $dados['status'] = self::statusAoAtivar($lote, $request->boolean('ativo'), $dados['venda_inicio']);
+        }
+        if ($request->has('exibir') && \App\Support\Esquema::temV014()) {
+            $dados['exibir'] = $request->boolean('exibir');
         }
 
         $antes = $lote->getAttributes();
@@ -94,6 +100,18 @@ class LoteController extends Controller
         Auditoria::registrar($ativar ? 'lote.ativar' : 'lote.desativar', $lote, $antes);
 
         return back()->with('ok', "Lote “{$lote->nome}” ".($ativar ? 'ativado.' : 'desativado: não aparece nem é vendido.'));
+    }
+
+    /** Mostrar/ocultar o ingresso na página do evento (sem mexer na venda). */
+    public function exibir(Lote $lote)
+    {
+        $this->autorizar($lote->evento);
+        abort_unless(\App\Support\Esquema::temV014(), 404);
+        $antes = $lote->getAttributes();
+        $lote->update(['exibir' => ! $lote->exibir]);
+        Auditoria::registrar($lote->exibir ? 'lote.exibir' : 'lote.ocultar', $lote, $antes);
+
+        return back()->with('ok', "Ingresso “{$lote->nome}” ".($lote->exibir ? 'visível na página do evento.' : 'oculto da página do evento.'));
     }
 
     public function destroy(Lote $lote)

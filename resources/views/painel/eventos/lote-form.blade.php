@@ -22,6 +22,9 @@
     <div class="campo col-3 lote-form__ativo">
         <label>Situação</label>
         <label class="interruptor"><input type="hidden" name="ativo" value="0"><input type="checkbox" name="ativo" value="1" @checked($ativo)><span></span> Ingresso ativo</label>
+        @if (\App\Support\Esquema::temV014())
+        <label class="interruptor" style="margin-top:6px" title="Desligado: o ingresso some da página do evento"><input type="hidden" name="exibir" value="0"><input type="checkbox" name="exibir" value="1" @checked(old('exibir', $lote->exibir ?? true))><span></span> Exibir na página</label>
+        @endif
     </div>
 
     {{-- Gratuito ou pago --}}

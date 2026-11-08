@@ -121,12 +121,17 @@
                                     @else Grátis @endif</td>
                                 <td style="min-width:140px"><small>{{ numero($lote->vendido) }} / {{ numero($lote->quantidade) }}</small><div class="barra"><span style="width:{{ min(100, $pct) }}%"></span></div></td>
                                 <td><small>@if ($lote->lote_anterior_id)Após “{{ $lotesOpcoes[$lote->lote_anterior_id] ?? 'lote anterior' }}”@else{{ data_local($lote->venda_inicio, 'd/m H:i') }}@endif → {{ data_local($lote->venda_fim, 'd/m H:i') }}</small></td>
-                                <td><span class="selo {{ ['ativo' => 'selo--verde', 'esgotado' => 'selo--laranja', 'pausado' => 'selo--cinza', 'encerrado' => 'selo--azul'][$lote->status] ?? '' }}">{{ \App\Models\Lote::STATUS[$lote->status] }}</span></td>
+                                <td><span class="selo {{ ['ativo' => 'selo--verde', 'esgotado' => 'selo--laranja', 'pausado' => 'selo--cinza', 'encerrado' => 'selo--azul'][$lote->status] ?? '' }}">{{ \App\Models\Lote::STATUS[$lote->status] }}</span>
+                                    @if (\App\Support\Esquema::temV014() && ! $lote->exibir)<br><span class="selo selo--cinza" style="margin-top:4px">Oculto da página</span>@endif</td>
                                 <td class="num">
                                     @if ($podeLotes)
                                         <form method="post" action="{{ route('lotes.alternar', $lote) }}" style="display:inline">@csrf
                                             <button class="botao botao--contorno botao--pequeno" title="{{ $lote->status === 'pausado' ? 'Volta a aparecer e a ser vendido' : 'Deixa de aparecer e de ser vendido' }}">{{ $lote->status === 'pausado' ? 'Ativar' : 'Desativar' }}</button>
                                         </form>
+                                        @if (\App\Support\Esquema::temV014())
+                                        <form method="post" action="{{ route('lotes.exibir', $lote) }}" style="display:inline">@csrf
+                                            <button class="botao botao--contorno botao--pequeno" title="{{ $lote->exibir ? 'Esconde da página do evento' : 'Mostra na página do evento' }}">{{ $lote->exibir ? 'Ocultar' : 'Exibir' }}</button></form>
+                                        @endif
                                         <button type="button" class="botao botao--contorno botao--pequeno" data-alternar="editar-lote-{{ $lote->id }}" aria-expanded="false">Editar</button>
                                     @endif
                                 </td>
