@@ -66,7 +66,7 @@
     <div class="cartao kpi"><small>Check-ins</small><b>{{ numero($indicadores->checkins_realizados) }}</b><small>entradas</small></div>
 </div>
 
-<section class="cartao" style="margin-top:18px">
+<section class="cartao" style="margin-top:18px" id="ingressos">
     <div class="cartao__titulo">
         <div><h2>Ingressos e lotes</h2><small>Setores (Pista, VIP…) e os lotes de cada um, com preço, quantidade e período de venda.</small></div>
         <small>{{ numero($somaLotes) }} {{ $evento->capacidade === null ? 'ingressos em lotes · sem capacidade máxima' : 'de '.numero($evento->capacidade).' lugares em lotes' }}</small>

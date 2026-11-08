@@ -41,6 +41,7 @@
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                         <x-status-evento :status="$evento->status" />
                         <a href="{{ route('eventos.show', $evento) }}" class="botao botao--contorno botao--pequeno">Abrir</a>
+                        <a href="{{ route('eventos.show', $evento) }}#ingressos" class="botao botao--contorno botao--pequeno">Ingressos</a>
                         @can('evento.criar')@unless (in_array($evento->status, ['encerrado', 'cancelado']))<a href="{{ route('eventos.edit', $evento) }}" class="botao botao--primario botao--pequeno">Editar</a>@endunless @endcan
                     </div>
                 </div>

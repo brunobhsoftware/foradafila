@@ -85,6 +85,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - Toda ação relevante grava em `auditoria` via `App\Support\Auditoria::registrar()`.
 - Datas: banco em UTC; tela em `America/Sao_Paulo` (helpers `data_local`, `para_input_data`, `utc_de_local`).
 - **Meus eventos** (decisão do Bruno, 08/11/2026): cada evento num painel (`.evento-painel`): nome, local, início–fim, status, Abrir/Editar;
+  botões Abrir, **Ingressos** (vai direto à seção `#ingressos` da página do evento, também com o evento publicado) e Editar;
   números — ingressos vendidos/ofertados, valor vendido (Σ `pedido.valor_total` pago/reembolso parcial/reembolsado), descontos,
   taxa da plataforma (só dos ingressos válidos/utilizados), devolvido (`reembolso` aprovado/concluído) e **valor líquido**
   (vendido − taxa − devoluções); link público com Copiar, Compartilhar (`data-compartilhar`: `navigator.share` ou copia) e WhatsApp.
