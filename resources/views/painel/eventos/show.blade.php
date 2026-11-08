@@ -24,6 +24,7 @@
         @can('evento.criar')
             @unless (in_array($evento->status, ['encerrado', 'cancelado']))
                 <a href="{{ route('eventos.edit', $evento) }}" class="botao botao--contorno"><x-icone nome="editar" /> Editar</a>
+                <a href="#ingressos" class="botao botao--contorno"><x-icone nome="ingresso" /> Editar ingressos</a>
             @endunless
         @endcan
         @foreach (['publicado' => $evento->status === 'pausado' ? 'Retomar vendas' : 'Publicar evento', 'pausado' => 'Pausar vendas', 'encerrado' => 'Encerrar'] as $novo => $rotulo)
