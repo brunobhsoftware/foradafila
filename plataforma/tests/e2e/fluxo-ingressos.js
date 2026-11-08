@@ -98,15 +98,17 @@ const lote = (nome) => sql(`SELECT CONCAT_WS('|', preco, modalidade, IFNULL(lote
   ok(pub.includes('Primeiro') && !pub.includes('Segundo') && !pub.includes('Equipe'), 'página do evento mostra só o lote para todo o público');
   ok(!pub.includes('abre quando o lote anterior encerrar'), 'lote seguinte da sequência não aparece antes da vez dele');
 
-  // ocultar da página sem mexer na venda
-  await P.goto(BASE + '/painel/eventos'); await nav(P, P.click('a:has-text("Festa dos Lotes")'));
-  await nav(P, linha('Primeiro').locator('button:has-text("Ocultar")').click());
-  ok(sql("SELECT CONCAT(exibir,'|',status) FROM lote WHERE nome='Primeiro'") === '0|ativo' && (await linha('Primeiro').innerText()).includes('Oculto da página'), 'Ocultar: some da página mas continua ativo');
-  await V.goto(BASE + '/e/' + codEv('festa-dos-lotes'));
-  ok(!(await V.content()).includes('Primeiro'), 'lote oculto não aparece na página do evento');
-  await nav(P, linha('Primeiro').locator('button:has-text("Exibir")').click());
+  // exibição segue a regra de venda: por data só no período; por lote só depois que o anterior termina
+  sql("UPDATE lote SET venda_inicio=DATE_ADD(UTC_TIMESTAMP(), INTERVAL 2 DAY) WHERE nome='Primeiro'");
   await V.reload();
-  ok((await V.content()).includes('Primeiro'), 'Exibir: volta a aparecer');
+  let t = await V.content();
+  ok(!t.includes('Primeiro') && t.includes('As vendas abrem em'), 'lote por data antes do período não aparece (mostra quando abre)');
+  sql("UPDATE lote SET venda_inicio=DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 DAY), status='esgotado' WHERE nome='Primeiro'");
+  sql("UPDATE lote SET visibilidade='publico' WHERE nome='Segundo'");
+  await V.reload();
+  t = await V.content();
+  ok(t.includes('Segundo') && !t.includes('Primeiro'), 'lote da sequência aparece quando o anterior esgota');
+  sql("UPDATE lote SET status='ativo' WHERE nome='Primeiro'");
 
   // mudar a data do evento: o fim das vendas dos lotes acompanha o novo término
   const fimAntes = sql("SELECT data_fim FROM evento WHERE slug='festa-dos-lotes'");

@@ -38,16 +38,18 @@ class EventoPublicoController extends Controller
         $evento->load(['local', 'categoria', 'tipos' => fn ($q) => $q->where('ativo', 1), 'tipos.lotes']);
 
         // Só os lotes públicos aparecem; ocultos e de convidados dependem de link próprio (fase futura).
-        $lotes = $evento->tipos->flatMap->lotes->where('visibilidade', 'publico')
-            ->filter(fn ($l) => ! \App\Support\Esquema::temV014() || $l->exibir)->values();
+        $lotes = $evento->tipos->flatMap->lotes->where('visibilidade', 'publico')->values();
         $aVenda = $lotes->filter(fn ($l) => self::loteAVenda($evento, $l));
-        // Sequência "Por lote" (1º, 2º, 3º…): o próximo só aparece quando chega a vez dele (decisão do Bruno, 08/11/2026).
-        $lotes = $lotes->reject(fn ($l) => $l->lote_anterior_id && ! $aVenda->contains('id', $l->id)
-            && in_array($l->status, ['ativo', 'agendado'], true) && ($l->quantidade - $l->reservado - $l->vendido) > 0)->values();
+        // A página mostra só os ingressos à venda agora, pela regra de cada lote (decisão do Bruno, 08/11/2026):
+        // "Por data" → dentro do período; "Por lote" → depois que o anterior terminou. Sem lote à venda, avisa a próxima abertura.
+        $proximaAbertura = $lotes->reject(fn ($l) => $aVenda->contains('id', $l->id))
+            ->filter(fn ($l) => ! $l->lote_anterior_id && in_array($l->status, ['ativo', 'agendado'], true) && $l->venda_inicio?->isFuture())
+            ->min('venda_inicio');
+        $lotes = $aVenda->values();
 
         $vendePago = (bool) \App\Support\Checkout::contaDoEvento($evento);
 
-        return view('publico.evento', compact('evento', 'lotes', 'aVenda', 'vendePago'));
+        return view('publico.evento', compact('evento', 'lotes', 'aVenda', 'vendePago', 'proximaAbertura'));
     }
 
     public function organizador(string $slug)
@@ -77,7 +79,6 @@ class EventoPublicoController extends Controller
     {
         $precos = $eventos->isEmpty() ? collect() : \App\Models\Lote::withoutGlobalScope('organizador')->whereIn('evento_id', $eventos->pluck('id'))
             ->where('visibilidade', 'publico')->whereIn('status', ['ativo', 'agendado'])
-            ->when(\App\Support\Esquema::temV014(), fn ($q) => $q->where('exibir', 1))
             ->groupBy('evento_id')->selectRaw('evento_id, MIN(preco) AS menor')->pluck('menor', 'evento_id');
         $eventos->each(fn ($e) => $e->setAttribute('preco_minimo', $precos[$e->id] ?? null));
     }
@@ -111,7 +112,7 @@ class EventoPublicoController extends Controller
      */
     public static function loteAVenda(Evento $evento, $lote): bool
     {
-        if ($evento->status !== 'publicado' || $lote->visibilidade !== 'publico' || (\App\Support\Esquema::temV014() && ! $lote->exibir)
+        if ($evento->status !== 'publicado' || $lote->visibilidade !== 'publico' 
             || ! in_array($lote->status, ['ativo', 'agendado'], true)
             || ! $lote->venda_inicio->isPast() || ! $lote->venda_fim->isFuture()
             || ($evento->data_fim && $evento->data_fim->isPast())
