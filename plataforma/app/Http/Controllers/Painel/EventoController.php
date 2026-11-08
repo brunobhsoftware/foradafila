@@ -98,6 +98,7 @@ class EventoController extends Controller
         $this->garantirAcesso($evento);
 
         $evento->load(['local', 'categoria', 'tipos.lotes', 'organizador']);
+        \App\Http\Controllers\Publico\EventoPublicoController::sincronizarExibicao($evento);
         $indicadores = $evento->indicadores();
         $checklist = $evento->status === 'rascunho' ? $evento->checklistPublicacao() : [];
 

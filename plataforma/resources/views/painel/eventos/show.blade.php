@@ -122,7 +122,8 @@
                                     @else Grátis @endif</td>
                                 <td style="min-width:140px"><small>{{ numero($lote->vendido) }} / {{ numero($lote->quantidade) }}</small><div class="barra"><span style="width:{{ min(100, $pct) }}%"></span></div></td>
                                 <td><small>@if ($lote->lote_anterior_id)Após “{{ $lotesOpcoes[$lote->lote_anterior_id] ?? 'lote anterior' }}”@else{{ data_local($lote->venda_inicio, 'd/m H:i') }}@endif → {{ data_local($lote->venda_fim, 'd/m H:i') }}</small></td>
-                                <td><span class="selo {{ ['ativo' => 'selo--verde', 'esgotado' => 'selo--laranja', 'pausado' => 'selo--cinza', 'encerrado' => 'selo--azul'][$lote->status] ?? '' }}">{{ \App\Models\Lote::STATUS[$lote->status] }}</span></td>
+                                <td><span class="selo {{ ['ativo' => 'selo--verde', 'esgotado' => 'selo--laranja', 'pausado' => 'selo--cinza', 'encerrado' => 'selo--azul'][$lote->status] ?? '' }}">{{ \App\Models\Lote::STATUS[$lote->status] }}</span>
+                                    @if (\App\Support\Esquema::temV014())<br><span class="selo {{ $lote->exibir ? 'selo--verde' : 'selo--cinza' }}" style="margin-top:4px" title="Calculado pela regra de venda (por data ou por lote); não é editável">{{ $lote->exibir ? 'Na página agora' : 'Oculto da página agora' }}</span>@endif</td>
                                 <td class="num">
                                     @if ($podeLotes)
                                         <form method="post" action="{{ route('lotes.alternar', $lote) }}" style="display:inline">@csrf

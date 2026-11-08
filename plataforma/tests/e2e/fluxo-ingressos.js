@@ -108,6 +108,9 @@ const lote = (nome) => sql(`SELECT CONCAT_WS('|', preco, modalidade, IFNULL(lote
   await V.reload();
   t = await V.content();
   ok(t.includes('Segundo') && !t.includes('Primeiro'), 'lote da sequência aparece quando o anterior esgota');
+  ok(sql("SELECT GROUP_CONCAT(exibir ORDER BY nome) FROM lote WHERE nome IN ('Primeiro','Segundo')") === '0,1', 'flag exibir atualizada sozinha pela regra (Primeiro 0, Segundo 1)');
+  await P.goto(BASE + '/painel/eventos'); await nav(P, P.click('a:has-text("Festa dos Lotes")'));
+  ok((await linha('Segundo').innerText()).includes('Na página agora') && (await linha('Primeiro').innerText()).includes('Oculto da página agora'), 'painel mostra a situação na página (só leitura)');
   sql("UPDATE lote SET status='ativo' WHERE nome='Primeiro'");
 
   // mudar a data do evento: o fim das vendas dos lotes acompanha o novo término
