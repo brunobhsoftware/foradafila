@@ -6,6 +6,7 @@
         ['rota' => 'admin.empresas', 'icone' => 'organizacao', 'texto' => 'Empresas'],
         ['rota' => 'admin.taxas', 'icone' => 'financeiro', 'texto' => 'Taxas e isenções'],
         ['rota' => 'admin.mercadopago', 'icone' => 'dinheiro', 'texto' => 'Mercado Pago'],
+        ['rota' => 'admin.emails', 'icone' => 'mensagem', 'texto' => 'E-mails enviados'],
         ['rota' => 'admin.banco', 'icone' => 'organizacao', 'texto' => 'Atualizações do banco'],
     ];
     $emBreve = [];

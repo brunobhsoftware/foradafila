@@ -173,7 +173,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   mínimo, carência para conta nova; taxa específica da empresa (isenção ou valores próprios; vazio = padrão) com início/fim;
   encerrar = fim ontem (ou remove se ainda não valeu). Sem o V008, essas telas mostram aviso (`admin.precisa-v008`).
   Ainda não há cobrança aplicada: o motor só calcula (simulação na tela da empresa).
-  **Primeiro acesso:** administrador criado sem senha usa "Esqueci a senha" (link de 60 min, `SenhaController::podeRedefinir`).
+  **E-mails enviados** (`/admin/emails`): últimos 100 de `mensagem_envio` (para, assunto, situação, erro; sem o corpo), busca e filtro.
+  **Primeiro acesso:** qualquer conta sem senha (administrador, pessoa da equipe convidada, comprador de cortesia) usa "Esqueci a senha" (link de 60 min, `SenhaController::podeRedefinir`).
   Modelo decidido pelo Bruno (07/11/2026): **aplicação única da BH Software + "Conectar" de cada produtor**; o dinheiro
   cai direto na conta do produtor. O Financeiro do produtor mostra a etapa 1 só como "Liberação pela plataforma".
 - **Vendas → Participantes** (`/painel/participantes`, `ParticipantesController`): por evento (seletor; padrão = próximo), busca
