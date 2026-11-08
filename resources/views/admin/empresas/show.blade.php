@@ -68,26 +68,29 @@
                 <td>{{ \Illuminate\Support\Carbon::parse($t->inicio)->format('d/m/Y') }} → {{ $t->fim ? \Illuminate\Support\Carbon::parse($t->fim)->format('d/m/Y') : 'sem fim' }}
                     @if ($vigente)<span class="selo selo--azul">vigente</span>@endif</td>
                 <td>{{ $t->observacao }}<br><small>{{ $t->autor }}</small></td>
-                <td class="num">@if (! $t->fim || $t->fim >= $hoje)
-                    <form method="post" action="{{ route('admin.empresas.taxas.encerrar', [$organizador, $t->id]) }}" data-confirmar="Encerrar esta taxa específica?">@csrf<button class="botao botao--perigo botao--pequeno">Encerrar</button></form>@endif</td>
+                <td class="num" style="white-space:nowrap">
+                    <button type="button" class="botao botao--contorno botao--pequeno" data-alternar="taxa-{{ $t->id }}">Editar</button>
+                    @if (! $t->fim || $t->fim >= $hoje)
+                    <form method="post" action="{{ route('admin.empresas.taxas.encerrar', [$organizador, $t->id]) }}" data-confirmar="Encerrar esta taxa específica?" style="display:inline">@csrf<button class="botao botao--perigo botao--pequeno">Encerrar</button></form>@endif</td>
             </tr>
+            <tr class="linha-acoes" id="taxa-{{ $t->id }}" @unless ((string) old('_taxa') === (string) $t->id) hidden @endunless><td colspan="5">
+                <form method="post" action="{{ route('admin.empresas.taxas.editar', [$organizador, $t->id]) }}" class="form-grade">@csrf @method('PUT')
+                    <input type="hidden" name="_taxa" value="{{ $t->id }}">
+                    @include('admin.empresas._taxa-campos', ['t' => (string) old('_taxa') === (string) $t->id ? null : $t])
+                    <div class="col-12"><button class="botao botao--primario botao--pequeno">Salvar alterações</button></div>
+                </form></td></tr>
         @endforeach
         </tbody>
     </table></div>
     @endif
-    <h3 style="margin:18px 0 6px">Nova taxa ou isenção</h3>
-    <form method="post" action="{{ route('admin.empresas.taxas', $organizador) }}" class="form-grade">
+    <details style="margin-top:18px" @if ($taxas->isEmpty() || (old('operacao') && ! old('_taxa'))) open @endif>
+    <summary style="cursor:pointer"><b>Nova taxa ou isenção</b> <small class="suave">— normalmente basta uma; edite a existente para mudar os valores</small></summary>
+    <form method="post" action="{{ route('admin.empresas.taxas', $organizador) }}" class="form-grade" style="margin-top:10px">
         @csrf
-        <div class="campo col-4"><label>Operação</label><select name="operacao">@foreach ($O as $k => $t)<option value="{{ $k }}" @selected(old('operacao') === $k)>{{ $t }}</option>@endforeach</select></div>
-        <div class="campo col-8"><label>&nbsp;</label><label class="interruptor"><input type="hidden" name="isento" value="0"><input type="checkbox" name="isento" value="1" @checked(old('isento'))><span></span> Isenção total no período</label></div>
-        <div class="campo col-4"><label>Percentual (%)</label><input name="percentual" type="number" step="0.001" min="0" max="100" value="{{ old('percentual') }}" placeholder="padrão">@error('percentual')<small class="erro">{{ $message }}</small>@enderror</div>
-        <div class="campo col-4"><label>Tarifa fixa (R$)</label><input name="valor_fixo" type="number" step="0.01" min="0" value="{{ old('valor_fixo') }}" placeholder="padrão"></div>
-        <div class="campo col-4"><label>Taxa mínima (R$)</label><input name="valor_minimo" type="number" step="0.01" min="0" value="{{ old('valor_minimo') }}" placeholder="padrão"></div>
-        <div class="campo col-4"><label>Início</label><input name="inicio" type="date" required value="{{ old('inicio', $hoje) }}"></div>
-        <div class="campo col-4"><label>Fim (opcional)</label><input name="fim" type="date" value="{{ old('fim') }}">@error('fim')<small class="erro">{{ $message }}</small>@enderror</div>
-        <div class="campo col-4"><label>Observação</label><input name="observacao" maxlength="255" value="{{ old('observacao') }}" placeholder="ex.: parceria de lançamento"></div>
+        @include('admin.empresas._taxa-campos', ['t' => null])
         <div class="col-12"><button class="botao botao--primario botao--pequeno">Registrar</button></div>
     </form>
+    </details>
 </section>
 
 <div class="grade grade-2" style="margin-top:18px">
