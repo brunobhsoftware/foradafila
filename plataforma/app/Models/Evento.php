@@ -25,6 +25,7 @@ class Evento extends Model
         'formato', 'link_online', 'classificacao', 'data_inicio', 'data_fim', 'abertura_portoes', 'capacidade',
         'visibilidade', 'max_ingressos_pedido', 'max_ingressos_cpf', 'exige_cpf_participante', 'nominal',
         'permite_transferencia', 'transferencia_ate_h', 'permite_reentrada', 'politica_cancelamento', 'criado_por',
+        'taxa_comprador', // V010
     ];
 
     protected function casts(): array

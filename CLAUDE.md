@@ -20,6 +20,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V007__administrador_plataforma.sql` | Só dados: cria o administrador da plataforma (Bruno, bruno@bhsoftware.com.br, `admin_plataforma = 1`, sem senha). Idempotente. Importado em produção em 07/11/2026 ("V007 ok") |
 | `banco/V008__administracao_taxas_impersonacao.sql` | Motor de taxas (`taxa_regra` com faixas por volume, `taxa_organizador` com isenções/validade), `impersonacao_log` e `auditoria.admin_impersonando_id`/`impersonacao_id`. Idempotente. Importado em produção em 07/11/2026 ("V008 ok") |
 | `banco/V009__cupom_divulgacao.sql` | `cupom.tipo_desconto` ganha `divulgacao` (valor 0; ajusta o CHECK `ck_cupom_valor`). Idempotente. Importado em produção em 08/11/2026 ("V009 ok") |
+| `banco/V010__taxa_servico_comprador.sql` | Quem paga a taxa: `organizador.taxa_comprador` (padrão), `evento.taxa_comprador` (NULL = padrão), `pedido.valor_taxa_servico`, `pedido_item.taxa_unitaria`. Idempotente. **Ainda não importado** |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
@@ -38,7 +39,10 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 
 - O Fora da Fila é **só prestador de tecnologia**: o dinheiro do ingresso cai direto na conta do organizador no
   gateway (Mercado Pago na fase 1; PayPal e PagBank previstos). A plataforma recebe só a comissão.
-- **Sem taxa para o comprador.** Comissão por ingresso: `max(valor_pago × % + fixo, mínimo)`.
+- **Quem paga a taxa é escolha do produtor** (decisão do Bruno, 08/11/2026; antes era "sem taxa para o comprador"):
+  **embutida** (o comprador paga o preço; a taxa sai do valor do produtor) ou **repassada ao comprador** (preço + taxa; o produtor
+  recebe o valor cheio). Padrão em Organização → Taxa da plataforma; cada evento pode mudar. Taxa por ingresso pago:
+  `max(valor × % + fixo, mínimo)` vinda do motor da Administração (ex.: 5% com mínimo de R$ 1). Gratuito não tem taxa.
 - Dois modos de cobrança ainda em estudo: `split` (operadora retém e repassa) ou `fatura` mensal.
   Fatura vencida → organizador `bloqueado_debito` → não cria nem publica evento (trigger).
 - O organizador é o responsável legal pelo evento; aceite de termos versionados obrigatório antes de publicar.
@@ -111,6 +115,13 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   `convidados` = restrito a convidados (link por e-mail/WhatsApp, futuro), `oculto` = **adicionado manualmente** pela
   equipe (o enum do banco não mudou; só o significado de `oculto`). Só `publico` aparece na página do evento.
   Lote pago só publica com conta de recebimento ativa (Mercado Pago, próxima fase).
+  **Taxa da plataforma** (V010, `App\Support\TaxaServico`): `repassada()` (evento → organização) e `paraPreco()` (taxa do
+  `MotorTaxas`, comprador paga, produtor recebe). Organização tem a seção "Taxa da plataforma" (embutida/repassada, com exemplo
+  de R$ 50); o formulário do evento tem "Taxa da plataforma nos ingressos pagos" (padrão da organização/embutida/repassada).
+  A página do evento mostra o preço com a taxa separada quando repassada ("R$ 5,00 + R$ 1,00 de taxa"); o painel de lotes mostra
+  "comprador paga" ou "você recebe". Textos do site (início, Preços, Ajuda, telas de acesso) dizem que o produtor escolhe.
+  Os campos `pedido.valor_taxa_servico`/`pedido_item.taxa_unitaria` serão preenchidos pela venda paga (checkout). Sem o V010,
+  nada disso aparece (`Esquema::temV010()`). A vitrine ("A partir de") ainda mostra o preço sem a taxa.
   **Fim das vendas** (decisão do Bruno, 08/11/2026): vai até o **fim do evento** (`data_fim`); o lote novo já sugere esse horário.
   Ao editar a data do evento, os lotes que terminavam junto com o evento (no início ou no fim antigos) ou que passariam do novo
   término são ajustados para o novo `data_fim` (`EventoController::ajustarFimDasVendas`, auditoria `lote.fim_vendas_ajustado`).
@@ -238,7 +249,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (22), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-divulgacao.js` (16), `fluxo-convidados.js` (19), `fluxo-mensagens.js` (13), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (22), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-divulgacao.js` (16), `fluxo-convidados.js` (19), `fluxo-mensagens.js` (13), `fluxo-taxa.js` (14), `fluxo-admin.js` (36, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.

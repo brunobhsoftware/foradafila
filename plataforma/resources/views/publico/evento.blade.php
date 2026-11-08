@@ -105,7 +105,9 @@
                 </small>
               </div>
               <div style="text-align:right">
-                <span class="pub-preco">{{ $gratis ? 'Grátis' : moeda($lote->preco) }}</span>
+                @php $tx = $gratis ? null : \App\Support\TaxaServico::paraPreco($evento, (float) $lote->preco, $evento->organizador); @endphp
+                <span class="pub-preco">{{ $gratis ? 'Grátis' : moeda($tx['comprador_paga']) }}
+                  @if ($tx && $tx['repassada'] && $tx['taxa'] > 0)<small class="pub-preco__taxa">{{ moeda($tx['preco']) }} + {{ moeda($tx['taxa']) }} de taxa</small>@endif</span>
                 @if ($disponivel && $gratis && $limite >= $lote->min_por_pedido)
                   <div style="margin-top:6px">
                     <label class="oculto-visual" for="q_{{ $lote->uuid }}">Quantidade de {{ $lote->nome }}</label>

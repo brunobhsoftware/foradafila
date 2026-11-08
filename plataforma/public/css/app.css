@@ -414,3 +414,5 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 .bloco-edicao { margin-top: 12px; padding: 16px 18px; background: var(--fundo); border: 1px solid var(--borda); border-radius: var(--raio); }
 .bloco-edicao__titulo { margin: 0 0 8px; font-weight: 600; color: var(--tinta); }
 .linha-acoes .lote-form { margin-top: 0 !important; }
+.opcoes-lote--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 900px) { .opcoes-lote--2 { grid-template-columns: 1fr; } }

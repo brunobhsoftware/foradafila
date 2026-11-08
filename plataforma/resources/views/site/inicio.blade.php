@@ -22,7 +22,7 @@
 <section class="diferenciais container" aria-label="Diferenciais">
   <div class="diferencial">
     <svg class="i i--laranja" viewBox="0 0 24 24"><ellipse cx="9" cy="6" rx="6" ry="2.5"/><path d="M3 6v4c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V6M3 10v4c0 1.4 2.7 2.5 6 2.5"/><ellipse cx="15" cy="14" rx="6" ry="2.5"/><path d="M9 14v4c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-4"/></svg>
-    <span>Sem taxa<br>para o comprador</span>
+    <span>Você escolhe<br>quem paga a taxa</span>
   </div>
   <div class="diferencial">
     <svg class="i i--laranja" viewBox="0 0 24 24"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3M7 12h10"/></svg>

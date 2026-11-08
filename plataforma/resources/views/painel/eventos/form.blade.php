@@ -107,6 +107,22 @@
                     @endforeach
                 </div>
             </div>
+            @if (\App\Support\Esquema::temV010())
+                @php
+                    $orgTaxa = app(\App\Support\Tenant::class)->organizador();
+                    $padraoTexto = $orgTaxa?->taxa_comprador ? 'repassada ao comprador' : 'embutida (você absorve)';
+                    $valTaxa = (string) old('taxa_comprador', $evento->taxa_comprador === null ? '' : (string) (int) $evento->taxa_comprador);
+                @endphp
+                <div class="campo col-12">
+                    <label for="c_taxa_comprador">Taxa da plataforma nos ingressos pagos</label>
+                    <select name="taxa_comprador" id="c_taxa_comprador">
+                        <option value="" @selected($valTaxa === '')>Padrão da organização — {{ $padraoTexto }}</option>
+                        <option value="0" @selected($valTaxa === '0')>Embutida: o comprador paga o preço e a taxa sai do valor que eu recebo</option>
+                        <option value="1" @selected($valTaxa === '1')>Repassada: o comprador paga o preço + a taxa e eu recebo o valor cheio</option>
+                    </select>
+                    <small class="suave">O padrão fica em Organização → Taxa da plataforma. Ingressos gratuitos não têm taxa.</small>
+                </div>
+            @endif
             <div class="col-12" style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:-8px">
                 <span class="campo" style="margin:0"><label for="c_politica_cancelamento" style="margin:0">Política de cancelamento e reembolso</label></span>
                 <button type="button" class="botao botao--contorno botao--pequeno" data-modelo-politica="{{ $modeloPolitica }}">Usar texto padrão</button>

@@ -1,12 +1,12 @@
 @extends('layouts.publico')
 @section('titulo', 'Preços')
-@section('descricao', 'Preços do Fora da Fila: sem taxa para o comprador. Para o produtor, 1% no primeiro evento, com percentual progressivo por faixa de vendas.')
+@section('descricao', 'Preços do Fora da Fila: o produtor escolhe se absorve a taxa ou se a repassa ao comprador. Para o produtor, 1% no primeiro evento, com percentual progressivo por faixa de vendas.')
 
 @section('conteudo')
 <section class="pub-cabecalho">
   <div class="container">
     <span class="traco"></span>
-    <h1>Preço justo, sem taxa para quem compra<span class="ponto">.</span></h1>
+    <h1>Preço justo, e você escolhe quem paga<span class="ponto">.</span></h1>
     <p>O comprador paga só o valor do ingresso. O produtor paga uma comissão sobre as vendas.</p>
   </div>
 </section>
@@ -22,8 +22,8 @@
     <div class="pub-grade pub-grade-2">
       <article class="pub-cartao">
         <span class="pub-selo">Para quem compra</span>
-        <h3>Sem taxa para o comprador</h3>
-        <p>O valor pago é o preço do ingresso definido pelo organizador. Não há taxa de conveniência ou de serviço cobrada do público.</p>
+        <h3>Taxa embutida ou repassada</h3>
+        <p>Em cada evento, você decide: <b>absorver a taxa</b> (o comprador paga só o preço do ingresso) ou <b>repassá-la ao comprador</b> (ele vê a taxa separada do preço e você recebe o valor cheio). Ingressos gratuitos não têm taxa.</p>
       </article>
       <article class="pub-cartao">
         <span class="pub-selo pub-selo--amarelo">Para o produtor</span>

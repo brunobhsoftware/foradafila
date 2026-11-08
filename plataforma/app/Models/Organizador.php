@@ -22,6 +22,8 @@ class Organizador extends Model
         'cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf', 'situacao', 'situacao_motivo',
         // V004
         'representante_nome', 'representante_cpf', 'banco', 'agencia', 'conta', 'favorecido', 'mostrar_eventos_passados',
+        // V010
+        'taxa_comprador',
     ];
 
     /** A chave da API nunca é guardada: só o hash (V004). */

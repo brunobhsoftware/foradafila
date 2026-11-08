@@ -197,3 +197,4 @@ button.botao { cursor: pointer; font-family: var(--fonte-texto); }
 .pub-eventos--passados .pub-evento-card { opacity: .78; } .pub-eventos--passados .pub-evento-card:hover { opacity: 1; }
 .rodape__admin { display: block; margin-top: 10px; font-size: .8rem; color: var(--texto-suave); opacity: .8; }
 .rodape__admin:hover { opacity: 1; }
+.pub-preco__taxa { display: block; font-size: .78rem; font-weight: 500; color: var(--texto-suave); text-align: right; }

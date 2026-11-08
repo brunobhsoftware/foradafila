@@ -263,6 +263,11 @@ class EventoController extends Controller
         foreach (['exige_cpf_participante', 'nominal', 'permite_transferencia', 'permite_reentrada'] as $campo) {
             $dadosEvento[$campo] = $request->boolean($campo);
         }
+        // Quem paga a taxa da plataforma (V010): "" = padrão da organização, "0" = embutida, "1" = repassada ao comprador.
+        if (\App\Support\Esquema::temV010()) {
+            $t = (string) $request->input('taxa_comprador', '');
+            $dadosEvento['taxa_comprador'] = in_array($t, ['0', '1'], true) ? (int) $t : null;
+        }
 
         $dadosLocal = null;
         if ($presencial) {

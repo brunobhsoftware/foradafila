@@ -37,6 +37,8 @@ class OrganizacaoController extends Controller
         return view('painel.organizacao.edit', [
             'org' => Organizador::findOrFail($tenant->id()),
             'temV004' => Esquema::temV004(),
+            'temV010' => Esquema::temV010(),
+            'exemploTaxa' => Esquema::temV008() ? \App\Support\MotorTaxas::calcular(Organizador::findOrFail($tenant->id()), 'ingresso_pago', 50) : null,
         ]);
     }
 
@@ -104,6 +106,9 @@ class OrganizacaoController extends Controller
         ]);
         unset($dados['logo']);
         $dados['uf'] = isset($dados['uf']) ? strtoupper($dados['uf']) : null;
+        if (Esquema::temV010()) {
+            $dados['taxa_comprador'] = $request->input('taxa_comprador') === '1';
+        }
         if ($v004) {
             $dados['mostrar_eventos_passados'] = $request->boolean('mostrar_eventos_passados');
             $dados['agencia'] = isset($dados['agencia']) ? strtoupper($dados['agencia']) : null;
