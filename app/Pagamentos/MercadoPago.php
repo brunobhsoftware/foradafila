@@ -181,24 +181,46 @@ class MercadoPago
     }
 
     /** API de Orders (Checkout Pro com Orders): cria a order e devolve a resposta (id, checkout_url...). */
+    /** Prepara o SDK oficial (mercadopago/dx-php) com o token e a URL da API (trocada só nos testes). */
+    private static function sdk(string $accessToken): void
+    {
+        \MercadoPago\MercadoPagoConfig::setAccessToken($accessToken);
+        \MercadoPago\MercadoPagoConfig::$BASE_URL = rtrim((string) config('pagamentos.mercadopago.api_url'), '/');
+        \MercadoPago\MercadoPagoConfig::setRuntimeEnviroment(\MercadoPago\MercadoPagoConfig::SERVER);
+    }
+
+    /** Cria a order pelo SDK oficial do Mercado Pago (recomendação da Qualidade da integração). */
     public static function criarOrder(string $accessToken, array $dados): array
     {
-        $r = Http::withToken($accessToken)->acceptJson()->asJson()->timeout(20)
-            ->withHeaders(['X-Idempotency-Key' => (string) \Illuminate\Support\Str::uuid()])
-            ->post(config('pagamentos.mercadopago.api_url').'/v1/orders', $dados);
-        if (! $r->successful() || ! $r->json('id')) {
-            $msg = $r->json('message') ?? collect((array) $r->json('errors'))->pluck('message')->filter()->implode('; ');
-            throw new RuntimeException('O Mercado Pago recusou a criação da order (HTTP '.$r->status().($msg ? ': '.mb_substr((string) $msg, 0, 300) : '').').');
+        self::sdk($accessToken);
+        $opcoes = new \MercadoPago\Client\Common\RequestOptions();
+        $opcoes->setCustomHeaders(['X-Idempotency-Key: '.\Illuminate\Support\Str::uuid()]);
+        try {
+            $order = (new \MercadoPago\Client\Order\OrderClient())->create($dados, $opcoes);
+        } catch (\MercadoPago\Exceptions\MPApiException $e) {
+            $r = $e->getApiResponse();
+            $j = $r ? $r->getContent() : [];
+            $msg = $j['message'] ?? collect((array) ($j['errors'] ?? []))->pluck('message')->filter()->implode('; ');
+            throw new RuntimeException('O Mercado Pago recusou a criação da order (HTTP '.$e->getStatusCode().($msg ? ': '.mb_substr((string) $msg, 0, 300) : '').').');
+        } catch (\Throwable $e) {
+            throw new RuntimeException('Não foi possível falar com o Mercado Pago: '.mb_substr($e->getMessage(), 0, 200));
+        }
+        $conteudo = $order->getResponse()->getContent();
+        if (empty($conteudo['id'])) {
+            throw new RuntimeException('O Mercado Pago não devolveu o número da order.');
         }
 
-        return $r->json();
+        return $conteudo;
     }
 
     public static function order(string $accessToken, string $id): array
     {
-        $r = Http::withToken($accessToken)->acceptJson()->timeout(15)->get(config('pagamentos.mercadopago.api_url').'/v1/orders/'.rawurlencode($id));
-
-        return $r->successful() ? $r->json() : [];
+        self::sdk($accessToken);
+        try {
+            return (new \MercadoPago\Client\Order\OrderClient())->get($id)->getResponse()->getContent();
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     public static function pagamento(string $accessToken, string $id): array
