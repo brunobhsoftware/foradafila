@@ -42,7 +42,7 @@ class EquipeController extends Controller
         $request->merge(['email' => mb_strtolower(trim((string) $request->input('email')))]);
         $dados = $this->validar($request, $tenant) + $request->validate([
             'nome' => ['required', 'string', 'max:150'],
-            'email' => ['required', 'email', 'max:150'],
+            'email' => ['required', 'email:filter', 'max:150'],
         ]);
 
         $usuario = Usuario::firstOrCreate(['email' => $dados['email']], ['nome' => $dados['nome']]);

@@ -156,4 +156,19 @@ class EmpresasController extends Controller implements \Illuminate\Routing\Contr
 
         return back()->with('ok', 'Link para criar nova senha enviado para '.$conta->email.'. Confira em E-mails enviados.');
     }
+
+    /** Administração: corrige o e-mail de login (ex.: digitado com acento, "estaçãoslod@gmail.com"). */
+    public function corrigirEmail(\Illuminate\Http\Request $request, string $usuario)
+    {
+        $conta = \App\Models\Usuario::where('uuid', $usuario)->firstOrFail();
+        $novo = mb_strtolower(trim((string) $request->input('email')));
+        $request->merge(['email' => $novo]);
+        $request->validate(['email' => ['required', 'email:filter', 'max:150', \Illuminate\Validation\Rule::unique('usuario', 'email')->ignore($conta->id)]],
+            ['email.email' => 'E-mail inválido (sem acentos, cedilha ou espaços).', 'email.unique' => 'Já existe outro login com esse e-mail.']);
+        $anterior = $conta->email;
+        $conta->forceFill(['email' => $novo, 'email_verificado_em' => null])->save();
+        \App\Support\Auditoria::registrar('admin.email_login_corrigido', $conta, ['email' => $anterior], ['email' => $novo]);
+
+        return back()->with('ok', "E-mail de login trocado de {$anterior} para {$novo}. Agora envie o link de nova senha.");
+    }
 }

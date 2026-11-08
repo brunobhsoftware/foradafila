@@ -31,7 +31,7 @@ class SenhaController extends Controller
 
     public function enviar(Request $request, string $area)
     {
-        $email = mb_strtolower(trim((string) $request->validate(['email' => ['required', 'email']])['email']));
+        $email = mb_strtolower(trim((string) $request->validate(['email' => ['required', 'email:filter']])['email']));
         $modelo = self::AREAS[$area]['modelo'];
         $conta = $modelo::where('email', $email)->first();
 

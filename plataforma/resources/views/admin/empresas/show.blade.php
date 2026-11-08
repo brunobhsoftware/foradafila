@@ -93,11 +93,17 @@
 <div class="grade grade-2" style="margin-top:18px">
     <section class="cartao" style="padding:20px">
         <h2 style="margin-top:0">Usuários</h2>
+        @error('email')<p class="erro" style="color:var(--vermelho)">{{ $message }}</p>@enderror
         @forelse ($usuarios as $u)
             <p><b>{{ $u->nome }}</b> · {{ $u->codigo === 'dono' ? 'Produtor' : $u->perfil }} · <span class="suave">{{ $u->status }}</span><br>
                 <small>Login: <b>{{ $u->email }}</b>@if (! $u->ativo) · <span style="color:var(--vermelho)">conta desativada</span>@endif @if ($u->ultimo_login_em) · último acesso {{ data_local($u->ultimo_login_em) }}@endif</small></p>
             <form method="post" action="{{ route('admin.empresas.senha', $u->uuid) }}" data-confirmar="Enviar para {{ $u->email }} o link para criar uma nova senha?" style="margin:-6px 0 12px">@csrf
                 <button class="botao botao--contorno botao--pequeno">Enviar link de nova senha</button></form>
+            @php $emailRuim = ! filter_var($u->email, FILTER_VALIDATE_EMAIL); @endphp
+            @if ($emailRuim)<p style="color:var(--vermelho);margin:-4px 0 6px"><small>Este e-mail tem acento, cedilha ou espaço: nenhum e-mail chega nele. Corrija abaixo.</small></p>@endif
+            <form method="post" action="{{ route('admin.empresas.email', $u->uuid) }}" style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px">@csrf @method('PUT')
+                <input name="email" type="text" value="{{ $emailRuim ? \Illuminate\Support\Str::ascii($u->email) : $u->email }}" style="max-width:280px" aria-label="Novo e-mail de login">
+                <button class="botao botao--contorno botao--pequeno">Corrigir e-mail de login</button></form>
         @empty <p class="suave">Nenhum usuário.</p> @endforelse
     </section>
     <section class="cartao" style="padding:20px">

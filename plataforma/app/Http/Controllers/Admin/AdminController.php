@@ -33,7 +33,7 @@ class AdminController extends Controller
         $d = $request->validate([
             'valor' => ['required', 'numeric', 'min:1', 'max:100'],
             'ambiente' => ['required', 'in:teste,producao'],
-            'email' => ['required', 'email', 'max:150'],
+            'email' => ['required', 'email:filter', 'max:150'],
             'nome' => ['required', 'string', 'max:150'],
             'cpf' => ['required', 'string', 'regex:/^\D*(\d\D*){11}$/'],
             'telefone' => ['nullable', 'string', 'regex:/^\D*(\d\D*){10,11}$/'],

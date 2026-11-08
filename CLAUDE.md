@@ -257,6 +257,9 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - **Regra de tela (decisão do Bruno, 08/11/2026): toda edição de item de lista abre ABAIXO da linha, em largura total, nunca ao
   lado.** Padrão: botão com `data-alternar="<id>"` + `<tr class="linha-acoes" id="<id>" hidden><td colspan="N">` (moldura cinza
   clara com borda laranja à esquerda, `public/css/app.css`). Usado em lotes, cupons, participantes, equipe e taxas da Administração.
+- **E-mail sem acento** (08/11/2026: o login da Estação Slod foi gravado como "estaçãoslod@gmail.com" e nenhum e-mail chegava):
+  toda validação de e-mail usa `email:filter` (recusa acento, cedilha e espaço). Administração → Empresas → detalhe avisa e-mail
+  inválido e tem "Corrigir e-mail de login" (sugere a versão sem acento; `admin.empresas.email`, auditoria `admin.email_login_corrigido`).
 - **Limites de tentativas (throttle):** sempre com nome próprio (`throttle:5,15,codigo-senha`), senão rotas diferentes
   dividem o mesmo contador.
 - **Preferências de notificação** (por pessoa da equipe, `organizador_usuario`): `/painel/preferencias` —
