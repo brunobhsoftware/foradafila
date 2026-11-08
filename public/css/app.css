@@ -411,3 +411,6 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 .chip-var { margin: 4px 4px 0 0; padding: 2px 8px; border: 1px solid var(--borda-forte); border-radius: 99px; background: #fff; font: .78rem ui-monospace, monospace; cursor: pointer; color: var(--tinta); }
 .chip-var:hover { border-color: var(--laranja); }
 .previa-msg { border: 1px dashed var(--borda-forte); border-radius: var(--raio-p); padding: 14px; background: var(--fundo); white-space: pre-wrap; }
+.bloco-edicao { margin-top: 12px; padding: 16px 18px; background: var(--fundo); border: 1px solid var(--borda); border-radius: var(--raio); }
+.bloco-edicao__titulo { margin: 0 0 8px; font-weight: 600; color: var(--tinta); }
+.linha-acoes .lote-form { margin-top: 0 !important; }
