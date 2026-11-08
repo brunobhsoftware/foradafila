@@ -163,8 +163,8 @@ class EventoController extends Controller
             ])['cancelamento_motivo'];
         }
 
-        if ($novo === 'publicado' && ! $evento->conta_pagamento_id && ($rec = \App\Support\Recebimento::conta($evento->organizador_id))) {
-            $dados['conta_pagamento_id'] = $rec->id; // ingresso pago recebido pela plataforma
+        if ($novo === 'publicado' && ($rec = \App\Support\Recebimento::contaAtual($evento->organizador_id)) && $rec->status === 'ativa') {
+            $dados['conta_pagamento_id'] = $rec->id; // conta usada nas vendas (plataforma ou aplicação própria)
         }
         RegraDoBanco::executar(function () use ($evento, $dados) {
             $antes = $evento->getAttributes();

@@ -72,6 +72,74 @@
 </section>
 @endif
 
+@if ($v012)
+@php
+    $modoAtual = $org->recebimento_modo ?: 'plataforma';
+    $propriaAtiva = $propria && $propria->status === 'ativa';
+    $webhookPropria = $propria ? route('webhook.mercadopago.empresa', $propria->uuid) : null;
+@endphp
+<section class="cartao" style="padding:22px 24px;margin-top:18px">
+    <h2 style="margin-top:0">Onde as vendas são recebidas</h2>
+    @error('recebimento_modo')<div class="alerta alerta--erro"><p>{{ $message }}</p></div>@enderror
+    <form method="post" action="{{ route('financeiro.modo') }}" class="pilha">@csrf @method('PUT')
+        <label class="opcao-cartao"><input type="radio" name="recebimento_modo" value="plataforma" @checked($modoAtual === 'plataforma')>
+            <span><b>Pela plataforma, com repasse</b> — o comprador paga na conta do Fora da Fila e você recebe por Pix ou transferência em até {{ \App\Support\Recebimento::PRAZO_DIAS_UTEIS }} dias úteis após o evento, já com a taxa descontada. Nada para configurar além dos dados acima.</span></label>
+        <label class="opcao-cartao"><input type="radio" name="recebimento_modo" value="propria" @checked($modoAtual === 'propria') @disabled(! $propriaAtiva)>
+            <span><b>Direto na conta do Mercado Pago da empresa</b> — cada venda cai na hora na sua conta, pela aplicação que você criou no Mercado Pago (abaixo). A taxa da plataforma é cobrada à parte, em fatura.
+            @unless ($propriaAtiva)<br><small class="suave">Disponível depois de cadastrar e verificar o Access Token de produção.</small>@endunless</span></label>
+        @can('financeiro.contas')<div><button class="botao botao--escuro botao--pequeno">Salvar forma de recebimento</button></div>@endcan
+    </form>
+</section>
+
+<details class="cartao" style="padding:18px 24px;margin-top:18px" @if (request('mp') || $verificacao || $errors->hasAny(['client_id','client_secret','access_token','public_key','webhook_secret'])) open @endif>
+    <summary style="cursor:pointer"><b style="font-size:1.1rem">Mercado Pago da empresa (aplicação própria)</b>
+        @if ($propriaAtiva)<span class="selo selo--verde" style="margin-left:8px">Ativa{{ $propria->email_conta ? ' — '.$propria->email_conta : '' }}</span>
+        @elseif ($propria && $propria->ultimo_erro)<span class="selo selo--vermelho" style="margin-left:8px">Token recusado</span>
+        @else<span class="selo selo--cinza" style="margin-left:8px">Não configurada</span>@endif</summary>
+    <p class="suave" style="margin:10px 0">Para receber as vendas direto na conta da empresa: crie uma aplicação no
+        <a href="https://www.mercadopago.com.br/developers/panel/app" target="_blank" rel="noopener">painel de desenvolvedores do Mercado Pago</a>
+        (logado na conta da empresa; tipo <b>Checkout Pro</b>, API de <b>Orders</b>), cadastre nela o endereço de notificações abaixo e cole aqui as chaves de teste e de produção.</p>
+    @if ($webhookPropria)
+        <div class="campo"><label>Endereço de notificações (webhooks) para cadastrar na aplicação</label>
+            <div class="copiar"><input id="mp-prop-webhook" value="{{ $webhookPropria }}" readonly><button type="button" class="botao botao--contorno botao--pequeno" data-copiar="mp-prop-webhook">Copiar</button></div>
+            <small class="suave">Eventos: Order (pedidos) e Pagamentos.</small></div>
+    @else
+        <p class="suave"><small>O endereço de notificações aparece depois de salvar as primeiras chaves.</small></p>
+    @endif
+
+    @if ($verificacao)
+        <div class="alerta alerta--info"><p><b>De quem são os tokens:</b><br>
+            @foreach (['producao' => 'Produção', 'teste' => 'Teste'] as $k => $t)
+                {{ $t }}: @if (! $verificacao[$k]) não cadastrado @elseif ($verificacao[$k]['ok']) {{ $verificacao[$k]['email'] ?? '—' }} ({{ $verificacao[$k]['apelido'] ?? '—' }}) — {{ $verificacao[$k]['teste'] ? 'conta de teste' : 'conta real' }} @else <b style="color:var(--vermelho)">recusado pelo Mercado Pago</b> @endif<br>
+            @endforeach</p></div>
+    @endif
+
+    @can('financeiro.contas')
+    @foreach (['teste' => '1. Ambiente de TESTE', 'producao' => '2. Ambiente de PRODUÇÃO'] as $amb => $titulo)
+        @php
+            $pre = $amb === 'teste' ? 'teste_' : '';
+            $tem = fn ($campo) => $propria && $propria->{$campo};
+        @endphp
+        <form method="post" action="{{ route('financeiro.mp.propria', $amb) }}" class="form-grade" style="margin-top:16px;padding:14px 16px;background:#F4F5F7;border-left:3px solid var(--laranja);border-radius:6px">
+            @csrf @method('PUT')
+            <h3 class="col-12" style="margin:0">{{ $titulo }}</h3>
+            <x-campo nome="client_id" rotulo="Client ID" :valor="$propria?->{$pre.'client_id'}" classe="col-6" autocomplete="off" />
+            <x-campo nome="client_secret" rotulo="Client Secret" tipo="password" classe="col-6" autocomplete="new-password" :placeholder="$tem($pre.'client_secret_cript') ? 'salvo — em branco mantém' : ''" />
+            <x-campo nome="access_token" rotulo="Access Token" tipo="password" classe="col-6" autocomplete="new-password" :placeholder="$tem($amb === 'teste' ? 'teste_access_token_cript' : 'access_token_cript') ? 'salvo — em branco mantém' : 'APP_USR-...'" />
+            <x-campo nome="public_key" rotulo="Public Key" :valor="$propria?->{$amb === 'teste' ? 'teste_public_key' : 'public_key'}" classe="col-6" autocomplete="off" />
+            <x-campo nome="webhook_secret" rotulo="Assinatura secreta dos webhooks" tipo="password" classe="col-12" autocomplete="new-password" :placeholder="$tem($pre.'webhook_secret_cript') ? 'salva — em branco mantém' : ''" />
+            <div class="col-12"><button class="botao {{ $amb === 'teste' ? 'botao--contorno' : 'botao--primario' }} botao--pequeno">Salvar chaves {{ $amb === 'teste' ? 'de teste' : 'de produção' }}</button></div>
+        </form>
+    @endforeach
+    @if ($propria)
+        <form method="post" action="{{ route('financeiro.mp.propria.verificar') }}" style="margin-top:14px">@csrf
+            <button class="botao botao--escuro botao--pequeno">Verificar de quem é o token</button>
+            <small class="suave">Confere no Mercado Pago a conta dos tokens. O de produção válido ativa a aplicação da empresa.</small></form>
+    @endif
+    @endcan
+</details>
+@endif
+
 @if ($conexaoDireta || ! $v012)
 
 <section class="cartao mp">

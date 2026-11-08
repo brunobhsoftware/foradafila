@@ -22,7 +22,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V009__cupom_divulgacao.sql` | `cupom.tipo_desconto` ganha `divulgacao` (valor 0; ajusta o CHECK `ck_cupom_valor`). Idempotente. Importado em produção em 08/11/2026 ("V009 ok") |
 | `banco/V010__taxa_servico_comprador.sql` | Quem paga a taxa: `organizador.taxa_comprador` (padrão), `evento.taxa_comprador` (NULL = padrão), `pedido.valor_taxa_servico`, `pedido_item.taxa_unitaria`. Idempotente. Aplicado em produção em 08/11/2026 ("V010 ok") |
 | `banco/V011__cadastro_unico_pessoa.sql` | Cadastro único de pessoas (`pessoa`, chave CPF: nome, e-mail, telefone, origem). Idempotente. Aplicado em produção em 08/11/2026 ("V011 ok") |
-| `banco/V012__recebimento_pela_plataforma.sql` | Recebimento pela plataforma: `organizador.pix_tipo/pix_chave/recebimento_preferido`, `conta_pagamento.modo` (direta/plataforma), tabela `repasse`, `pagamento.repasse_id`. Idempotente. **Ainda não aplicado** |
+| `banco/V012__recebimento_pela_plataforma.sql` | Recebimento pela plataforma: `organizador.pix_tipo/pix_chave/recebimento_preferido`, `conta_pagamento.modo` (direta/plataforma), tabela `repasse`, `pagamento.repasse_id`; `organizador.recebimento_modo` e colunas da aplicação própria em `conta_pagamento` (client_id, segredos e token de teste criptografados). Idempotente. **Ainda não aplicado** |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
@@ -136,7 +136,15 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   Pix/conta; chave Pix por tipo com validação; conta bancária com os 4 campos) — os dados bancários **saíram de Organização**.
   Salvar cria/ativa `conta_pagamento` `modo = plataforma` (`App\Support\Recebimento::sincronizar`), que atende o gatilho de publicação;
   publicar evento liga `evento.conta_pagamento_id` a ela. "Conectar Mercado Pago" fica **em breve/desativado** (`MP_CONEXAO_DIRETA`,
-  padrão false; o código do OAuth continua). Teste `fluxo-recebimento.js` (15). **Próximo:** checkout pago com o token da BH,
+  padrão false; o código do OAuth continua). Teste `fluxo-recebimento.js` (15).
+  **Aplicação Mercado Pago própria da empresa** (decisão do Bruno, 08/11/2026): no Financeiro, "Mercado Pago da empresa (aplicação
+  própria)" com blocos TESTE e PRODUÇÃO (Client ID, Client Secret, Access Token, Public Key, assinatura dos webhooks; segredos
+  criptografados, em branco mantém), endereço de webhook **por empresa** (`/webhooks/mercadopago/{uuid da conta}`, confere com a
+  assinatura dela e grava `webhook_evento.conta_pagamento_id`) e "Verificar de quem é o token" (`/users/me`; o de produção válido
+  ativa a conta `modo = propria`, preenchendo `homologada_em` por causa do gatilho `trg_conta_bu`). "Onde as vendas são recebidas":
+  **pela plataforma, com repasse** (padrão) ou **direto na conta da empresa** (`organizador.recebimento_modo`; só com a aplicação
+  ativa; troca a conta dos eventos não encerrados; nesse modo a taxa da plataforma é cobrada em fatura). `Recebimento::contaAtual()`
+  escolhe a conta na publicação e no checkout. Teste `fluxo-mp-propria.js` (14, porta 8001 + MP falso na 8099). **Próximo:** checkout pago com o token da BH,
   webhook confirmando pedido e emitindo ingressos, saldo e repasses na Administração.
 - **Financeiro / Mercado Pago (OAuth pronto, aguardando a aplicação no MP):** `/painel/financeiro` (`FinanceiroController`)
   conecta a conta do organizador por OAuth com PKCE (`state` na sessão), grava em `conta_pagamento` (status `conectada`,

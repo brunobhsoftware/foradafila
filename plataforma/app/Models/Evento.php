@@ -116,7 +116,7 @@ class Evento extends Model
         $termoAceito = DB::table('termo_aceite as ta')->join('termo as t', 't.id', '=', 'ta.termo_id')
             ->where('ta.organizador_id', $this->organizador_id)
             ->where('t.tipo', 'responsabilidade_organizador')->where('t.vigente', 1)->exists();
-        $contaId = $this->conta_pagamento_id ?: \App\Support\Recebimento::conta($this->organizador_id)?->id;
+        $contaId = \App\Support\Recebimento::contaAtual($this->organizador_id)?->id ?: $this->conta_pagamento_id;
         $contaAtiva = $contaId && ContaPagamento::withoutGlobalScopes()->whereKey($contaId)
             ->where('status', 'ativa')->where('ambiente', 'producao')->exists();
 

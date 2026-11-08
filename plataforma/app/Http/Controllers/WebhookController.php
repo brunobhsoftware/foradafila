@@ -12,12 +12,34 @@ use Illuminate\Support\Facades\DB;
  */
 class WebhookController extends Controller
 {
+    /** Webhook da aplicação Mercado Pago própria de uma empresa: confere com a assinatura cadastrada por ela. */
+    public function mercadoPagoEmpresa(Request $request, string $conta)
+    {
+        $c = \App\Models\ContaPagamento::withoutGlobalScopes()->where('uuid', $conta)->where('modo', 'propria')->first();
+        $segredos = $c ? array_filter(['producao' => $c->webhook_secret_cript, 'teste' => $c->teste_webhook_secret_cript]) : [];
+
+        return $this->registrar($request, function ($assinatura, $requestId, $dataId) use ($segredos) {
+            foreach ($segredos as $origem => $cript) {
+                if (MercadoPago::confereAssinatura(decrypt($cript, false), $assinatura, $requestId, $dataId)) {
+                    return $origem;
+                }
+            }
+
+            return null;
+        }, $c?->id);
+    }
+
     public function mercadoPago(Request $request)
+    {
+        return $this->registrar($request, fn ($a, $r, $d) => MercadoPago::origemAssinatura($a, $r, $d));
+    }
+
+    private function registrar(Request $request, callable $conferir, ?int $contaId = null)
     {
         $corpo = $request->json()->all() ?: $request->all();
         $dataId = (string) ($request->query('data_id') ?? data_get($corpo, 'data.id') ?? $request->query('id') ?? '');
         $requestId = $request->header('x-request-id');
-        $origem = MercadoPago::origemAssinatura($request->header('x-signature'), $requestId, $dataId);
+        $origem = $conferir($request->header('x-signature'), $requestId, $dataId);
         $valida = $origem !== null;
         $idExterno = (string) (data_get($corpo, 'id') ?: ($requestId ?: sha1($request->getContent())));
 
@@ -26,6 +48,7 @@ class WebhookController extends Controller
 
         DB::table('webhook_evento')->insertOrIgnore([
             'gateway_id' => DB::table('gateway')->where('codigo', 'mercadopago')->value('id'),
+            'conta_pagamento_id' => $contaId,
             'id_evento_externo' => mb_substr($idExterno, 0, 150),
             'tipo' => mb_substr((string) (data_get($corpo, 'type') ?? $request->query('type') ?? $request->query('topic') ?? ''), 0, 60) ?: null,
             'acao' => mb_substr((string) data_get($corpo, 'action', ''), 0, 60) ?: null,

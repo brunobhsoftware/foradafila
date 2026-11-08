@@ -81,6 +81,8 @@ Route::middleware('auth')->group(function () {
 });
 
 // ---------- Avisos das operadoras de pagamento (sem login e sem CSRF) ----------
+Route::post('/webhooks/mercadopago/{conta}', [WebhookController::class, 'mercadoPagoEmpresa'])->name('webhook.mercadopago.empresa')->whereUuid('conta')
+    ->middleware('throttle:120,1,webhook-mp-empresa');
 Route::post('/webhooks/mercadopago', [WebhookController::class, 'mercadoPago'])->name('webhook.mercadopago')
     ->middleware('throttle:120,1,webhook-mp');
 
@@ -130,6 +132,9 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::get('/', DashboardController::class)->name('painel');
 
     Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro');
+    Route::put('/financeiro/mercadopago/propria/{ambiente}', [FinanceiroController::class, 'salvarPropria'])->name('financeiro.mp.propria')->whereIn('ambiente', ['teste', 'producao']);
+    Route::post('/financeiro/mercadopago/propria/verificar', [FinanceiroController::class, 'verificarPropria'])->name('financeiro.mp.propria.verificar')->middleware('throttle:10,1,mp-propria-verificar');
+    Route::put('/financeiro/modo', [FinanceiroController::class, 'modoRecebimento'])->name('financeiro.modo');
     Route::put('/financeiro/recebimento', [FinanceiroController::class, 'salvarRecebimento'])->name('financeiro.recebimento');
     Route::post('/financeiro/mercadopago/conectar', [FinanceiroController::class, 'conectar'])->name('financeiro.mp.conectar');
     Route::get('/financeiro/mercadopago/retorno', [FinanceiroController::class, 'retorno'])->name('financeiro.mp.retorno');
