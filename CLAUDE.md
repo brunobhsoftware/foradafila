@@ -153,7 +153,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   integração; pagar com a conta de teste compradora) ou **Produção** (token client_credentials). A página tem dois blocos completos:
   **"1. Ambiente de TESTE"** e **"2. Ambiente de PRODUÇÃO"**, cada um com os 4 campos (Client ID, Client Secret, Access Token,
   assinatura dos webhooks), salvar, "Verificar de quem é o token" e o botão de pagamento (teste / de verdade). Access Token de
-  produção (`mp_access_token`, opcional) tem prioridade sobre o client_credentials. **O pagamento de teste usa a API de Orders**
+  produção (`mp_access_token`, opcional) tem prioridade sobre o client_credentials. **SDK oficial `mercadopago/dx-php` (^3.0, no composer)** cria e consulta as orders (`MercadoPago::sdk()` ajusta token e `BASE_URL`; recomendação "SDK do backend" da Qualidade da integração). **O pagamento de teste usa a API de Orders**
   (`POST /v1/orders`, a aplicação é "Checkout Pro com Orders"; `MercadoPago::criarOrder()`/`order()`), com o que a Qualidade da
   integração pede: payer (e-mail, nome, sobrenome, CPF, telefone), items (title, description, category_id `tickets`, external_code,
   quantity, unit_price), `config.statement_descriptor` FORADAFILA, `config.online.success_url/failure_url/pending_url` e
@@ -262,7 +262,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (24), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-divulgacao.js` (16), `fluxo-convidados.js` (19), `fluxo-mensagens.js` (13), `fluxo-taxa.js` (14), `fluxo-admin.js` (40, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (24), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-divulgacao.js` (16), `fluxo-convidados.js` (19), `fluxo-mensagens.js` (13), `fluxo-taxa.js` (14), `fluxo-admin.js` (41, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.
