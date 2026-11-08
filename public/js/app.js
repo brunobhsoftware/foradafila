@@ -59,18 +59,40 @@
   });
 
   // Cadastro único: ao completar o CPF, preenche nome/e-mail/telefone vazios do mesmo formulário
-  // Compra: CPF primeiro. Conhecido → mostra nome e e-mail mascarado; novo → libera nome, e-mail e celular.
+  // Compra: CPF primeiro (ou "Não desejo informar o CPF"). Só depois aparecem os ingressos.
   $$('[data-compra-cpf]').forEach((box) => {
+    const form = box.closest('form');
     const cpf = box.querySelector('[name=cpf]'), achado = box.querySelector('[data-cpf-achado]'), novo = box.querySelector('[data-cpf-novo]');
-    const campos = ['nome', 'email'].map((n) => box.querySelector(`[name=${n}]`));
+    const semCpf = box.querySelector('[data-sem-cpf]'), depois = form.querySelector('[data-depois-cpf]');
+    const nome = box.querySelector('[name=nome]'), email = box.querySelector('[name=email]'), tel = box.querySelector('[name=telefone]');
+    const marca = form.querySelector('[data-usar-comprador]'), outra = form.querySelector('[data-outra-pessoa]');
+    const p0 = (k) => form.querySelector(`[name="participantes[0][${k}]"]`);
     let conhecido = null, ultimo = '';
+    const cartao = () => !!form.querySelector('[data-forma][value=cartao]:checked');
+    const ajustarCpf = () => {
+      const exige = semCpf.value !== '1' || cartao();
+      cpf.required = exige;
+      box.querySelector('[data-cpf-obrig]').hidden = !exige;
+      box.querySelector('[data-cpf-dica]').textContent = semCpf.value === '1' && cartao()
+        ? '— para pagar com cartão, informe o CPF do titular.' : '— comece pelo seu CPF para buscar os dados cadastrais.';
+    };
+    // 1º ingresso = quem está comprando (até clicar em "Estou comprando para outra pessoa")
+    const preencher = () => {
+      if (!marca || marca.value !== '1') return;
+      const dados = conhecido ? { nome: conhecido.nome } : { nome: nome.value, email: email.value, telefone: tel.value };
+      if (cpf.value.replace(/\D/g, '').length === 11) dados.cpf = cpf.value;
+      Object.entries(dados).forEach(([k, v]) => { const el = p0(k); if (el && v) el.value = v; });
+      if (conhecido) ['email', 'telefone'].forEach((k) => { const el = p0(k); if (el && !el.value) { el.required = false; el.placeholder = 'O mesmo do seu cadastro'; } });
+    };
     const mostrar = (modo) => {
       achado.hidden = modo !== 'achado'; novo.hidden = modo !== 'novo';
-      campos.forEach((c) => { c.required = modo === 'novo'; });
+      [nome, email].forEach((c) => { c.required = modo === 'novo'; });
+      if (modo && depois) depois.hidden = false;
+      preencher();
     };
     const buscar = async () => {
       const d = cpf.value.replace(/\D/g, '');
-      if (d.length !== 11) { if (!campos[0].value) mostrar(''); return; }
+      if (d.length !== 11) return;
       if (d === ultimo) return; ultimo = d;
       try {
         const r = await fetch(box.dataset.url + '/' + d, { headers: { Accept: 'application/json' } });
@@ -85,24 +107,26 @@
       } catch (e) { mostrar('novo'); }
     };
     cpf.addEventListener('input', buscar); cpf.addEventListener('blur', buscar);
-    if (campos[0].value || campos[1].value) mostrar('novo'); else mostrar('');
-    buscar();
-    window.ffCompradorCompra = () => ({ conhecido, cpf: cpf.value, nome: campos[0].value, email: campos[1].value, telefone: box.querySelector('[name=telefone]').value });
-  });
-  $$('[data-usar-meus-dados]').forEach((bt) => {
-    bt.addEventListener('click', () => {
-      const bloco = bt.closest('.pub-participante'), marca = bloco.querySelector('[data-usar-comprador]');
-      const c = window.ffCompradorCompra ? window.ffCompradorCompra() : null;
-      marca.value = '1';
-      const pre = (k, v) => { const el = bloco.querySelector(`[name="participantes[0][${k}]"]`); if (el && v && !el.value) el.value = v; return el; };
-      if (c) {
-        pre('nome', c.conhecido ? c.conhecido.nome : c.nome);
-        pre('cpf', c.cpf);
-        if (!c.conhecido) { pre('email', c.email); pre('telefone', c.telefone); }
-        else ['email', 'telefone'].forEach((k) => { const el = bloco.querySelector(`[name="participantes[0][${k}]"]`); if (el && !el.value) { el.required = false; el.placeholder = 'O mesmo do seu cadastro'; } });
-      }
-      bt.textContent = 'Seus dados foram usados neste ingresso';
+    box.querySelector('[data-botao-sem-cpf]').addEventListener('click', () => {
+      semCpf.value = '1'; conhecido = null; ultimo = '';
+      if (!cartao()) cpf.value = '';
+      ajustarCpf(); mostrar('novo'); nome.focus();
     });
+    [nome, email, tel].forEach((el) => el.addEventListener('input', preencher));
+    if (outra) outra.addEventListener('click', () => {
+      marca.value = '0';
+      outra.closest('.pub-participante').querySelectorAll('input:not([type=hidden]), select, textarea').forEach((el) => {
+        if (el.type === 'checkbox') el.checked = false; else el.value = '';
+        if (el.dataset.obrigatorioOriginal === undefined) el.dataset.obrigatorioOriginal = '';
+      });
+      const pn = p0('nome'); if (pn) pn.focus();
+      outra.textContent = 'Preencha os dados de quem vai usar o ingresso';
+      outra.disabled = true;
+    });
+    form.querySelectorAll('[data-forma]').forEach((r) => r.addEventListener('change', () => { ajustarCpf(); if (cartao() && semCpf.value === '1') cpf.focus(); }));
+    ajustarCpf();
+    if (nome.value || email.value || semCpf.value === '1') mostrar('novo');
+    buscar();
   });
 
   $$('[data-busca-cpf]').forEach((cpf) => {

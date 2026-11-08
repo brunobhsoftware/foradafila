@@ -75,6 +75,9 @@ class InscricaoController extends Controller
             unset($regras['participantes.*.cpf']);
             $regras = array_merge($regras, \App\Support\Formularios::regras($campos));
         }
+        if ($selecao->contains(fn ($s) => (float) $s['lote']->preco > 0)) {
+            $regras['forma_pagamento'] = ['required', 'in:pix,cartao'];
+        }
         $regras += [
             'aceites' => ['required', 'array'],
             'aceites.*' => ['accepted'],
@@ -90,8 +93,12 @@ class InscricaoController extends Controller
         if (! $comprador) {
             $request->merge(['email' => mb_strtolower(trim((string) $request->input('email'))), 'cpf' => Documento::digitos((string) $request->input('cpf'))]);
             $conhecido = self::dadosDoCpf($request->input('cpf'));
+            // "Não desejo informar o CPF": segue sem ele, menos no cartão de crédito (o Mercado Pago pede o CPF do titular).
+            $pago = $selecao->contains(fn ($s) => (float) $s['lote']->preco > 0);
+            $cpfOpcional = $request->boolean('sem_cpf') && ! ($pago && $request->input('forma_pagamento') === 'cartao');
             $regras += [
-                'cpf' => ['required', new DocumentoValido('PF')],
+                'sem_cpf' => ['nullable', 'boolean'],
+                'cpf' => [$cpfOpcional ? 'nullable' : 'required', new DocumentoValido('PF')],
                 'nome' => [$conhecido ? 'nullable' : 'required', 'string', 'max:150'],
                 'email' => [$conhecido && $conhecido['email'] ? 'nullable' : 'required', 'email:filter', 'max:150'],
                 'telefone' => ['nullable', 'string', 'max:20'],
@@ -112,7 +119,8 @@ class InscricaoController extends Controller
             $request->merge(['participantes' => $parts]);
         }
         $dados = $request->validate($regras, [
-            'cpf.required' => 'Informe o seu CPF.',
+            'cpf.required' => $request->input('forma_pagamento') === 'cartao' ? 'Para pagar com cartão, informe o CPF do titular.' : 'Informe o seu CPF ou clique em “Não desejo informar o CPF”.',
+            'forma_pagamento.required' => 'Escolha Pix ou cartão de crédito.',
             'nome.required' => 'Informe o seu nome completo.',
             'email.required' => 'Informe o seu e-mail para receber os ingressos.',
             'participantes.*.nome.required' => 'Informe o nome de cada participante.',
@@ -318,9 +326,14 @@ class InscricaoController extends Controller
             Auth::guard('comprador')->login($compradorFinal);
             $request->session()->regenerate();
         }
-        $cpf = $participantes[0]['cpf'] ?? null;
+        // Cartão com CPF informado agora: guarda no comprador (o CPF vira o indexador único dele).
+        $cpf = ($dados['cpf'] ?? null) ?: ($compradorFinal->cpf ?: ($participantes[0]['cpf'] ?? null));
+        if ($cpf && ! $compradorFinal->cpf) {
+            $compradorFinal->forceFill(['cpf' => $cpf])->save();
+            \App\Support\CadastroPessoa::registrar($cpf, $compradorFinal->nome, $compradorFinal->email, $compradorFinal->telefone, 'compra');
+        }
         try {
-            $link = \App\Support\Checkout::criarOrder($pedido, $evento, $compradorFinal, $conta, $cpf);
+            $link = \App\Support\Checkout::criarOrder($pedido, $evento, $compradorFinal, $conta, $cpf, $dados['forma_pagamento'] ?? null);
         } catch (\Throwable $e) {
             report($e);
             \App\Support\Checkout::liberar($pedido->fresh(), 'cancelado');
@@ -361,7 +374,7 @@ class InscricaoController extends Controller
     {
         $cpf = Documento::digitos((string) ($dados['cpf'] ?? ''));
         $tel = preg_replace('/\D/', '', (string) ($dados['telefone'] ?? '')) ?: null;
-        $conhecido = self::dadosDoCpf($cpf);
+        $conhecido = $cpf ? self::dadosDoCpf($cpf) : null;
         if ($conhecido && $conhecido['comprador']) {
             return $conhecido['comprador'];
         }
@@ -369,14 +382,14 @@ class InscricaoController extends Controller
         $email = ($dados['email'] ?? '') ?: ($conhecido['email'] ?? '');
         \App\Support\CadastroPessoa::registrar($cpf, $nome, $email, $tel ?: ($conhecido['telefone'] ?? null), 'compra');
         if ($c = Comprador::where('email', $email)->first()) {
-            if (! $c->cpf) {
+            if (! $c->cpf && $cpf) {
                 $c->forceFill(['cpf' => $cpf])->save();
             }
 
             return $c;
         }
 
-        return Comprador::create(['nome' => $nome, 'email' => $email, 'cpf' => $cpf, 'telefone' => $tel ?: ($conhecido['telefone'] ?? null), 'senha_hash' => null]);
+        return Comprador::create(['nome' => $nome, 'email' => $email, 'cpf' => $cpf ?: null, 'telefone' => $tel ?: ($conhecido['telefone'] ?? null), 'senha_hash' => null]);
     }
 
     public static function mascararEmail(?string $e): ?string

@@ -100,7 +100,7 @@ class Checkout
     }
 
     /** Monta e cria a order; grava a linha em pagamento. Devolve o link do checkout. */
-    public static function criarOrder(Pedido $pedido, Evento $evento, Comprador $comprador, ContaPagamento $conta, ?string $cpf): string
+    public static function criarOrder(Pedido $pedido, Evento $evento, Comprador $comprador, ContaPagamento $conta, ?string $cpf, ?string $forma = null): string
     {
         $pedido->loadMissing('itens.lote.tipo');
         $volta = fn (string $r) => route('pedido.retorno', ['pedido' => $pedido->uuid, 'resultado' => $r]);
@@ -135,6 +135,12 @@ class Checkout
             'items' => $itens,
             'config' => [
                 'statement_descriptor' => 'FORADAFILA',
+                // Forma escolhida na nossa tela: Pix vai direto ao Pix; cartão mostra só cartões.
+                'payment_method' => match ($forma) {
+                    'pix' => ['not_allowed_types' => ['credit_card', 'debit_card', 'prepaid_card', 'ticket', 'atm'], 'default_id' => 'pix'],
+                    'cartao' => ['not_allowed_types' => ['bank_transfer', 'ticket', 'atm']],
+                    default => null,
+                },
                 'online' => ['success_url' => $volta('sucesso'), 'failure_url' => $volta('falha'), 'pending_url' => $volta('pendente'),
                     // 3DS (Qualidade da integração): valida quando há risco de fraude e transfere a responsabilidade ao emissor
                     'transaction_security' => ['validation' => 'on_fraud_risk', 'liability_shift' => 'required']],
@@ -146,6 +152,9 @@ class Checkout
                 'payer.last_purchase' => now()->toIso8601String(),
             ],
         ];
+        if (! $forma) {
+            unset($dados['config']['payment_method']);
+        }
         $order = MercadoPago::criarOrder(self::token($conta), $dados);
         $link = (string) ($order['checkout_url'] ?? data_get($order, 'config.online.checkout_url') ?? '');
         if ($link === '') {
