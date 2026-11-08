@@ -88,6 +88,14 @@
     cpf.addEventListener('blur', consultar);
   });
 
+  // Evento: exemplo de valores da taxa (embutida/repassada) conforme a opção escolhida
+  $$('[data-exemplo-taxa]').forEach((ex) => {
+    const sel = document.getElementById('c_taxa_comprador');
+    if (!sel) return;
+    const mostrar = () => { const v = sel.value === '' ? ex.dataset.padrao : sel.value; ex.textContent = ex.dataset['ex' + v]; };
+    sel.addEventListener('change', mostrar); mostrar();
+  });
+
   // Botões que mostram/escondem um bloco (ex.: ações do participante)
   $$('[data-alternar]').forEach((b) => b.addEventListener('click', () => {
     const alvo = document.getElementById(b.dataset.alternar);

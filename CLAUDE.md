@@ -118,7 +118,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   Lote pago só publica com conta de recebimento ativa (Mercado Pago, próxima fase).
   **Taxa da plataforma** (V010, `App\Support\TaxaServico`): `repassada()` (evento → organização) e `paraPreco()` (taxa do
   `MotorTaxas`, comprador paga, produtor recebe). Organização tem a seção "Taxa da plataforma" (embutida/repassada, com exemplo
-  de R$ 50); o formulário do evento tem "Taxa da plataforma nos ingressos pagos" (padrão da organização/embutida/repassada).
+  de R$ 50); o formulário do evento tem "Taxa da plataforma nos ingressos pagos" (padrão da organização/embutida/repassada), com exemplo de R$ 50 que muda na hora conforme a opção (`data-exemplo-taxa`; sem taxa configurada, ilustrativo de 5%). A taxa não é gravada no lote: é calculada na hora, então mudar o modelo atualiza todos os ingressos do evento.
   A página do evento mostra o preço com a taxa separada quando repassada ("R$ 5,00 + R$ 1,00 de taxa"); o painel de lotes mostra
   "comprador paga" ou "você recebe". Textos do site (início, Preços, Ajuda, telas de acesso) dizem que o produtor escolhe.
   Os campos `pedido.valor_taxa_servico`/`pedido_item.taxa_unitaria` serão preenchidos pela venda paga (checkout). Sem o V010,
@@ -262,7 +262,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   "Notificar-me cada vez que um participante realizar uma compra" (aviso por noreply@) e "Quero receber as
   novidades do Fora da Fila por e-mail" (consentimento com data em `receber_novidades_em`).
 - `config/foradafila.php`: `comprador_cancela_gratuito` (padrão true; `FF_COMPRADOR_CANCELA_GRATUITO`).
-- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (24), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-divulgacao.js` (16), `fluxo-convidados.js` (19), `fluxo-mensagens.js` (13), `fluxo-taxa.js` (14), `fluxo-admin.js` (41, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
+- Testes de ponta a ponta: `tests/e2e/fluxo-produtor.js` (22), `fluxo-comprador.js` (30) e `fluxo-imagem.js` (18), `fluxo-organizacao.js` (30) e `fluxo-conta.js` (38) e `fluxo-evento-regras.js` (19, simula antes/depois do V005), `fluxo-endereco.js` (13), `fluxo-politica.js` (9), `fluxo-ingressos.js` (24), `fluxo-admin-empresas.js` (23), `fluxo-vendas.js` (23), `fluxo-checkin.js` (18), `fluxo-cupons.js` (17), `fluxo-divulgacao.js` (16), `fluxo-convidados.js` (19), `fluxo-mensagens.js` (13), `fluxo-taxa.js` (16), `fluxo-admin.js` (41, porta 8001), `fluxo-financeiro.js` (19, com Mercado Pago falso na porta 8099 e o Laravel em 8001 com as variáveis `MP_*` de teste do cabeçalho do arquivo) — os três últimos precisam do V004 —, com Playwright,
   contra banco limpo e `php artisan serve`.
 - Desenvolvimento local: MariaDB com V001+V002, `.env` local, `php artisan serve`. O `vendor/` vem da branch
   `publicacao` (o proxy da nuvem bloqueia downloads do Composer): `git archive origin/publicacao vendor | tar -x -C plataforma`.
