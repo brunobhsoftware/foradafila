@@ -39,6 +39,7 @@ class EventoPublicoController extends Controller
 
         // Só os lotes públicos aparecem; ocultos e de convidados dependem de link próprio (fase futura).
         $lotes = $evento->tipos->flatMap->lotes->where('visibilidade', 'publico')->values();
+        self::sincronizarExibicao($evento);
         $aVenda = $lotes->filter(fn ($l) => self::loteAVenda($evento, $l));
         // A página mostra só os ingressos à venda agora, pela regra de cada lote (decisão do Bruno, 08/11/2026):
         // "Por data" → dentro do período; "Por lote" → depois que o anterior terminou. Sem lote à venda, avisa a próxima abertura.
@@ -110,6 +111,25 @@ class EventoPublicoController extends Controller
      * "agendado" abre quando chega o início das vendas, e um lote com "abre depois de"
      * só abre quando o anterior esgotar, encerrar ou passar do fim das vendas.
      */
+    /**
+     * Atualiza a flag lote.exibir (V014) com a situação de agora: 1 = aparece na página do evento, 0 = oculto.
+     * Não é editável: vem da regra de venda de cada lote (por data ou por lote). Recalculada ao abrir a página
+     * pública e o evento no painel (sem cron).
+     */
+    public static function sincronizarExibicao(Evento $evento): void
+    {
+        if (! \App\Support\Esquema::temV014()) {
+            return;
+        }
+        foreach ($evento->tipos->flatMap->lotes as $lote) {
+            $agora = self::loteAVenda($evento, $lote) ? 1 : 0;
+            if ((int) $lote->exibir !== $agora) {
+                \Illuminate\Support\Facades\DB::table('lote')->where('id', $lote->id)->update(['exibir' => $agora]);
+                $lote->exibir = $agora;
+            }
+        }
+    }
+
     public static function loteAVenda(Evento $evento, $lote): bool
     {
         if ($evento->status !== 'publicado' || $lote->visibilidade !== 'publico' 
