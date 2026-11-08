@@ -104,15 +104,15 @@ class FinanceiroController extends Controller
         $org = \App\Models\Organizador::findOrFail(app(Tenant::class)->id());
         $conta = \App\Support\Recebimento::contaPropria($org);
         $cripto = fn ($v) => encrypt(trim($v), false);
-        // Client ID, Client Secret e assinatura dos webhooks são da APLICAÇÃO (um só par, nas credenciais de produção);
-        // Access Token e Public Key existem em cada ambiente (teste e produção).
+        // Client ID e Client Secret são da APLICAÇÃO (um só par); Access Token, Public Key e assinatura dos webhooks
+        // existem em cada ambiente (teste e produção) — decisão do Bruno, 08/11/2026.
         $novos = $ambiente === 'aplicacao' ? array_filter([
             'client_id' => $d['client_id'] ?? null,
             'client_secret_cript' => filled($d['client_secret'] ?? null) ? $cripto($d['client_secret']) : null,
-            'webhook_secret_cript' => filled($d['webhook_secret'] ?? null) ? $cripto($d['webhook_secret']) : null,
         ]) : array_filter([
             ($ambiente === 'teste' ? 'teste_access_token_cript' : 'access_token_cript') => filled($d['access_token'] ?? null) ? $cripto($d['access_token']) : null,
             ($ambiente === 'teste' ? 'teste_public_key' : 'public_key') => $d['public_key'] ?? null,
+            ($ambiente === 'teste' ? 'teste_webhook_secret_cript' : 'webhook_secret_cript') => filled($d['webhook_secret'] ?? null) ? $cripto($d['webhook_secret']) : null,
         ]);
         if ($ambiente === 'producao' && isset($novos['access_token_cript'])) {
             $novos += ['status' => 'em_homologacao', 'conectado_por' => auth()->id(), 'conectado_em' => now()]; // vira "ativa" ao verificar
@@ -158,10 +158,10 @@ class FinanceiroController extends Controller
     }
 
     /** Pagamento de teste com a aplicação própria da empresa (homologação ou produção), como na Administração. */
-    public function testePropria(Request $request, string $ambiente)
+    public function testePropria(Request $request)
     {
         Gate::authorize('financeiro.contas');
-        abort_unless(in_array($ambiente, ['teste', 'producao'], true), 404);
+        $ambiente = $request->input('ambiente') === 'producao' ? 'producao' : 'teste';
         $d = $request->validate([
             'cpf' => ['required', new \App\Rules\DocumentoValido('PF')],
             'nome' => ['required', 'string', 'max:150'],
@@ -173,7 +173,7 @@ class FinanceiroController extends Controller
         $conta = \App\Support\Recebimento::conta($org->id, 'propria');
         $cript = $ambiente === 'teste' ? $conta?->teste_access_token_cript : $conta?->access_token_cript;
         if (! $cript) {
-            return redirect()->route('financeiro', ['mp' => 1])->withErrors(['teste_'.$ambiente => 'Salve primeiro o Access Token '.($ambiente === 'teste' ? 'de teste' : 'de produção').'.']);
+            return redirect()->route('financeiro', ['mp' => 1])->withErrors(['pagamento_teste' => 'Salve primeiro o Access Token '.($ambiente === 'teste' ? 'de teste' : 'de produção').'.']);
         }
         $cpf = preg_replace('/\D/', '', $d['cpf']);
         $fone = preg_replace('/\D/', '', (string) ($d['telefone'] ?? ''));
@@ -199,7 +199,7 @@ class FinanceiroController extends Controller
         try {
             $order = MercadoPago::criarOrder(decrypt($cript, false), $dados);
         } catch (\Throwable $e) {
-            return redirect()->route('financeiro', ['mp' => 1])->withErrors(['teste_'.$ambiente => $e->getMessage()]);
+            return redirect()->route('financeiro', ['mp' => 1])->withErrors(['pagamento_teste' => $e->getMessage()]);
         }
         \Illuminate\Support\Facades\Cache::put('mp_teste_'.$ref, ['order' => $order['id'], 'ambiente' => $ambiente, 'conta' => $conta->id], now()->addHours(6));
         Auditoria::registrar('financeiro.mp_propria_teste', $conta, null, ['ambiente' => $ambiente, 'valor' => $valor, 'order' => $order['id']]);

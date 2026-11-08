@@ -51,9 +51,11 @@
     <form method="post" action="{{ route('financeiro.recebimento') }}" class="form-grade">
         @csrf @method('PUT')
         <div class="campo col-12"><label>Como prefere receber</label>
-            <div style="display:flex;gap:18px;flex-wrap:wrap">
-                <label class="opcao-cartao"><input type="radio" name="recebimento_preferido" value="pix" @checked($pref === 'pix')> Pix</label>
-                <label class="opcao-cartao"><input type="radio" name="recebimento_preferido" value="conta" @checked($pref === 'conta')> Transferência para conta bancária</label>
+            <div class="grade grade-2" style="gap:12px">
+                <label class="opcao-cartao"><input type="radio" name="recebimento_preferido" value="pix" @checked($pref === 'pix')>
+                    <span><b>Pix</b><small>O repasse cai na hora, na chave Pix cadastrada abaixo. É a forma mais rápida.</small></span></label>
+                <label class="opcao-cartao"><input type="radio" name="recebimento_preferido" value="conta" @checked($pref === 'conta')>
+                    <span><b>Transferência para conta bancária</b><small>TED para a conta da organização (banco, agência, conta e favorecido abaixo).</small></span></label>
             </div></div>
         <h3 class="col-12" style="margin:8px 0 0;font-size:1rem">Chave Pix</h3>
         <x-campo nome="pix_tipo" rotulo="Tipo da chave" tipo="select" :opcoes="['' => 'Selecione'] + \App\Support\Recebimento::PIX_TIPOS" :valor="$org->pix_tipo" classe="col-4" />
@@ -82,11 +84,13 @@
     <h2 style="margin-top:0">Onde as vendas são recebidas</h2>
     @error('recebimento_modo')<div class="alerta alerta--erro"><p>{{ $message }}</p></div>@enderror
     <form method="post" action="{{ route('financeiro.modo') }}" class="pilha">@csrf @method('PUT')
+        <div class="grade grade-2" style="gap:12px">
         <label class="opcao-cartao"><input type="radio" name="recebimento_modo" value="plataforma" @checked($modoAtual === 'plataforma')>
-            <span><b>Pela plataforma, com repasse</b> — o comprador paga na conta do Fora da Fila e você recebe por Pix ou transferência em até {{ \App\Support\Recebimento::PRAZO_DIAS_UTEIS }} dias úteis após o evento, já com a taxa descontada. Nada para configurar além dos dados acima.</span></label>
+            <span><b>Pela plataforma, com repasse</b><small>O comprador paga na conta do Fora da Fila e você recebe por Pix ou transferência em até {{ \App\Support\Recebimento::PRAZO_DIAS_UTEIS }} dias úteis após o evento, já com a taxa descontada. Nada para configurar além dos dados para o repasse.</small></span></label>
         <label class="opcao-cartao"><input type="radio" name="recebimento_modo" value="propria" @checked($modoAtual === 'propria') @disabled(! $propriaAtiva)>
-            <span><b>Direto na conta do Mercado Pago da empresa</b> — cada venda cai na hora na sua conta, pela aplicação que você criou no Mercado Pago (abaixo). A taxa da plataforma é cobrada à parte, em fatura.
-            @unless ($propriaAtiva)<br><small class="suave">Disponível depois de cadastrar e verificar o Access Token de produção.</small>@endunless</span></label>
+            <span><b>Direto na conta do Mercado Pago da empresa</b><small>Cada venda cai na hora na sua conta, pela aplicação que você criou no Mercado Pago (abaixo). A taxa da plataforma é cobrada à parte, em fatura.
+            @unless ($propriaAtiva)<br><b style="font-size:.8rem">Disponível depois de cadastrar e verificar o Access Token de produção.</b>@endunless</small></span></label>
+        </div>
         @can('financeiro.contas')<div><button class="botao botao--escuro botao--pequeno">Salvar forma de recebimento</button></div>@endcan
     </form>
 </section>
@@ -125,10 +129,9 @@
     <form method="post" action="{{ route('financeiro.mp.propria', 'aplicacao') }}" class="form-grade" style="margin-top:16px;padding:14px 16px;background:#F4F5F7;border-left:3px solid var(--tinta);border-radius:6px">
         @csrf @method('PUT')
         <h3 class="col-12" style="margin:0">1. Aplicação <small class="suave" style="font-weight:400">— vale para teste e produção</small></h3>
-        <p class="col-12 suave" style="margin:0"><small>No Mercado Pago, Client ID e Client Secret ficam em <b>Credenciais de produção</b>; a assinatura secreta, em <b>Webhooks</b>. São um só para a aplicação.</small></p>
+        <p class="col-12 suave" style="margin:0"><small>No Mercado Pago, Client ID e Client Secret ficam em <b>Credenciais de produção</b>. São um só para a aplicação.</small></p>
         <x-campo nome="client_id" rotulo="Client ID" :valor="$propria?->client_id" classe="col-6" autocomplete="off" />
         <x-campo nome="client_secret" rotulo="Client Secret" tipo="password" classe="col-6" autocomplete="new-password" :placeholder="$propria?->client_secret_cript ? 'salvo — em branco mantém' : ''" />
-        <x-campo nome="webhook_secret" rotulo="Assinatura secreta dos webhooks" tipo="password" classe="col-12" autocomplete="new-password" :placeholder="$propria?->webhook_secret_cript ? 'salva — em branco mantém' : ''" />
         <div class="col-12"><button class="botao botao--escuro botao--pequeno">Salvar dados da aplicação</button></div>
     </form>
     @foreach (['teste' => '2. Ambiente de TESTE', 'producao' => '3. Ambiente de PRODUÇÃO'] as $amb => $titulo)
@@ -138,9 +141,10 @@
         @endphp
         <form method="post" action="{{ route('financeiro.mp.propria', $amb) }}" class="form-grade" style="margin-top:16px;padding:14px 16px;background:#F4F5F7;border-left:3px solid var(--laranja);border-radius:6px">
             @csrf @method('PUT')
-            <h3 class="col-12" style="margin:0">{{ $titulo }} <small class="suave" style="font-weight:400">— Access Token e Public Key {{ $amb === 'teste' ? 'de teste' : 'de produção' }}</small></h3>
+            <h3 class="col-12" style="margin:0">{{ $titulo }} <small class="suave" style="font-weight:400">— Access Token, Public Key e assinatura dos webhooks {{ $amb === 'teste' ? 'de teste' : 'de produção' }}</small></h3>
             <x-campo nome="access_token" rotulo="Access Token" tipo="password" classe="col-6" autocomplete="new-password" :placeholder="$tem($amb === 'teste' ? 'teste_access_token_cript' : 'access_token_cript') ? 'salvo — em branco mantém' : 'APP_USR-...'" />
             <x-campo nome="public_key" rotulo="Public Key" :valor="$propria?->{$amb === 'teste' ? 'teste_public_key' : 'public_key'}" classe="col-6" autocomplete="off" />
+            <x-campo nome="webhook_secret" rotulo="Assinatura secreta dos webhooks ({{ $amb === 'teste' ? 'modo teste' : 'modo produção' }})" tipo="password" classe="col-12" autocomplete="new-password" :placeholder="$tem($pre.'webhook_secret_cript') ? 'salva — em branco mantém' : ''" />
             <div class="col-12" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
                 <button class="botao {{ $amb === 'teste' ? 'botao--contorno' : 'botao--primario' }} botao--pequeno">Salvar chaves {{ $amb === 'teste' ? 'de teste' : 'de produção' }}</button>
                 <button type="submit" form="mp-prop-verificar" class="botao botao--escuro botao--pequeno">Verificar de quem é o token</button>
@@ -149,20 +153,27 @@
                 @endif
             </div>
         </form>
-        @php $temToken = $propria && ($amb === 'teste' ? $propria->teste_access_token_cript : $propria->access_token_cript); @endphp
-        <form method="post" action="{{ route('financeiro.mp.propria.teste', $amb) }}" class="form-grade" style="margin:8px 0 0;padding:14px 16px;border:1px dashed var(--borda);border-radius:6px">
-            @csrf
-            <h4 class="col-12" style="margin:0">Pagamento de teste — {{ $amb === 'teste' ? 'homologação (conta compradora de teste)' : 'produção (cobrança real; pague com outra conta)' }}</h4>
-            @error('teste_'.$amb)<p class="col-12 erro" style="color:var(--vermelho);margin:0">{{ $message }}</p>@enderror
-            <div class="campo col-4"><label>CPF</label><input name="cpf" required data-mascara="cpf" data-busca-cpf inputmode="numeric" value="{{ $amb === 'teste' ? '123.456.789-09' : '' }}"></div>
-            <div class="campo col-8"><label>Nome completo</label><input name="nome" required data-pessoa="nome" value="{{ $amb === 'teste' ? 'APRO Teste' : '' }}"></div>
-            <div class="campo col-6"><label>E-mail de quem paga</label><input name="email" type="email" required data-pessoa="email" placeholder="{{ $amb === 'teste' ? 'e-mail da conta compradora de teste' : '' }}"></div>
-            <div class="campo col-3"><label>Telefone com DDD</label><input name="telefone" data-mascara="telefone" data-pessoa="telefone"></div>
-            <div class="campo col-3"><label>Valor (R$)</label><input name="valor" type="number" step="0.01" min="1" max="100" value="5.00" required></div>
-            <div class="col-12"><button class="botao botao--escuro botao--pequeno" @disabled(! $temToken)>{{ $amb === 'teste' ? 'Pagar teste no Mercado Pago' : 'Pagar de verdade no Mercado Pago' }} ↗</button>
-                @unless ($temToken)<small class="suave">Salve o Access Token {{ $amb === 'teste' ? 'de teste' : 'de produção' }} antes.</small>@endunless</div>
-        </form>
+
     @endforeach
+    @php $tokTeste = $propria?->teste_access_token_cript; $tokProd = $propria?->access_token_cript; $ambTeste = old('ambiente', $tokTeste ? 'teste' : 'producao'); @endphp
+    <form method="post" action="{{ route('financeiro.mp.propria.teste') }}" class="form-grade" style="margin-top:16px;padding:14px 16px;border:1px dashed var(--borda-forte);border-radius:6px">
+        @csrf
+        <h3 class="col-12" style="margin:0">4. Pagamento de teste</h3>
+        @error('pagamento_teste')<p class="col-12 erro" style="color:var(--vermelho);margin:0">{{ $message }}</p>@enderror
+        <div class="campo col-12"><div class="grade grade-2" style="gap:12px">
+            <label class="opcao-cartao"><input type="radio" name="ambiente" value="teste" @checked($ambTeste === 'teste') @disabled(! $tokTeste)>
+                <span><b>Teste (homologação)</b><small>Usa o Access Token de teste. Pague com a conta compradora de teste; nenhum dinheiro real é movimentado.@unless ($tokTeste)<br><b style="font-size:.8rem">Salve o Access Token de teste antes.</b>@endunless</small></span></label>
+            <label class="opcao-cartao"><input type="radio" name="ambiente" value="producao" @checked($ambTeste === 'producao') @disabled(! $tokProd)>
+                <span><b>Produção (cobrança real)</b><small>Usa o Access Token de produção: o valor cai de verdade na conta da empresa. Pague com outra conta do Mercado Pago.@unless ($tokProd)<br><b style="font-size:.8rem">Salve o Access Token de produção antes.</b>@endunless</small></span></label>
+        </div></div>
+        <div class="campo col-4"><label>CPF de quem paga</label><input name="cpf" required data-mascara="cpf" data-busca-cpf inputmode="numeric" value="{{ old('cpf') }}"></div>
+        <div class="campo col-8"><label>Nome completo</label><input name="nome" required data-pessoa="nome" value="{{ old('nome') }}"></div>
+        <div class="campo col-6"><label>E-mail de quem paga</label><input name="email" type="email" required data-pessoa="email" value="{{ old('email') }}" placeholder="no teste, o e-mail da conta compradora de teste"></div>
+        <div class="campo col-3"><label>Telefone com DDD</label><input name="telefone" data-mascara="telefone" data-pessoa="telefone" value="{{ old('telefone') }}"></div>
+        <div class="campo col-3"><label>Valor (R$)</label><input name="valor" type="number" step="0.01" min="1" max="100" value="{{ old('valor', '5.00') }}" required></div>
+        <div class="col-12"><button class="botao botao--escuro botao--pequeno" @disabled(! $tokTeste && ! $tokProd)>Gerar pagamento no Mercado Pago ↗</button>
+            <small class="suave">Abra o link em janela anônima ou no celular, fora da conta da empresa.</small></div>
+    </form>
     @if ($propria)
         <form method="post" action="{{ route('financeiro.mp.propria.verificar') }}" id="mp-prop-verificar" style="margin-top:14px">@csrf
             <button class="botao botao--escuro botao--pequeno">Verificar de quem é o token</button>
