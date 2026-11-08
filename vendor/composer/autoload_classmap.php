@@ -67,6 +67,7 @@ return array(
     'App\\Pagamentos\\MercadoPago' => $baseDir . '/app/Pagamentos/MercadoPago.php',
     'App\\Providers\\AppServiceProvider' => $baseDir . '/app/Providers/AppServiceProvider.php',
     'App\\Rules\\DocumentoValido' => $baseDir . '/app/Rules/DocumentoValido.php',
+    'App\\Support\\AtualizacaoBanco' => $baseDir . '/app/Support/AtualizacaoBanco.php',
     'App\\Support\\Auditoria' => $baseDir . '/app/Support/Auditoria.php',
     'App\\Support\\CancelamentoIngressos' => $baseDir . '/app/Support/CancelamentoIngressos.php',
     'App\\Support\\CodigoVerificacao' => $baseDir . '/app/Support/CodigoVerificacao.php',

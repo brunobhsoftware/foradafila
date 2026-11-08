@@ -159,6 +159,25 @@ class AdminController extends Controller
         return redirect()->to(route('admin.mercadopago').'#ambiente-'.$ambiente)->with('verificacao', [$ambiente => $resultado]);
     }
 
+    /** Atualizações do banco aplicadas pela Administração (sem phpMyAdmin). */
+    public function banco()
+    {
+        return view('admin.banco', ['scripts' => \App\Support\AtualizacaoBanco::lista()]);
+    }
+
+    public function aplicarBanco(Request $request)
+    {
+        $arquivo = (string) $request->validate(['arquivo' => ['required', 'string', 'max:120']])['arquivo'];
+        try {
+            $n = \App\Support\AtualizacaoBanco::aplicar($arquivo);
+        } catch (\Illuminate\Database\QueryException $e) {
+            return back()->withErrors(['banco' => 'O banco recusou um comando de '.$arquivo.': '.mb_substr($e->getMessage(), 0, 300)]);
+        }
+        Auditoria::registrar('plataforma.banco_atualizar', $request->user(), null, ['arquivo' => $arquivo, 'comandos' => $n]);
+
+        return redirect()->route('admin.banco')->with('ok', "{$arquivo} aplicado ({$n} comando(s)). Recarregue as telas do painel para ver as novidades.");
+    }
+
     public function mercadoPago()
     {
         return view('admin.mercadopago', ['credenciais' => MercadoPago::situacaoCredenciais(), 'configurado' => MercadoPago::configurado(), 'pkce' => MercadoPago::usaPkce(),
