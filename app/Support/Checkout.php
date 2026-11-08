@@ -84,7 +84,7 @@ class Checkout
         }
         $dados = [
             'type' => 'online',
-            'processing_mode' => 'automatic',
+            'processing_mode' => 'manual',
             'total_amount' => number_format((float) $pedido->valor_total, 2, '.', ''),
             'external_reference' => $pedido->codigo,
             'description' => mb_substr('Ingressos — '.$evento->titulo, 0, 150),

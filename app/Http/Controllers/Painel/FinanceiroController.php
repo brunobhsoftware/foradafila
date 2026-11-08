@@ -183,7 +183,7 @@ class FinanceiroController extends Controller
         $ref = 'teste-'.Str::uuid();
         $volta = fn (string $r) => route('admin.mercadopago.teste.retorno', ['ref' => $ref, 'resultado' => $r]);
         $dados = [
-            'type' => 'online', 'processing_mode' => 'automatic', 'total_amount' => $valor, 'external_reference' => $ref,
+            'type' => 'online', 'processing_mode' => 'manual', 'total_amount' => $valor, 'external_reference' => $ref,
             'description' => 'Teste de integração — '.$org->nomeExibicao(),
             'payer' => array_filter(['email' => $d['email'], 'first_name' => $partes[0], 'last_name' => $partes[1] ?? $partes[0],
                 'identification' => ['type' => 'CPF', 'number' => $cpf],

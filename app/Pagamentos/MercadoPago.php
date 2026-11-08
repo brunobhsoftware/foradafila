@@ -200,8 +200,12 @@ class MercadoPago
         } catch (\MercadoPago\Exceptions\MPApiException $e) {
             $r = $e->getApiResponse();
             $j = $r ? $r->getContent() : [];
-            $msg = $j['message'] ?? collect((array) ($j['errors'] ?? []))->pluck('message')->filter()->implode('; ');
-            throw new RuntimeException('O Mercado Pago recusou a criação da order (HTTP '.$e->getStatusCode().($msg ? ': '.mb_substr((string) $msg, 0, 300) : '').').');
+            // Mensagem + detalhes de cada erro (ex.: quais propriedades faltam), para saber o que corrigir.
+            $partes = collect((array) ($j['errors'] ?? []))->map(fn ($er) => trim(($er['message'] ?? '').' '.implode(', ', array_map(
+                fn ($d) => is_scalar($d) ? (string) $d : json_encode($d, JSON_UNESCAPED_UNICODE), (array) ($er['details'] ?? [])))))->filter();
+            $msg = trim(($j['message'] ?? '').($partes->isNotEmpty() ? ' — '.$partes->implode('; ') : ''));
+            \Illuminate\Support\Facades\Log::warning('Mercado Pago recusou order', ['status' => $e->getStatusCode(), 'resposta' => $j]);
+            throw new RuntimeException('O Mercado Pago recusou a criação da order (HTTP '.$e->getStatusCode().($msg ? ': '.mb_substr($msg, 0, 500) : '').').');
         } catch (\Throwable $e) {
             throw new RuntimeException('Não foi possível falar com o Mercado Pago: '.mb_substr($e->getMessage(), 0, 200));
         }
