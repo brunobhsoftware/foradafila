@@ -191,7 +191,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   produção (`mp_access_token`, opcional) tem prioridade sobre o client_credentials. **SDK oficial `mercadopago/dx-php` (^3.0, no composer)** cria e consulta as orders (`MercadoPago::sdk()` ajusta token e `BASE_URL`; recomendação "SDK do backend" da Qualidade da integração). **O pagamento de teste usa a API de Orders**
   (`POST /v1/orders`, a aplicação é "Checkout Pro com Orders"; `MercadoPago::criarOrder()`/`order()`), com o que a Qualidade da
   integração pede: payer (e-mail, nome, sobrenome, CPF, telefone), items (title, description, category_id `tickets`, external_code,
-  quantity, unit_price), `config.statement_descriptor` FORADAFILA, `config.online.success_url/failure_url/pending_url` e
+  quantity, unit_price), `config.statement_descriptor` FORADAFILA, `config.online.success_url/failure_url/pending_url`, 3DS `config.online.transaction_security` (`validation: on_fraud_risk`, `liability_shift: required`; recomendação da Qualidade, 08/11/2026) e
   `additional_info` (`payer.authentication_type`, `registration_date`, `is_first_purchase_online`, `last_purchase`). O formulário
   pede os dados do comprador. Retorno por `?ref=` (cache `mp_teste_<ref>` → order + ambiente). Webhook: mesma URL; aceita a
   assinatura de produção ou a de teste (`mp_teste_webhook_secret`, opcional) — a lista mostra "Válida (teste)". O botão do pagamento

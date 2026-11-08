@@ -84,7 +84,9 @@ class AdminController extends Controller
             ]],
             'config' => [
                 'statement_descriptor' => 'FORADAFILA',
-                'online' => ['success_url' => $volta('sucesso'), 'failure_url' => $volta('falha'), 'pending_url' => $volta('pendente')],
+                'online' => ['success_url' => $volta('sucesso'), 'failure_url' => $volta('falha'), 'pending_url' => $volta('pendente'),
+                    // 3DS (Qualidade da integração): valida quando há risco de fraude e transfere a responsabilidade ao emissor
+                    'transaction_security' => ['validation' => 'on_fraud_risk', 'liability_shift' => 'required']],
             ],
             'additional_info' => [
                 'payer.authentication_type' => 'WEB',
