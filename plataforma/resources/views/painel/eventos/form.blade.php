@@ -9,6 +9,9 @@
         <h1>{{ $editando ? 'Editar evento' : 'Novo evento' }}</h1>
         <p>{{ $editando ? 'As mudanças valem na hora para a página do evento.' : 'O evento nasce como rascunho. Você publica depois de criar os ingressos.' }}</p>
     </div>
+    @if ($editando)
+        <div class="cabecalho__acoes"><a href="{{ route('eventos.show', $evento) }}#ingressos" class="botao botao--escuro"><x-icone nome="ingresso" /> Editar ingressos</a></div>
+    @endif
 </div>
 
 <form method="post" action="{{ $editando ? route('eventos.update', $evento) : route('eventos.store') }}" class="cartao" enctype="multipart/form-data">
