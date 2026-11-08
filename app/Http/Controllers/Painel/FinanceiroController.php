@@ -29,7 +29,7 @@ class FinanceiroController extends Controller
             'recebimento' => \App\Support\Recebimento::conta($org->id),
             'temPropria' => \App\Support\Esquema::temPropria(),
             'homologacao' => \App\Support\Checkout::modoTeste($org->id),
-            'homologacaoGeral' => \App\Support\Checkout::modoTeste(null),
+
             'propria' => ! \App\Support\Esquema::temPropria() ? null : (Gate::allows('financeiro.contas') ? \App\Support\Recebimento::contaPropria($org) : \App\Support\Recebimento::conta($org->id, 'propria')),
             'verificacao' => session('verificacao_mp'),
             'saldo' => \App\Support\Esquema::temV012() ? \App\Support\Repasses::resumo($org->id) : null,
