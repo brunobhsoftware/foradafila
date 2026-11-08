@@ -51,13 +51,15 @@ const entrar = async (p, email, senha) => {
   await P.fill('[name=representante_nome]', 'Bruno Conta'); await P.fill('[name=representante_cpf]', '529.982.247-25');
   await salvar();
   ok((await P.content()).includes('Dados da organização salvos'), 'salva sem dados bancários');
+  // dados bancários agora ficam no Financeiro (Dados para o repasse)
+  await P.goto(BASE + '/painel/financeiro');
+  await P.check('input[name=recebimento_preferido][value=conta]', { force: true });
   await P.fill('[name=banco]', '341 - Itaú Unibanco');
-  await salvar();
-  const c2 = await P.content();
-  ok(c2.includes('informe também a agência') && c2.includes('informe também a conta') && c2.includes('informe também o favorecido'), 'banco preenchido pede agência, conta e favorecido');
+  await nav(P, P.click('button:has-text("Salvar dados de recebimento")'));
+  ok((await P.content()).includes('informe banco, agência, conta e favorecido') || (await P.content()).includes('Informe a agência'), 'banco preenchido pede agência, conta e favorecido');
   await P.fill('[name=agencia]', '1234'); await P.fill('[name=conta]', '12345-6'); await P.fill('[name=favorecido]', 'Estacao Slod Ltda');
-  await salvar();
-  ok((await P.content()).includes('Dados da organização salvos') && sql("SELECT conta FROM organizador WHERE documento='41902878000108'") === '12345-6', 'salva com os quatro dados bancários');
+  await nav(P, P.click('button:has-text("Salvar dados de recebimento")'));
+  ok((await P.content()).includes('Dados de recebimento salvos') && sql("SELECT conta FROM organizador WHERE documento='41902878000108'") === '12345-6', 'salva com os quatro dados bancários');
 
   // reenviar convite
   await P.goto(BASE + '/painel/equipe');

@@ -8,6 +8,7 @@ const http = require('http');
 const crypto = require('crypto');
 const BASE = process.env.BASE || 'http://127.0.0.1:8001';
 const sql = (q) => execSync(`mysql --default-character-set=utf8mb4 -uroot foradafila -N -e "${q.replace(/"/g, '\\"')}"`).toString().trim();
+const codEv = (slug) => sql(`SELECT SUBSTRING(REPLACE(uuid,'-',''),1,10) FROM evento WHERE slug='${slug}'`);
 const ok = (c, m) => { console.log((c ? 'PASSOU ' : 'FALHOU ') + m); if (!c) process.exitCode = 1; };
 const local = (d, h = '20:00') => new Date(Date.now() + d * 864e5).toISOString().slice(0, 10) + 'T' + h;
 const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
@@ -68,7 +69,7 @@ const webhook = async (P, id) => {
 
   // ---- compra ----
   const C = await (await b.newContext()).newPage(); C.on('pageerror', (e) => erros.push(e.message));
-  await C.goto(BASE + '/e/show-pago');
+  await C.goto(BASE + '/e/' + codEv('show-pago'));
   ok(await C.locator('button:has-text("Comprar ingresso")').count() === 1 && !(await C.content()).includes('venda online em breve'), 'página do evento vende o lote pago');
   await C.selectOption('select[name^="q["]', '2');
   await nav(C, C.click('button:has-text("Comprar ingresso")'));
@@ -108,7 +109,7 @@ const webhook = async (P, id) => {
   ok(C.url().endsWith('/minha-conta') && (await C.content()).includes('Pagamento aprovado'), 'retorno aprovado leva a Meus ingressos');
 
   // ---- pagamento recusado libera a reserva ----
-  await C.goto(BASE + '/e/show-pago');
+  await C.goto(BASE + '/e/' + codEv('show-pago'));
   await C.selectOption('select[name^="q["]', '1');
   await nav(C, C.click('button:has-text("Comprar ingresso")'));
   await C.fill('[name="participantes[0][nome]"]', 'Ana Compradora');
@@ -122,14 +123,14 @@ const webhook = async (P, id) => {
     && sql("SELECT status FROM pedido ORDER BY id DESC LIMIT 1") === 'recusado', 'recusado: reserva devolvida ao estoque');
 
   // ---- reserva vencida volta ao estoque ----
-  await C.goto(BASE + '/e/show-pago');
+  await C.goto(BASE + '/e/' + codEv('show-pago'));
   await C.selectOption('select[name^="q["]', '3');
   await nav(C, C.click('button:has-text("Comprar ingresso")'));
   for (let i = 0; i < 3; i++) await C.fill(`[name="participantes[${i}][nome]"]`, 'P' + i);
   for (const k of ['compra_comprador', 'privacidade']) await C.check(`[name="aceites[${k}]"]`);
   await nav(C, C.click('button:has-text("Ir para o pagamento")'));
   sql("UPDATE pedido SET expira_em = DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 MINUTE) WHERE status='aguardando_pagamento'");
-  await C.goto(BASE + '/e/show-pago');
+  await C.goto(BASE + '/e/' + codEv('show-pago'));
   ok(sql("SELECT reservado FROM lote") === '0' && sql("SELECT status FROM pedido ORDER BY id DESC LIMIT 1") === 'expirado', 'reserva vencida e não paga volta ao estoque ao abrir o evento');
 
   // ---- extrato e repasse ----
@@ -167,6 +168,7 @@ const webhook = async (P, id) => {
   sql("UPDATE evento SET titulo='Show Renomeado', slug='show-renomeado'");
   await C.goto(linkCodigo);
   ok((await C.content()).includes('Show Renomeado'), 'link com código continua abrindo o evento depois de mudar o nome');
+  ok((await C.goto(BASE + '/e/show-renomeado')).status() === 404, 'link pelo nome não abre mais (só o código)');
   // ---- homologação por empresa ----
   await P.goto(BASE + '/painel/financeiro');
   await P.check('input[name=ambiente_vendas][value=homologacao]', { force: true });

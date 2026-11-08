@@ -8,6 +8,7 @@ const fs = require('fs');
 const BASE = process.env.BASE || 'http://127.0.0.1:8000';
 const APP_KEY = (fs.readFileSync(__dirname + '/../../.env', 'utf8').match(/^APP_KEY=(.*)$/m) || [])[1].trim();
 const sql = (q) => execSync(`mysql --default-character-set=utf8mb4 -uroot foradafila -N -e "${q.replace(/"/g, '\\"')}"`).toString().trim();
+const codEv = (slug) => sql(`SELECT SUBSTRING(REPLACE(uuid,'-',''),1,10) FROM evento WHERE slug='${slug}'`);
 const ok = (c, m) => { console.log((c ? 'PASSOU ' : 'FALHOU ') + m); if (!c) process.exitCode = 1; };
 const local = (d, h = '20:00') => new Date(Date.now() + d * 864e5).toISOString().slice(0, 10) + 'T' + h;
 const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
@@ -35,7 +36,7 @@ const qr = (codigo) => `FF1.${codigo}.${crypto.createHmac('sha256', APP_KEY).upd
   await nav(P, P.click('button:has-text("Publicar evento")'));
 
   const V = await (await b.newContext()).newPage();
-  await V.goto(BASE + '/e/show-da-portaria');
+  await V.goto(BASE + '/e/' + codEv('show-da-portaria'));
   await V.selectOption('select[name^="q["]', '3');
   await nav(V, V.click('button:has-text("Garantir ingresso")'));
   for (const [n, v] of [['nome', 'Ana Compradora'], ['email', 'ana@publico.test'], ['senha', 'Ingresso1'], ['senha_confirmation', 'Ingresso1']]) await V.fill(`[name=${n}]`, v);

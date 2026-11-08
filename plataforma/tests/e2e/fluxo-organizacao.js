@@ -9,6 +9,7 @@ const BASE = process.env.BASE || 'http://127.0.0.1:8000';
 const IMG = process.env.IMG;
 const MIDIA = process.env.MIDIA || __dirname + '/../../storage/app/midia/logomarcas';
 const sql = (q) => execSync(`mysql --default-character-set=utf8mb4 -uroot foradafila -N -e "${q.replace(/"/g, '\\"')}"`).toString().trim();
+const codEv = (slug) => sql(`SELECT SUBSTRING(REPLACE(uuid,'-',''),1,10) FROM evento WHERE slug='${slug}'`);
 const ok = (c, m) => { console.log((c ? 'PASSOU ' : 'FALHOU ') + m); if (!c) process.exitCode = 1; };
 const local = (d, h = '20:00') => new Date(Date.now() + d * 864e5).toISOString().slice(0, 10) + 'T' + h;
 const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
@@ -74,7 +75,7 @@ const salvar = async (p) => { await p.evaluate(() => { document.querySelector('f
   await nav(P, f.locator('button:has-text("Adicionar lote")').click());
   await nav(P, P.click('button:has-text("Publicar evento")'));
   const V = await (await b.newContext()).newPage();
-  await V.goto(BASE + '/e/roda-na-estacao');
+  await V.goto(BASE + '/e/' + codEv('roda-na-estacao'));
   ok(await V.locator('img[alt^="Logo de"]').count() === 1, 'logo do organizador na página do evento');
   await V.selectOption('select[name^="q["]', '1');
   await nav(V, V.click('button:has-text("Garantir ingresso")'));

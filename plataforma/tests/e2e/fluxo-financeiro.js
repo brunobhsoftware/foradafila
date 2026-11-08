@@ -58,7 +58,7 @@ const falso = http.createServer((req, res) => {
   recusar = true;
   await nav(P, P.click('button:has-text("Conectar Mercado Pago")'));
   ok((await P.content()).includes('O Mercado Pago recusou a autorização (HTTP 400: invalid_grant)'), 'recusa do Mercado Pago vira mensagem na tela');
-  ok(sql('SELECT COUNT(*) FROM conta_pagamento') === '0', 'nada gravado quando recusa');
+  ok(sql("SELECT COUNT(*) FROM conta_pagamento WHERE modo='direta'") === '0', 'nada gravado quando recusa');
 
   // conexão aceita
   recusar = false;
@@ -67,9 +67,9 @@ const falso = http.createServer((req, res) => {
   ok(tela.includes('Conta do Mercado Pago conectada (vendas@slod.test)') && tela.includes('ESTACAOSLOD') && tela.includes('Testes (sandbox)'), 'conta conectada com e-mail, apelido e ambiente');
   ok(ultimoToken.grant_type === 'authorization_code' && ultimoToken.code === 'TG-codigo-123' && ultimoToken.client_secret === 'segredo-teste'
     && ultimoToken.code_verifier && ultimoToken.redirect_uri.endsWith('/painel/financeiro/mercadopago/retorno'), 'troca o código com PKCE e o endereço de retorno');
-  const linha = sql("SELECT CONCAT_WS('|', status, ambiente, conta_externa_id, email_conta, pais_conta, escopos, public_key) FROM conta_pagamento");
+  const linha = sql("SELECT CONCAT_WS('|', status, ambiente, conta_externa_id, email_conta, pais_conta, escopos, public_key) FROM conta_pagamento WHERE modo='direta'");
   ok(linha === 'conectada|sandbox|987654321|vendas@slod.test|MLB|offline_access read write|APP_USR-chave-publica', 'dados gravados: ' + linha);
-  ok(sql("SELECT access_token_cript LIKE '%token-secreto%' OR refresh_token_cript LIKE '%refresh-secreto%' FROM conta_pagamento") === '0', 'tokens gravados criptografados');
+  ok(sql("SELECT access_token_cript LIKE '%token-secreto%' OR refresh_token_cript LIKE '%refresh-secreto%' FROM conta_pagamento WHERE modo='direta'") === '0', 'tokens gravados criptografados');
   ok(!tela.includes('token-secreto'), 'token não aparece na tela');
   ok(sql("SELECT COUNT(*) FROM auditoria WHERE acao='conta_pagamento.conectar' AND depois NOT LIKE '%token_cript%'") === '1', 'auditoria sem os tokens');
 
@@ -80,7 +80,7 @@ const falso = http.createServer((req, res) => {
   // desconectar
   P.once('dialog', (d) => d.accept());
   await nav(P, P.click('button:has-text("Desconectar")'));
-  ok(sql("SELECT CONCAT(status, '|', access_token_cript IS NULL) FROM conta_pagamento") === 'revogada|1' && (await P.content()).includes('Não conectada'), 'desconectar apaga os tokens');
+  ok(sql("SELECT CONCAT(status, '|', access_token_cript IS NULL) FROM conta_pagamento WHERE modo='direta'") === 'revogada|1' && (await P.content()).includes('Não conectada'), 'desconectar apaga os tokens');
 
   // PKCE desligado (padrão): não envia code_challenge nem code_verifier
   sql("UPDATE parametro_sistema SET valor='0' WHERE chave='mp_pkce'");

@@ -5,6 +5,7 @@ const { chromium } = require('playwright');
 const { execSync } = require('child_process');
 const BASE = process.env.BASE || 'http://127.0.0.1:8000';
 const sql = (q) => execSync(`mysql --default-character-set=utf8mb4 -uroot foradafila -N -e "${q.replace(/"/g, '\\"')}"`).toString().trim();
+const codEv = (slug) => sql(`SELECT SUBSTRING(REPLACE(uuid,'-',''),1,10) FROM evento WHERE slug='${slug}'`);
 const ok = (c, m) => { console.log((c ? 'PASSOU ' : 'FALHOU ') + m); if (!c) process.exitCode = 1; };
 const local = (d, h = '20:00') => new Date(Date.now() + d * 864e5).toISOString().slice(0, 10) + 'T' + h;
 const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
@@ -36,7 +37,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
 
   // comprador se inscreve com 3 ingressos
   const V = await (await b.newContext()).newPage(); V.on('pageerror', (e) => erros.push(e.message));
-  await V.goto(BASE + '/e/festa-das-vendas');
+  await V.goto(BASE + '/e/' + codEv('festa-das-vendas'));
   await V.selectOption('select[name^="q["]', '3');
   await nav(V, V.click('button:has-text("Garantir ingresso")'));
   for (const [n, v] of [['nome', 'Ana Compradora'], ['email', 'ana@publico.test'], ['senha', 'Ingresso1'], ['senha_confirmation', 'Ingresso1']]) await V.fill(`[name=${n}]`, v);

@@ -93,8 +93,9 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - Site público (`layouts/publico` + `site/_topo`, `site/_rodape`, CSS `public/assets/css/publico.css`):
   início, `/solucao`, `/precos`, `/ajuda`, `/eventos` (vitrine), `/e/{slug}` (evento), `/p/{slug}` (organizador),
   `/termos/{tipo}`. **Link do evento com código fixo** (decisão do Bruno, 08/11/2026): `Evento::linkPublico()` = `/e/{10 primeiros
-  caracteres do uuid}`, que nunca muda; `EventoPublicoController::buscar()` aceita o código ou o nome antigo (slug), então links já
-  compartilhados continuam valendo. Todo link gerado pelo sistema (painel, cupons, vitrine, compra) usa o código. Menu superior muda conforme quem está logado (produtor e/ou comprador).
+  caracteres do uuid}`, que nunca muda; **só o código abre** (`EventoPublicoController::buscar()`; links pelo nome/slug dão 404, decisão
+  do Bruno, 08/11/2026). Todo link e formulário (painel, cupons, vitrine, compra `inscricao.create/store`) usa `codigoPublico()`.
+  Nos testes, `codEv(slug)` busca o código no banco. Menu superior muda conforme quem está logado (produtor e/ou comprador).
 - Comprador: guard **`comprador`** (tabela `comprador`), separado do produtor. Rotas em `/minha-conta`:
   entrar, criar conta, Meus ingressos, segunda via (`/ingressos/{uuid}`, QR no navegador com
   `public/js/vendor/qrcode-generator.js`, MIT) e cancelamento de inscrição gratuita.

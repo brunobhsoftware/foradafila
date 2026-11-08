@@ -3,6 +3,8 @@
 // IMG precisa ter: capa.png (1600x838), quadrada.jpg, grande.png (> 2 MB) e falsa.png (texto com extensão .png).
 const { chromium } = require('playwright');
 const fs = require('fs');
+const { execSync } = require('child_process');
+const codEv = (slug) => execSync(`mysql -uroot foradafila -N -e "SELECT SUBSTRING(REPLACE(uuid,'-',''),1,10) FROM evento WHERE slug='${slug}'"`).toString().trim();
 const BASE = process.env.BASE || 'http://127.0.0.1:8000';
 const IMG = process.env.IMG;
 const MIDIA = process.env.MIDIA || __dirname + '/../../storage/app/midia/eventos';
@@ -74,7 +76,7 @@ const arquivos = () => (fs.existsSync(MIDIA) ? fs.readdirSync(MIDIA) : []);
   await nav(P, f.locator('button:has-text("Adicionar lote")').click());
   await nav(P, P.click('button:has-text("Publicar evento")'));
   const V = await (await b.newContext()).newPage();
-  await V.goto(BASE + '/e/samba-na-estacao');
+  await V.goto(BASE + '/e/' + codEv('samba-na-estacao'));
   ok(await V.locator('img.pub-evento__capa').count() === 1, 'página pública mostra a imagem');
   ok((await V.getAttribute('meta[property="og:image"]', 'content') || '').includes('/midia/eventos/'), 'og:image para compartilhamento');
   await V.goto(BASE + '/eventos');

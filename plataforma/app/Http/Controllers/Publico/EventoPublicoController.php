@@ -89,11 +89,12 @@ class EventoPublicoController extends Controller
     /** Evento pela URL pública. Privados exigem link de acesso privado, que ainda não existe: 404. */
     public static function buscar(string $slug): Evento
     {
-        // Aceita o código fixo (10 primeiros caracteres do uuid) ou o nome antigo (slug).
-        $codigo = preg_match('/^[0-9a-f]{10}$/', $slug) ? substr($slug, 0, 8).'-'.substr($slug, 8, 2) : null;
+        // Só o código fixo (10 primeiros caracteres do uuid); links pelo nome (slug) não abrem mais (decisão do Bruno, 08/11/2026).
+        abort_unless(preg_match('/^[0-9a-f]{10}$/', $slug), 404);
+        $codigo = substr($slug, 0, 8).'-'.substr($slug, 8, 2);
 
         return Evento::withoutGlobalScope('organizador')->with('organizador')
-            ->where(fn ($q) => $codigo ? $q->where('uuid', 'like', $codigo.'%')->orWhere('slug', $slug) : $q->where('slug', $slug))
+            ->where('uuid', 'like', $codigo.'%')
             ->whereIn('status', self::STATUS_PUBLICOS)
             ->where('visibilidade', '<>', 'privado')->firstOrFail();
     }

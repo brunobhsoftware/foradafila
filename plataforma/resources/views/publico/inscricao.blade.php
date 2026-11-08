@@ -15,7 +15,7 @@
 @section('conteudo')
 <section class="pub-secao">
   <div class="container pub-evento">
-    <form method="post" action="{{ route('inscricao.store', $evento->slug) }}" class="pub-cartao">
+    <form method="post" action="{{ route('inscricao.store', $evento->codigoPublico()) }}" class="pub-cartao">
       @csrf
       <input type="hidden" name="chave" value="{{ old('chave', $chave) }}">
       @foreach ($selecao as $s)<input type="hidden" name="q[{{ $s['lote']->uuid }}]" value="{{ $s['quantidade'] }}">@endforeach

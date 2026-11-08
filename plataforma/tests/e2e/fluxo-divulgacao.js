@@ -6,6 +6,7 @@ const { chromium } = require('playwright');
 const { execSync } = require('child_process');
 const BASE = process.env.BASE || 'http://127.0.0.1:8000';
 const sql = (q) => execSync(`mysql --default-character-set=utf8mb4 -uroot foradafila -N -e "${q.replace(/"/g, '\\"')}"`).toString().trim();
+const codEv = (slug) => sql(`SELECT SUBSTRING(REPLACE(uuid,'-',''),1,10) FROM evento WHERE slug='${slug}'`);
 const ok = (c, m) => { console.log((c ? 'PASSOU ' : 'FALHOU ') + m); if (!c) process.exitCode = 1; };
 const local = (d, h = '20:00') => new Date(Date.now() + d * 864e5).toISOString().slice(0, 10) + 'T' + h;
 const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
@@ -65,7 +66,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
 
   // ---- código digitado e código inválido ----
   const W = await (await b.newContext()).newPage();
-  await W.goto(BASE + '/e/festa-divulgada');
+  await W.goto(BASE + '/e/' + codEv('festa-divulgada'));
   await W.selectOption('select[name^="q["]', '1');
   await nav(W, W.click('button:has-text("Garantir ingresso")'));
   ok(await W.inputValue('[name=cupom]') === '', 'sem link: campo vazio');
