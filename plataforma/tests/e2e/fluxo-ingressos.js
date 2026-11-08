@@ -72,7 +72,7 @@ const lote = (nome) => sql(`SELECT CONCAT_WS('|', preco, modalidade, IFNULL(lote
   ok(lote('Equipe') === '0.00|inteira|-|oculto|pausado', 'lote manual criado desativado');
 
   // ativar / desativar pela lista
-  const linha = (n) => P.locator(`tr:has(td b:text-is("${n}"))`);
+  const linha = (n) => P.locator(`tr:not(.linha-acoes):has(td b:text-is("${n}"))`);
   ok((await linha('Equipe').innerText()).includes('Desativado'), 'lista mostra "Desativado"');
   await nav(P, linha('Primeiro').locator('button:has-text("Desativar")').click());
   ok(lote('Primeiro').endsWith('|pausado') && (await P.content()).includes('desativado: não aparece nem é vendido'), 'botão Desativar');
@@ -80,8 +80,8 @@ const lote = (nome) => sql(`SELECT CONCAT_WS('|', preco, modalidade, IFNULL(lote
   ok(lote('Primeiro').endsWith('|ativo'), 'botão Ativar volta para à venda');
 
   // edição: o anterior não pode começar depois dele mesmo
-  await linha('Primeiro').locator('summary:has-text("Editar")').click();
-  const fe = linha('Primeiro').locator('form[data-lote-form]');
+  await linha('Primeiro').locator('button:has-text("Editar")').click();
+  const fe = P.locator('tr.linha-acoes:visible form[data-lote-form]');
   await fe.locator('input[name=liberacao][value=por_lote]').check({ force: true });
   await fe.locator('[name=lote_anterior_id]').selectOption({ label: 'Segundo' });
   ok((await salvar(fe)).includes('Esse lote já começa depois deste'), 'recusa lotes que dependem um do outro');

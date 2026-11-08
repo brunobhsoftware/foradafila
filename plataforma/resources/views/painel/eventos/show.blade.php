@@ -79,17 +79,7 @@
                     @if ($tipo->descricao)<small>{{ $tipo->descricao }}</small>@endif</div>
                 @if ($podeLotes)
                     <div style="display:flex;gap:8px">
-                        <details class="painel-recolhivel"><summary class="botao botao--contorno botao--pequeno">Editar tipo</summary>
-                            <form method="post" action="{{ route('tipos.update', $tipo) }}" class="form-grade" style="min-width:min(520px,80vw)">
-                                @csrf @method('PUT')
-                                <x-campo nome="nome" rotulo="Nome" :valor="$tipo->nome" obrigatorio classe="col-6" />
-                                <x-campo nome="capacidade" rotulo="Capacidade do setor" tipo="number" :valor="$tipo->capacidade" classe="col-6" />
-                                <x-campo nome="descricao" rotulo="Descrição" :valor="$tipo->descricao" />
-                                <input type="hidden" name="ativo" value="0">
-                                <label class="opcao col-12"><input type="checkbox" name="ativo" value="1" @checked($tipo->ativo)> Ativo</label>
-                                <div class="col-12"><button class="botao botao--escuro botao--pequeno">Salvar tipo</button></div>
-                            </form>
-                        </details>
+                        <button type="button" class="botao botao--contorno botao--pequeno" data-alternar="editar-tipo-{{ $tipo->id }}" aria-expanded="false">Editar tipo</button>
                         @if ($tipo->lotes->isEmpty())
                             <form method="post" action="{{ route('tipos.destroy', $tipo) }}" data-confirmar="Excluir o tipo “{{ $tipo->nome }}”?">
                                 @csrf @method('DELETE') <button class="botao botao--perigo botao--pequeno">Excluir</button>
@@ -98,6 +88,23 @@
                     </div>
                 @endif
             </div>
+
+            @if ($podeLotes)
+                <div class="bloco-edicao" id="editar-tipo-{{ $tipo->id }}" hidden>
+                    <p class="bloco-edicao__titulo">Editar tipo “{{ $tipo->nome }}”</p>
+                    <form method="post" action="{{ route('tipos.update', $tipo) }}" class="form-grade">
+                        @csrf @method('PUT')
+                        <x-campo nome="nome" rotulo="Nome" :valor="$tipo->nome" obrigatorio classe="col-6" />
+                        <x-campo nome="capacidade" rotulo="Capacidade do setor" tipo="number" :valor="$tipo->capacidade" classe="col-6" />
+                        <x-campo nome="descricao" rotulo="Descrição" :valor="$tipo->descricao" />
+                        <input type="hidden" name="ativo" value="0">
+                        <label class="opcao col-12"><input type="checkbox" name="ativo" value="1" @checked($tipo->ativo)> Ativo</label>
+                        <div class="col-12 acoes-linha" style="justify-content:flex-start">
+                            <button class="botao botao--escuro botao--pequeno">Salvar tipo</button>
+                            <button type="button" class="botao botao--link" data-alternar="editar-tipo-{{ $tipo->id }}">Fechar</button></div>
+                    </form>
+                </div>
+            @endif
 
             @if ($tipo->lotes->isNotEmpty())
                 <div class="tabela-rolagem" style="margin-top:12px">
@@ -118,19 +125,26 @@
                                         <form method="post" action="{{ route('lotes.alternar', $lote) }}" style="display:inline">@csrf
                                             <button class="botao botao--contorno botao--pequeno" title="{{ $lote->status === 'pausado' ? 'Volta a aparecer e a ser vendido' : 'Deixa de aparecer e de ser vendido' }}">{{ $lote->status === 'pausado' ? 'Ativar' : 'Desativar' }}</button>
                                         </form>
-                                        <details class="painel-recolhivel" style="display:inline-block" @if (old('_form') === 'lote-'.$lote->id) open @endif><summary class="botao botao--contorno botao--pequeno">Editar</summary>
-                                            <div style="text-align:left;min-width:min(680px,84vw)">
-                                                @include('painel.eventos.lote-form', ['lote' => $lote, 'acao' => route('lotes.update', $lote), 'metodo' => 'PUT'])
-                                                @unless ($lote->temMovimento())
-                                                    <form method="post" action="{{ route('lotes.destroy', $lote) }}" data-confirmar="Excluir o lote “{{ $lote->nome }}”?" style="margin-top:8px">
-                                                        @csrf @method('DELETE') <button class="botao botao--perigo botao--pequeno">Excluir lote</button>
-                                                    </form>
-                                                @endunless
-                                            </div>
-                                        </details>
+                                        <button type="button" class="botao botao--contorno botao--pequeno" data-alternar="editar-lote-{{ $lote->id }}" aria-expanded="false">Editar</button>
                                     @endif
                                 </td>
                             </tr>
+                            @if ($podeLotes)
+                            <tr class="linha-acoes" id="editar-lote-{{ $lote->id }}" @unless (old('_form') === 'lote-'.$lote->id) hidden @endunless>
+                                <td colspan="7">
+                                    <p class="bloco-edicao__titulo">Editar lote “{{ $lote->nome }}”</p>
+                                    @include('painel.eventos.lote-form', ['lote' => $lote, 'acao' => route('lotes.update', $lote), 'metodo' => 'PUT'])
+                                    <div class="acoes-linha" style="justify-content:flex-start;margin-top:10px">
+                                        @unless ($lote->temMovimento())
+                                            <form method="post" action="{{ route('lotes.destroy', $lote) }}" data-confirmar="Excluir o lote “{{ $lote->nome }}”?">
+                                                @csrf @method('DELETE') <button class="botao botao--perigo botao--pequeno">Excluir lote</button>
+                                            </form>
+                                        @endunless
+                                        <button type="button" class="botao botao--link" data-alternar="editar-lote-{{ $lote->id }}">Fechar</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endif
                         @endforeach
                         </tbody>
                     </table>
