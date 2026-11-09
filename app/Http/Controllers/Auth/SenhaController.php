@@ -93,6 +93,18 @@ class SenhaController extends Controller
             }
         }
 
+        if ($conta instanceof \App\Models\Comprador) {
+            // O link assinado veio do e-mail: já provou que o e-mail é dele. Entra direto, sem pedir outro código (decisão do Bruno, 09/11/2026).
+            if (! $conta->email_verificado_em) {
+                $conta->forceFill(['email_verificado_em' => now()])->save();
+            }
+            \Illuminate\Support\Facades\Auth::guard('comprador')->login($conta, true);
+            $request->session()->regenerate();
+            session(['comprador_verificado' => $conta->id]);
+
+            return redirect()->route('comprador.ingressos')->with('ok', 'Senha salva. Você já está na sua conta.');
+        }
+
         return redirect()->route(self::AREAS[$area]['login'])->with('ok', 'Senha alterada. Entre com a nova senha.');
     }
 
