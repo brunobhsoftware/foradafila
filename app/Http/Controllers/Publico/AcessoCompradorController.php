@@ -149,6 +149,69 @@ class AcessoCompradorController extends Controller
         return redirect()->route('comprador.dados')->with('ok', 'Seu cadastro foi atualizado.');
     }
 
+    /** "Enviar para meu e-mail": reenvia a confirmação com o PDF dos ingressos ao e-mail do comprador. */
+    public function reenviar(Request $request, string $uuid)
+    {
+        $c = $request->user('comprador');
+        $p = Pedido::withoutGlobalScopes()->where('uuid', $uuid)->where('comprador_id', $c->id)->firstOrFail();
+        $evento = \App\Models\Evento::withoutGlobalScopes()->with('organizador')->findOrFail($p->evento_id);
+        app(\App\Support\Tenant::class)->definir($evento->organizador);
+        $evento->load('local');
+        $p->load(['ingressos.participante', 'ingressos.tipo', 'ingressos.lote']);
+        abort_if($p->ingressos->whereIn('status', ['valido', 'utilizado'])->isEmpty(), 422, 'Este pedido não tem ingressos válidos.');
+        Notificacoes::ingressosConfirmados($p, $c, $evento, $evento->organizador, $p->ingressos);
+
+        return back()->with('ok', 'Enviamos os ingressos do pedido '.$p->codigo.' para '.InscricaoController::mascararEmail($c->email).', em PDF.');
+    }
+
+    /** Alterar e-mail: com o e-mail atual validado nesta sessão, manda um código ao e-mail NOVO; só troca depois do código. */
+    public function email(Request $request)
+    {
+        return view('comprador.email', ['verificado' => self::verificado(), 'novo' => session('email_novo'),
+            'emailMascarado' => InscricaoController::mascararEmail($request->user('comprador')->email)]);
+    }
+
+    public function emailCodigo(Request $request)
+    {
+        abort_unless(self::verificado(), 403);
+        $c = $request->user('comprador');
+        $request->merge(['email' => mb_strtolower(trim((string) $request->input('email')))]);
+        $novo = $request->validate(['email' => ['required', 'email:filter', 'max:150',
+            \Illuminate\Validation\Rule::unique('comprador', 'email')]], ['email.unique' => 'Este e-mail já está em outro cadastro.'], ['email' => 'novo e-mail'])['email'];
+        if ($novo === $c->email) {
+            return back()->withErrors(['email' => 'Este já é o seu e-mail.']);
+        }
+        session(['email_novo' => $novo]);
+        if ($codigo = CodigoVerificacao::gerar($c->id, 'email-comprador')) {
+            Notificacoes::codigoVerificacao($c->nome, $novo, $codigo, 'confirmar o seu novo e-mail');
+        }
+
+        return redirect()->route('comprador.email')->with('ok', 'Enviamos um código para '.$novo.'. Digite-o abaixo para confirmar a troca.');
+    }
+
+    public function salvarEmail(Request $request)
+    {
+        abort_unless(self::verificado() && session('email_novo'), 403);
+        $c = $request->user('comprador');
+        $codigo = (string) $request->validate(['codigo' => ['required', 'string']], ['codigo.required' => 'Digite o código.'])['codigo'];
+        if ($erro = CodigoVerificacao::conferir($c->id, 'email-comprador', $codigo)) {
+            return back()->withErrors(['codigo' => $erro]);
+        }
+        $novo = session()->pull('email_novo');
+        if (Comprador::where('email', $novo)->where('id', '!=', $c->id)->exists()) {
+            return redirect()->route('comprador.email')->withErrors(['email' => 'Este e-mail já está em outro cadastro.']);
+        }
+        $antigo = $c->email;
+        $c->forceFill(['email' => $novo, 'email_verificado_em' => now()])->save();
+        Notificacoes::contaAlterada($c->nome, $antigo, 'O e-mail da sua conta no Fora da Fila foi trocado para '.InscricaoController::mascararEmail($novo).'. Se não foi você, responda ao organizador do evento.');
+        Notificacoes::contaAlterada($c->nome, $novo, 'Este passou a ser o e-mail da sua conta no Fora da Fila. Os próximos ingressos chegam aqui.');
+        if ($c->cpf) {
+            CadastroPessoa::registrar($c->cpf, $c->nome, $novo, $c->telefone, 'cadastro');
+        }
+
+        return redirect()->route('comprador.dados')->with('ok', 'Seu e-mail foi alterado para '.$novo.'.');
+    }
+
     /** Alterar senha (botão próprio; só quem já tem senha e com o e-mail validado nesta sessão). */
     public function senha(Request $request)
     {

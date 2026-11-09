@@ -58,6 +58,10 @@ Route::prefix('minha-conta')->name('comprador.')->group(function () {
         Route::put('/dados', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'salvarDados']);
         Route::get('/senha', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'senha'])->name('senha');
         Route::put('/senha', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'salvarSenha'])->middleware('throttle:10,15,senha-comprador');
+        Route::get('/email', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'email'])->name('email');
+        Route::post('/email/codigo', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'emailCodigo'])->name('email.codigo')->middleware('throttle:5,10,email-comprador-codigo');
+        Route::put('/email', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'salvarEmail'])->middleware('throttle:10,10,email-comprador');
+        Route::post('/pedidos/{uuid}/reenviar', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'reenviar'])->name('reenviar')->middleware('throttle:5,10,reenviar-comprador');
         Route::post('/dados/codigo', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'codigoDados'])->name('dados.codigo')->middleware('throttle:5,10,codigo-comprador-dados');
         Route::get('/ingressos/{uuid}', [MeusIngressosController::class, 'show'])->name('ingresso');
         Route::post('/pedidos/{uuid}/cancelar', [MeusIngressosController::class, 'cancelar'])->name('cancelar');

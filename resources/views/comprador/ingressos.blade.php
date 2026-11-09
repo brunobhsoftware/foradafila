@@ -25,7 +25,10 @@
       @endphp
       <article class="pub-pedido">
         <div class="pub-pedido__topo">
-          <div>
+          <a href="{{ $evento->linkPublico() }}" class="pub-pedido__capa" aria-label="Página do evento {{ $evento->titulo }}">
+            @if ($evento->imagem_capa_url)<img src="{{ $evento->imagem_capa_url }}" alt="" loading="lazy">@else<span>{{ mb_substr($evento->titulo, 0, 1) }}</span>@endif
+          </a>
+          <div style="flex:1;min-width:200px">
             <h2><a href="{{ $evento->linkPublico() }}" style="color:var(--tinta)">{{ $evento->titulo }}</a></h2>
             <small>{{ data_local($evento->data_inicio, 'd/m/Y \à\s H:i') }} · {{ $evento->local?->enderecoCurto() ?? \App\Models\Evento::FORMATOS[$evento->formato] }}</small>
           </div>
@@ -51,6 +54,10 @@
           @endforeach
         </div>
         <div class="pub-pedido__rodape">
+          @if (in_array($pedido->status, ['pago', 'confirmado', 'reembolso_parcial'], true) && $pedido->ingressos->whereIn('status', ['valido', 'utilizado'])->isNotEmpty())
+            <form method="post" action="{{ route('comprador.reenviar', $pedido->uuid) }}">@csrf
+              <button class="botao botao--contorno botao--pequeno">Enviar para meu e-mail</button></form>
+          @endif
           <small>Dúvidas, alterações ou reembolso: fale com o organizador <b>{{ $org->nomeExibicao() }}</b> — <a href="mailto:{{ $org->email_contato }}?subject={{ rawurlencode('Pedido '.$pedido->codigo.' — '.$evento->titulo) }}">{{ $org->email_contato }}</a></small>
           @if ($podeCancelar)
             <form method="post" action="{{ route('comprador.cancelar', $pedido->uuid) }}" data-confirmar="Cancelar a inscrição do pedido {{ $pedido->codigo }}? Os ingressos deixam de valer e a vaga volta a ficar disponível.">
