@@ -182,6 +182,26 @@ class ListasEmailController extends Controller
         }, Str::slug($lista->nome).'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
+    /**
+     * Padroniza o nome (decisão do Bruno, 09/11/2026): primeira letra de cada palavra maiúscula e o resto minúsculo;
+     * "de", "da", "do", "das", "dos" e "e" ficam minúsculos no meio do nome. Ex.: "MARIA DA SILVA" → "Maria da Silva".
+     */
+    public static function padronizarNome(?string $nome): ?string
+    {
+        $nome = trim(preg_replace('/\s+/u', ' ', (string) $nome));
+        if ($nome === '') {
+            return null;
+        }
+        $palavras = explode(' ', mb_convert_case(mb_strtolower($nome), MB_CASE_TITLE));
+        foreach ($palavras as $i => $p) {
+            if ($i > 0 && in_array(mb_strtolower($p), ['de', 'da', 'do', 'das', 'dos', 'e', 'di', 'du'], true)) {
+                $palavras[$i] = mb_strtolower($p);
+            }
+        }
+
+        return mb_substr(implode(' ', $palavras), 0, 150);
+    }
+
     public static function emailValido(string $email): bool
     {
         return mb_strlen($email) <= 150 && filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
@@ -229,7 +249,7 @@ class ListasEmailController extends Controller
         $antes = DB::table('lista_email_contato')->where('lista_id', $lista->id)->count();
         foreach (array_chunk(array_values($lidos['validos']), 500) as $lote) {
             DB::table('lista_email_contato')->insertOrIgnore(array_map(fn ($c) => [
-                'lista_id' => $lista->id, 'organizador_id' => $tenant->id(), 'email' => $c['email'], 'nome' => $c['nome'],
+                'lista_id' => $lista->id, 'organizador_id' => $tenant->id(), 'email' => $c['email'], 'nome' => self::padronizarNome($c['nome']),
                 'telefone' => $c['telefone'], 'origem' => $c['origem'] ?? $origem ?? 'manual',
             ] + (Esquema::temV018() ? ['consentimento_em' => now(), 'consentimento_por' => auth()->id()] : []) + [
             ], $lote));
