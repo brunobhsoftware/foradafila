@@ -27,9 +27,9 @@
                 <a href="#ingressos" class="botao botao--contorno"><x-icone nome="ingresso" /> Editar ingressos</a>
             @endunless
         @endcan
-        @foreach (['publicado' => $evento->status === 'pausado' ? 'Retomar vendas' : 'Publicar evento', 'pausado' => 'Pausar vendas', 'encerrado' => 'Encerrar'] as $novo => $rotulo)
+        @foreach (['publicado' => $evento->status === 'pausado' ? 'Retomar vendas' : 'Publicar evento', 'pausado' => 'Pausar vendas', 'rascunho' => 'Ocultar (voltar para rascunho)', 'encerrado' => 'Encerrar'] as $novo => $rotulo)
             @if (isset($transicoes[$novo]) && auth()->user()->can($transicoes[$novo]))
-                <form method="post" action="{{ route('eventos.status', $evento) }}" @if ($novo === 'encerrado') data-confirmar="Encerrar o evento? Depois disso ele não pode mais ser editado." @endif>
+                <form method="post" action="{{ route('eventos.status', $evento) }}" @if ($novo === 'encerrado') data-confirmar="Encerrar o evento? Depois disso ele não pode mais ser editado." @elseif ($novo === 'rascunho') data-confirmar="Ocultar o evento? Ele sai do site e para de vender; os ingressos já emitidos continuam valendo. Você pode publicar de novo depois." @endif>
                     @csrf <input type="hidden" name="status" value="{{ $novo }}">
                     <button class="botao {{ $novo === 'publicado' ? 'botao--primario' : 'botao--contorno' }}"
                         @if ($novo === 'publicado' && $evento->status === 'rascunho' && ! $evento->podePublicar()) disabled title="Resolva os itens da lista abaixo" @endif>{{ $rotulo }}</button>

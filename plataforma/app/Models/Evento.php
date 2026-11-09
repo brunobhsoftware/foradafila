@@ -57,8 +57,9 @@ class Evento extends Model
     /** Mudanças de status possíveis: status atual => [novo status => permissão exigida]. */
     public const TRANSICOES = [
         'rascunho' => ['publicado' => 'evento.publicar', 'cancelado' => 'evento.cancelar'],
-        'publicado' => ['pausado' => 'evento.publicar', 'encerrado' => 'evento.publicar', 'cancelado' => 'evento.cancelar'],
-        'pausado' => ['publicado' => 'evento.publicar', 'encerrado' => 'evento.publicar', 'cancelado' => 'evento.cancelar'],
+        // "rascunho" = ocultar: sai do site (página, vitrine e página da organização); ingressos já emitidos continuam valendo
+        'publicado' => ['pausado' => 'evento.publicar', 'rascunho' => 'evento.publicar', 'encerrado' => 'evento.publicar', 'cancelado' => 'evento.cancelar'],
+        'pausado' => ['publicado' => 'evento.publicar', 'rascunho' => 'evento.publicar', 'encerrado' => 'evento.publicar', 'cancelado' => 'evento.cancelar'],
         'encerrado' => [],
         'cancelado' => [],
     ];

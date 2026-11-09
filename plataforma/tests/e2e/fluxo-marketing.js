@@ -105,6 +105,13 @@ net.createServer((s) => {
   await fl.locator('[name=quantidade]').fill('100');
   await nav(P, fl.locator('button:has-text("Adicionar lote")').click());
   await nav(P, P.click('button:has-text("Publicar evento")'));
+  // ocultar evento publicado (voltar para rascunho) e publicar de novo
+  const urlEv = P.url(); const cod = sql("SELECT SUBSTRING(REPLACE(uuid,'-',''),1,10) FROM evento WHERE titulo='Festa do Convite'");
+  await nav(P, P.click('button:has-text("Ocultar (voltar para rascunho)")'));
+  ok((await P.content()).includes('Evento ocultado') && sql("SELECT status FROM evento WHERE titulo='Festa do Convite'") === 'rascunho', 'ocultar evento publicado');
+  ok((await P.request.get(BASE + '/e/' + cod)).status() === 404, 'evento oculto some do site');
+  await nav(P, P.click('button:has-text("Publicar evento")'));
+  ok(sql("SELECT status FROM evento WHERE titulo='Festa do Convite'") === 'publicado' && (await P.request.get(BASE + '/e/' + cod)).status() === 200, 'publicar de novo');
   await nav(P, P.click('.menu-lateral a:has-text("Convite por e-mail")'));
   const previa = await P.frameLocator('[data-convite-previa]').locator('body').innerText();
   ok(previa.includes('Festa do Convite') && previa.includes('Garantir meu ingresso') && previa.includes('Não quero mais receber'), 'pré-visualização montada do evento');

@@ -195,6 +195,7 @@ class EventoController extends Controller
         $mensagens = [
             'publicado' => 'Evento publicado! As vendas seguem a agenda de cada lote.',
             'pausado' => 'Vendas pausadas.',
+            'rascunho' => 'Evento ocultado: voltou para rascunho e não aparece mais no site. Para mostrar de novo, use "Publicar evento".',
             'encerrado' => 'Evento encerrado.',
             'cancelado' => 'Evento cancelado.',
         ];
