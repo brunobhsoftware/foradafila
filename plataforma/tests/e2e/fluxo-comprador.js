@@ -189,7 +189,7 @@ const formularioLegado = require('./_formulario-legado');
   await Z.fill('[name=codigo]', codigoDoLog('acessar os seus ingressos'));
   await nav(Z, Z.click('button:has-text("Entrar")'));
   ok(Z.url().endsWith('/minha-conta') && (await Z.content()).includes('Você entrou na sua conta'), 'com o código entra direto em Meus ingressos');
-  await nav(Z, Z.click('a:has-text("Meus dados")'));
+  await nav(Z, Z.click('.pub-abas a:has-text("Meus dados")'));
   await Z.fill('[name=telefone]', '31955554444'); await Z.fill('[name=data_nascimento]', '1985-04-20');
   await nav(Z, Z.click('button:has-text("Salvar")'));
   ok((await Z.content()).includes('Seu cadastro foi atualizado') && sql("SELECT CONCAT(telefone,'|',data_nascimento) FROM comprador WHERE email='ana@publico.test'") === '31955554444|1985-04-20', 'Meus dados (após o código): altera celular e data de nascimento');
