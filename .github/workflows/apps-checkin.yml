@@ -8,6 +8,11 @@ on:
     branches: [main]
     paths: ["apps/checkin/**", ".github/workflows/apps-checkin.yml"]
   workflow_dispatch:
+    inputs:
+      ios:
+        description: "Compilar também o iOS (precisa de máquinas macOS liberadas na conta do GitHub)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -31,6 +36,7 @@ jobs:
           node-version: "20"
       - run: npm ci
       - run: npx cap sync android
+      - uses: gradle/actions/setup-gradle@v4
       - name: APK de teste
         working-directory: apps/checkin/android
         run: |
@@ -62,6 +68,8 @@ jobs:
           path: apps/checkin/android/app/build/outputs/bundle/release/*.aab
 
   ios:
+    # macOS é cobrado à parte no GitHub: só roda quando pedido no "Run workflow".
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.ios }}
     runs-on: macos-14
     defaults:
       run:
