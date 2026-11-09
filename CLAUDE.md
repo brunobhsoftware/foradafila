@@ -28,7 +28,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V015__formularios_inscricao.sql` | Formulários de inscrição: `formulario.padrao` e `evento.formulario_id`. Idempotente. Aplicado em produção em 08/11/2026 ("V015 ok") |
 | `banco/V016__cpf_teste_e_nascimento.sql` | Limpa o CPF de teste do MP (12345678909) de `comprador`/`pessoa` e cria `pessoa.data_nascimento`. Idempotente. Aplicado em produção em 09/11/2026 ("V016 ok") |
 | `docs/apps-checkin.md` | **Apps de check-in**: instalar sem loja (PWA) e publicar no Google Play e na App Store (projeto `apps/checkin/`, Capacitor 6) |
-| `apps/checkin/` | Projeto Capacitor dos apps Android/iOS (abre `https://foradafila.com.br/app` com câmera; `www/index.html` = tela sem internet) |
+| `apps/checkin/` | Projeto Capacitor dos apps Android/iOS, **com os projetos nativos gerados** (`android/`, `ios/`: ícones, tela de abertura, nome "FF Check-in", permissão de câmera); abre `https://foradafila.com.br/app`. Compilado pelo GitHub em `.github/workflows/apps-checkin.yml` (APK de teste, AAB assinado com os segredos `ANDROID_*`, build iOS de simulador) |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 

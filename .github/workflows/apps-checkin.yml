@@ -1,0 +1,87 @@
+# Compila os apps de check-in (apps/checkin, Capacitor) a cada mudança na pasta ou pelo botão "Run workflow".
+# Android: APK de teste (instala direto no celular) e, com os segredos de assinatura cadastrados, o AAB assinado para o Google Play.
+# iOS: compila para o simulador (confere que o projeto está íntegro); o envio à App Store é feito pelo Xcode no Mac (docs/apps-checkin.md).
+name: Apps de check-in
+
+on:
+  push:
+    branches: [main]
+    paths: ["apps/checkin/**", ".github/workflows/apps-checkin.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    env:
+      TEM_CHAVE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    defaults:
+      run:
+        working-directory: apps/checkin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - run: npx cap sync android
+      - name: APK de teste
+        working-directory: apps/checkin/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: foradafila-checkin-android-teste
+          path: apps/checkin/android/app/build/outputs/apk/debug/app-debug.apk
+      - name: AAB assinado para o Google Play (só com os segredos ANDROID_*)
+        if: ${{ env.TEM_CHAVE == 'true' }}
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        working-directory: apps/checkin/android
+        run: |
+          echo "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/foradafila.jks"
+          ./gradlew bundleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/foradafila.jks" \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+      - uses: actions/upload-artifact@v4
+        if: ${{ hashFiles('apps/checkin/android/app/build/outputs/bundle/release/*.aab') != '' }}
+        with:
+          name: foradafila-checkin-android-google-play
+          path: apps/checkin/android/app/build/outputs/bundle/release/*.aab
+
+  ios:
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: apps/checkin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - run: npx cap sync ios
+      - name: Compilar para o simulador (sem assinatura)
+        working-directory: apps/checkin/ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -sdk iphonesimulator \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+      - name: Empacotar o app do simulador
+        working-directory: apps/checkin/ios/App/build/Build/Products/Debug-iphonesimulator
+        run: zip -qr "$GITHUB_WORKSPACE/foradafila-checkin-ios-simulador.zip" App.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: foradafila-checkin-ios-simulador
+          path: foradafila-checkin-ios-simulador.zip
