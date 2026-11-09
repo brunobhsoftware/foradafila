@@ -19,7 +19,7 @@
     </div>
     @if ($c->status === 'agendada')<p style="margin:14px 0 0"><b>Começa em {{ data_local($c->agendada_para, 'd/m/Y \à\s H:i') }}.</b></p>@endif
     @if ($c->status === 'enviando' && $pendentes)
-        <p class="suave" style="margin:14px 0 0">Os e-mails saem aos poucos (a cada minuto um pouco), até {{ \App\Support\Convites::LIMITE_DIA }} por dia para a empresa. O que não sair hoje continua amanhã. Pode fechar esta tela.</p>
+        <p class="suave" style="margin:14px 0 0">Os e-mails saem aos poucos (a cada minuto um pouco), até {{ $limiteDia }} por dia para a empresa. O que não sair hoje continua amanhã. Pode fechar esta tela.</p>
     @endif
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
         @if ($c->status === 'enviando' && $pendentes)<form method="post" action="{{ route('convites.situacao', [$c->uuid, 'pausar']) }}">@csrf<button class="botao botao--contorno">Pausar</button></form>@endif

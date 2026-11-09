@@ -4,7 +4,10 @@
 @section('conteudo')
 <div class="cabecalho"><div><h1>Convite por e-mail</h1><p>Convide uma lista de e-mails para um evento. O e-mail é montado com a imagem, a data, o local e a descrição do evento; você só escreve o assunto.</p></div></div>
 
-@if ($contas->isEmpty())
+@unless ($marketing)
+    <div class="alerta alerta--info"><p><b>E-mail marketing não liberado.</b> O envio de convites por e-mail é um recurso contratado à parte.
+        Fale com o Fora da Fila para liberar o envio para a sua empresa.</p></div>
+@elseif ($contas->isEmpty())
     <div class="alerta alerta--info"><p>Para enviar convites, cadastre antes uma conta de e-mail da sua empresa em
         @can('organizador.editar')<a href="{{ route('marketing.index') }}">Organização → Opções de marketing</a>@else Organização → Opções de marketing (peça ao produtor)@endcan.</p></div>
 @elseif ($listas->isEmpty())
@@ -19,7 +22,7 @@
             @foreach ($eventos as $e)<option value="{{ $e->uuid }}" @selected(old('evento') === $e->uuid)>{{ $e->titulo }} — {{ data_local($e->data_inicio, 'd/m/Y') }}</option>@endforeach</select></div>
         <div class="campo col-6"><label>Lista</label><select name="lista">
             @foreach ($listas as $l)<option value="{{ $l->uuid }}" @selected(old('lista') === $l->uuid)>{{ $l->nome }} ({{ number_format($l->total, 0, ',', '.') }})</option>@endforeach</select></div>
-        @php $porConta = intdiv(\App\Support\Convites::LIMITE_DIA, max(1, $contas->count())); @endphp
+        @php $porConta = intdiv($limiteDia, max(1, $contas->count())); @endphp
         <div class="campo col-6"><label>Enviar pela conta</label><select name="smtp">
             <option value="">Todas as contas — divide automaticamente ({{ $contas->count() }} × {{ $porConta }} por dia)</option>
             @foreach ($contas as $c)<option value="{{ $c->uuid }}" @selected(old('smtp') === $c->uuid)>{{ $c->nome }} — {{ $c->remetente_email }} (só ela: {{ $porConta }} por dia)</option>@endforeach</select></div>

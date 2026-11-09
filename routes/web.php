@@ -143,6 +143,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/empresas/{organizador}', [\App\Http\Controllers\Admin\EmpresasController::class, 'show'])->name('empresas.show');
     Route::put('/empresas/{organizador}/situacao', [\App\Http\Controllers\Admin\EmpresasController::class, 'situacao'])->name('empresas.situacao');
     Route::post('/empresas/{organizador}/assumir', [\App\Http\Controllers\Admin\EmpresasController::class, 'assumir'])->name('empresas.assumir');
+    Route::put('/empresas/{organizador}/marketing', [\App\Http\Controllers\Admin\EmpresasController::class, 'marketing'])->name('empresas.marketing');
     Route::post('/empresas/{organizador}/taxas', [\App\Http\Controllers\Admin\EmpresasController::class, 'salvarTaxa'])->name('empresas.taxas');
     Route::put('/empresas/{organizador}/taxas/{taxa}', [\App\Http\Controllers\Admin\EmpresasController::class, 'salvarTaxa'])->name('empresas.taxas.editar')->whereNumber('taxa');
     Route::post('/empresas/{organizador}/taxas/{taxa}/encerrar', [\App\Http\Controllers\Admin\EmpresasController::class, 'encerrarTaxa'])->name('empresas.taxas.encerrar')->whereNumber('taxa');

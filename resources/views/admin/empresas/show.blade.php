@@ -51,6 +51,22 @@
     </section>
 </div>
 
+<section class="cartao" style="padding:20px;margin-top:18px" id="marketing">
+    <div class="cartao__titulo" style="padding:0;border:0;margin-bottom:12px">
+        <h2 style="margin:0">E-mail marketing</h2>
+        <span class="selo {{ $marketing ? 'selo--verde' : 'selo--cinza' }}">{{ $marketing ? 'Liberado' : 'Desligado' }}</span>
+    </div>
+    <p class="suave">Libere o envio de <b>convites por e-mail</b> (Marketing do produtor) e defina quantos e-mails esta empresa pode enviar por dia.
+        Desligado, a empresa não envia convites. O padrão é {{ \App\Support\Marketing::LIMITE_PADRAO }} por dia.</p>
+    <form method="post" action="{{ route('admin.empresas.marketing', $organizador) }}" class="form-grade">@csrf @method('PUT')
+        <div class="campo col-12"><input type="hidden" name="marketing_ativo" value="0">
+            <label class="opcao"><input type="checkbox" name="marketing_ativo" value="1" @checked($marketing)>
+                <span><b>Liberar e-mail marketing para esta empresa</b></span></label></div>
+        <x-campo nome="marketing_limite" rotulo="Limite de e-mails por dia" tipo="number" :valor="$marketingLimite" obrigatorio classe="col-4" min="1" :max="\App\Support\Marketing::LIMITE_MAXIMO" />
+        <div class="campo col-8" style="align-self:end"><button class="botao botao--primario">Salvar e-mail marketing</button></div>
+    </form>
+</section>
+
 <section class="cartao" style="padding:20px;margin-top:18px" id="taxas">
     <h2 style="margin-top:0">Taxas e isenções desta empresa</h2>
     <p class="suave">Sobrepõem as <a href="{{ route('admin.taxas') }}">taxas padrão</a> no período informado. Campo em branco usa o valor padrão.

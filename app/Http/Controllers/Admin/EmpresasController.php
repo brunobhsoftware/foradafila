@@ -71,8 +71,10 @@ class EmpresasController extends Controller implements \Illuminate\Routing\Contr
         $taxas = DB::table('taxa_organizador as t')->leftJoin('usuario as u', 'u.id', '=', 't.criado_por')->where('t.organizador_id', $id)
             ->select('t.*', 'u.nome as autor')->orderByDesc('t.inicio')->get();
         $simulacao = MotorTaxas::calcular($organizador, 'ingresso_pago', 100);
+        $marketing = \App\Support\Marketing::ativo($id);
+        $marketingLimite = \App\Support\Marketing::limiteDia($id);
 
-        return view('admin.empresas.show', compact('organizador', 'numeros', 'usuarios', 'contas', 'auditoria', 'impersonacoes', 'taxas', 'simulacao'));
+        return view('admin.empresas.show', compact('organizador', 'numeros', 'usuarios', 'contas', 'auditoria', 'impersonacoes', 'taxas', 'simulacao', 'marketing', 'marketingLimite'));
     }
 
     public function situacao(Request $request, Organizador $organizador)
@@ -101,6 +103,21 @@ class EmpresasController extends Controller implements \Illuminate\Routing\Contr
 
         return $dados && ($org = Organizador::find($dados['organizador_id'])) ? redirect()->route('admin.empresas.show', $org)->with('ok', 'Você saiu da conta da empresa e voltou para a Administração.')
             : redirect()->route('admin.inicio');
+    }
+
+    /** E-mail marketing por empresa (decisão do Bruno, 09/11/2026): liga/desliga o envio de convites e define o limite diário. */
+    public function marketing(Request $request, Organizador $organizador)
+    {
+        $d = $request->validate([
+            'marketing_ativo' => ['nullable', 'boolean'],
+            'marketing_limite' => ['required', 'integer', 'min:1', 'max:'.\App\Support\Marketing::LIMITE_MAXIMO],
+        ], [], ['marketing_limite' => 'limite diário']);
+        $ativo = $request->boolean('marketing_ativo');
+        \App\Support\Marketing::definir($organizador->id, $ativo, (int) $d['marketing_limite']);
+        Auditoria::registrar('plataforma.marketing_empresa', $organizador, null, ['ativo' => $ativo, 'limite' => (int) $d['marketing_limite']]);
+
+        return redirect()->to(route('admin.empresas.show', $organizador).'#marketing')
+            ->with('ok', $ativo ? 'E-mail marketing liberado ('.$d['marketing_limite'].' por dia).' : 'E-mail marketing desligado para esta empresa.');
     }
 
     // ---------- Taxas específicas da empresa ----------
