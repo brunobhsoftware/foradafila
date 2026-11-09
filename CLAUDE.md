@@ -366,7 +366,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   ingresso válido no evento (compradores ou participantes com e-mail; até 300 por envio, throttle `comunicado` 5/hora); histórico
   dos últimos 40 envios. Os módulos do menu do produtor não mostram mais "em breve" (só a rota genérica continua existindo).
 - **Opções de marketing** (V017, decisão do Bruno 09/11/2026): Organização → "Configurar e-mails de divulgação" (`/painel/organizacao/marketing`,
-  `MarketingController`, `organizador.editar`): até 5 contas SMTP da empresa (`App\Support\SmtpEmpresa`: `Mail::build` na hora, senha
+  `MarketingController`, `organizador.editar`): até 10 contas SMTP da empresa (`App\Support\SmtpEmpresa::MAXIMO`, era 5; o banco não limita: `Mail::build` na hora, senha
   `Crypt`, em branco mantém; "Enviar teste" grava `testado_em`/`ultimo_erro`; limite por hora). Só para divulgação: ingressos/senha/avisos
   continuam pelo fique@/noreply@. Cartão "E-mail marketing do Fora da Fila — em breve" (pacotes da Hostinger, 2º passo).
   **Divulgação → Listas de e-mail** (`/painel/listas-email`, `ListasEmailController`, `campanha.gerenciar`): criar lista, colar e-mails
