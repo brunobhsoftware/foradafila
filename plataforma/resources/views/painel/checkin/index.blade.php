@@ -13,6 +13,7 @@
     <a href="{{ route('app.index') }}" class="botao botao--contorno botao--pequeno" target="_blank" rel="noopener">Abrir o app</a>
 </div>
 <script src="{{ asset('js/vendor/qrcode-generator.js') }}"></script>
+<script src="{{ asset('js/vendor/jsQR.js') }}"></script>
 <script>(function () { const a = document.getElementById('qr-app'); if (!a || typeof qrcode === 'undefined') return; const q = qrcode(0, 'M'); q.addData(a.dataset.conteudo); q.make(); a.innerHTML = q.createSvgTag({ cellSize: 3, margin: 0, scalable: true }); })();</script>
 
 @if ($eventos->isEmpty())

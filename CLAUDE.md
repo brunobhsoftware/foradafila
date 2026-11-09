@@ -320,7 +320,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   `pedido.reembolsar`. A devolução do dinheiro em si é do produtor (com o Mercado Pago, sairá pela API).
 - **Vendas → Check-in** (`/painel/checkin`, `CheckinController`): por evento; campo para leitor USB/Bluetooth ou digitação (QR
   `FF1.<codigo>.<hmac>` com assinatura conferida antes do banco, ou número `FF-0001-000123`/só o número), câmera pelo
-  `BarcodeDetector` do navegador (Chrome/Android; sem ele, aviso), busca manual (nome, CPF, número) com "Registrar entrada",
+  `BarcodeDetector` do navegador quando existe, senão **jsQR** (iPhone, Safari, computador; 09/11/2026 — antes aparecia "Este navegador não lê QR"), busca manual (nome, CPF, número) com "Registrar entrada",
   contadores (entraram, válidos, %, dentro agora se houver reentrada), últimas 15 leituras e "Desfazer" (`checkin.configurar`).
   Resultados: aceito, já utilizado, cancelado, outro evento, inexistente, assinatura inválida, portões fechados (antes de
   `abertura_portoes` — o cadastro preenche com o início do evento). Entrada por UPDATE condicional (dois portões não passam o mesmo
