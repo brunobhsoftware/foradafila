@@ -26,7 +26,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V013__checkout_pago.sql` | Checkout pago: `pedido.dados_participantes` (JSON até o pagamento ser aprovado) e `ck_pedido_valores` passa a somar `valor_taxa_servico`. Idempotente. Aplicado em produção em 08/11/2026 ("V013 ok") |
 | `banco/V014__lote_exibir.sql` | `lote.exibir` — **flag calculada** (1 = na página agora, 0 = oculto), atualizada pela regra de venda; não editável. Idempotente. Aplicado em produção em 08/11/2026 ("V014 ok") |
 | `banco/V015__formularios_inscricao.sql` | Formulários de inscrição: `formulario.padrao` e `evento.formulario_id`. Idempotente. Aplicado em produção em 08/11/2026 ("V015 ok") |
-| `banco/V016__cpf_teste_e_nascimento.sql` | Limpa o CPF de teste do MP (12345678909) de `comprador`/`pessoa` e cria `pessoa.data_nascimento`. Idempotente. **Aplicar em produção** (Administração → Atualizações do banco) |
+| `banco/V016__cpf_teste_e_nascimento.sql` | Limpa o CPF de teste do MP (12345678909) de `comprador`/`pessoa` e cria `pessoa.data_nascimento`. Idempotente. Aplicado em produção em 09/11/2026 ("V016 ok") |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
