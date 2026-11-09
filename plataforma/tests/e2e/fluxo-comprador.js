@@ -285,6 +285,17 @@ const formularioLegado = require('./_formulario-legado');
 
 
 
+  // link "Crie a sua senha" do e-mail: salva a senha e já entra (sem outro código), com Meus dados liberado
+  sql("INSERT INTO comprador (uuid, nome, email) VALUES (UUID(), 'Sem Senha Link', 'link.senha@publico.test')");
+  const linkSenha = require('child_process').execSync(`php artisan tinker --execute 'echo App\\Http\\Controllers\\Auth\\SenhaController::link(App\\Models\\Comprador::where("email","link.senha@publico.test")->first(), "comprador");'`, { cwd: __dirname + '/../..' }).toString().trim().split('\n').pop();
+  const L = await ctx();
+  await L.goto(BASE + linkSenha.replace(/^https?:\/\/[^/]+/, ''));
+  await L.fill('[name=senha]', 'Link1234'); await L.fill('[name=senha_confirmation]', 'Link1234');
+  await nav(L, L.click('main form button, .pub-secao form button, form button.botao'));
+  ok(L.url().endsWith('/minha-conta') && (await L.content()).includes('Você já está na sua conta'), 'link do e-mail: cria a senha e entra direto em Meus ingressos');
+  await L.goto(BASE + '/minha-conta/dados');
+  ok(!(await L.content()).includes('confirme o seu e-mail') && await L.locator('button:has-text("Salvar cadastro")').isVisible(), 'sem pedir outro código para editar os dados');
+
   // celular
   const M = await (await browser.newContext({ ...devices['iPhone 13'] })).newPage();
   for (const pg of ['/', '/precos', linkPublico.replace(BASE, '')]) {

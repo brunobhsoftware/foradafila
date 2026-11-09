@@ -153,6 +153,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   tem senha → `/minha-conta/entrar/senha` (senha, "Receber um código no e-mail", "Esqueci a senha"; o POST continua em `CompradorAuthController::autenticar`);
   tem cadastro sem senha → código direto; **sem cadastro** → código (`cadastro-novo`, chave `crc32` do e-mail) → `/minha-conta/completar` ("Complete seu
   cadastro": nome, CPF, nascimento, celular e senha, todos obrigatórios) → cria o comprador já com `email_verificado_em` e entra.
+  **Código só uma vez** (decisão do Bruno, 09/11/2026): depois de confirmar o e-mail (código, "Complete seu cadastro" ou link "Crie a sua senha" do e-mail —
+  `SenhaController::salvar` agora entra direto para o comprador, com `comprador_verificado`), a pessoa já cai em Meus ingressos e edita os dados sem outro código.
 - **Acesso do comprador por código** (decisão do Bruno, 09/11/2026; `AcessoCompradorController`): botão **"Acessar meus ingressos"** na tela
   dos ingressos (`POST /pedido/{uuid}/acessar`, só para o pedido desta sessão; logado e dono → direto) e **"Entrar com código"** em
   `/minha-conta/entrar` (`codigo.enviar`, resposta igual exista ou não a conta) mandam um código de 6 dígitos (`CodigoVerificacao`,
