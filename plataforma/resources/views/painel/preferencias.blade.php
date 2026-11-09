@@ -38,6 +38,12 @@
                 <small>A página pública ({{ route('organizador.publico', $org->slug) }}) lista também os eventos que já aconteceram.
                     Vale para toda a organização{{ $podeEditarOrg ? '' : '; só quem pode editar a organização altera esta opção' }}.</small></span>
             </label>
+            @if ($podeEditarOrg)<input type="hidden" name="copia_ingressos" value="0">@endif
+            <label class="opcao" style="margin-top:10px">
+                <input type="checkbox" name="copia_ingressos" value="1" @checked(\App\Support\CopiaIngressos::ativa($org->id)) @disabled(! $podeEditarOrg)>
+                <span><b>Receber cópia dos e-mails de ingressos</b><br>
+                <small>O e-mail de confirmação de cada compra (com o PDF) vai ao comprador com cópia para {{ $org->email_contato ?: 'o e-mail de contato da organização' }}.</small></span>
+            </label>
         </section>
         <div class="acoes-form"><button class="botao botao--primario">Salvar preferências</button></div>
     </form>

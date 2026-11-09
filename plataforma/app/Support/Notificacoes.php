@@ -43,7 +43,10 @@ class Notificacoes
     {
         // Link que abre os ingressos sem login (assinado, 90 dias) e PDF anexo (decisão do Bruno, 09/11/2026).
         $link = \App\Http\Controllers\Publico\PagamentoController::linkIngressos($pedido);
-        $linkSenha = ($comprador->senha_hash || ! $comprador->exists || ! $comprador->uuid) ? null : \App\Http\Controllers\Auth\SenhaController::link($comprador, 'comprador');
+        // Cópia para a organização (preferência): o mesmo e-mail com Cc. Com cópia, o link pessoal "Crie a sua senha" não vai
+        // (a organização não pode receber o link de senha do comprador); ele cria a senha pelo código em "Meus ingressos".
+        $copia = CopiaIngressos::ativa($org->id) && filter_var($org->email_contato, FILTER_VALIDATE_EMAIL) ? [$org->email_contato] : [];
+        $linkSenha = ($copia || $comprador->senha_hash || ! $comprador->exists || ! $comprador->uuid) ? null : \App\Http\Controllers\Auth\SenhaController::link($comprador, 'comprador');
         $vars = [
             'comprador_nome' => $comprador->nome, 'pedido_codigo' => $pedido->codigo, 'evento_titulo' => $evento->titulo,
             'evento_data' => data_local($evento->data_inicio, 'd/m/Y \à\s H:i'), 'local_nome' => $evento->local?->nome ?? 'online',
@@ -78,7 +81,7 @@ class Notificacoes
         }
         Email::operacao('confirmacao_compra', $comprador->email, self::assuntoEvento($evento->titulo, $modelo['assunto']), $html, $texto, [
             'organizador_id' => $org->id, 'modelo_id' => $modelo['modelo_id'], 'comprador_id' => $comprador->id, 'pedido_id' => $pedido->id,
-            'anexos' => $anexos, 'ocultar' => array_filter([$linkSenha ? self::e($linkSenha) : null]),
+            'anexos' => $anexos, 'cc' => $copia, 'ocultar' => array_filter([$linkSenha ? self::e($linkSenha) : null]),
         ]);
     }
 

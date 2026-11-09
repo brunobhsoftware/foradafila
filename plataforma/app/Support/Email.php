@@ -62,11 +62,12 @@ class Email
 
         // binário não passa pelo JSON do dispatch: o anexo vai em base64 e é decodificado no envio
         $anexos = array_map(fn ($a) => ['nome' => $a['nome'], 'mime' => $a['mime'], 'b64' => base64_encode($a['conteudo'])], $refs['anexos'] ?? []);
-        dispatch(fn () => self::enviar($id, $conta, $para, $assunto, $html, $texto, $anexos))->afterResponse();
+        $cc = array_values(array_filter((array) ($refs['cc'] ?? []), fn ($e) => filter_var($e, FILTER_VALIDATE_EMAIL) && mb_strtolower($e) !== mb_strtolower($para)));
+        dispatch(fn () => self::enviar($id, $conta, $para, $assunto, $html, $texto, $anexos, $cc))->afterResponse();
     }
 
     /** @param array<int, array{nome: string, b64: string, mime: string}> $anexos */
-    private static function enviar(int $id, string $conta, string $para, string $assunto, string $html, string $texto, array $anexos = []): void
+    private static function enviar(int $id, string $conta, string $para, string $assunto, string $html, string $texto, array $anexos = [], array $cc = []): void
     {
         // Sem senha configurada (desenvolvimento), o e-mail vai para o log em vez do SMTP.
         $mailer = config("mail.mailers.$conta.password") ? $conta : 'log';
@@ -74,8 +75,11 @@ class Email
 
         DB::table('mensagem_envio')->where('id', $id)->update(['status' => 'enviando', 'tentativas' => DB::raw('tentativas + 1')]);
         try {
-            $enviada = Mail::mailer($mailer)->html($html, function ($m) use ($para, $assunto, $remetente, $texto, $conta, $anexos) {
+            $enviada = Mail::mailer($mailer)->html($html, function ($m) use ($para, $assunto, $remetente, $texto, $conta, $anexos, $cc) {
                 $m->to($para)->from($remetente, 'Fora da Fila')->subject($assunto)->text($texto);
+                if ($cc) {
+                    $m->cc($cc);
+                }
                 foreach ($anexos as $a) {
                     $m->attachData(base64_decode($a['b64']), $a['nome'], ['mime' => $a['mime']]);
                 }

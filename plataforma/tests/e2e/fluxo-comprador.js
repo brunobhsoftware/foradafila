@@ -102,7 +102,7 @@ const formularioLegado = require('./_formulario-legado');
   ok(/\/pedido\/[0-9a-f-]{36}\/ingressos$/.test(V.url()) && meus.includes('Seus ingressos') && meus.includes('confirmado'), 'inscrição confirmada mostra os ingressos na hora, sem login');
   await V.waitForSelector('[data-qr] svg');
   ok(await V.locator('[data-qr] svg').count() === 2, 'os dois ingressos aparecem com o QR Code');
-  const pdf = await V.request.get(await V.getAttribute('a:has-text("Baixar ingressos em PDF")', 'href'));
+  const pdf = await V.request.get(await V.getAttribute('a:has-text("Baixar PDF")', 'href'));
   ok(pdf.status() === 200 && pdf.headers()['content-type'] === 'application/pdf' && (await pdf.body()).slice(0, 5).toString() === '%PDF-', 'baixa os ingressos em PDF');
   const outro = await ctx();
   ok((await outro.goto(V.url())).url().includes('/entrar'), 'outro navegador sem o link não vê os ingressos');

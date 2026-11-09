@@ -441,6 +441,9 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - **Assunto de e-mail de evento começa sempre pelo nome do evento** (decisão do Bruno, 09/11/2026): `Notificacoes::assuntoEvento($titulo, $assunto)`
   → "Nome do evento — resto" (tira o nome de onde estiver, inclusive de modelos editados pelo produtor); usado na confirmação, cancelamentos,
   aviso à equipe e comunicados.
+- **Cópia para a organização** (decisão do Bruno, 09/11/2026): preferência "Receber cópia dos e-mails de ingressos" (Organização e Preferências,
+  só com `organizador.editar`; `parametro_sistema` `copia_ingressos_org_<id>`, `App\Support\CopiaIngressos`). Um e-mail só ao comprador com **Cc**
+  para `email_contato` (`Email` aceita `refs['cc']`); com cópia, o link "Crie a sua senha" não vai no e-mail.
 - Textos em `App\Support\Notificacoes`; layout em `resources/views/emails/layout.blade.php`; modelos editáveis
   do banco (`modelo_mensagem`) via `App\Support\ModeloMensagem` (evento → organizador → padrão).
 - Enviados hoje: boas-vindas ao produtor, convite da equipe, ingressos confirmados, recuperação de senha

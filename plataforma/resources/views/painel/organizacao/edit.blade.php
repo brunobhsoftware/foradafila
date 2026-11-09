@@ -86,6 +86,11 @@
                         <span><b>Mostrar eventos passados</b><br><small>A página pública lista também os eventos que já aconteceram, abaixo dos próximos.</small></span></label>
                 </div>
             @endif
+            <div class="campo col-12">
+                <input type="hidden" name="copia_ingressos" value="0">
+                <label class="opcao"><input type="checkbox" name="copia_ingressos" value="1" @checked(old('copia_ingressos', \App\Support\CopiaIngressos::ativa($org->id)))>
+                    <span><b>Receber cópia dos e-mails de ingressos</b><br><small>O e-mail de confirmação da compra (com o PDF dos ingressos) vai ao comprador com cópia para {{ $org->email_contato ?: 'o e-mail de contato da organização' }}.</small></span></label>
+            </div>
         </div>
     </section>
     <section class="secao-form">
