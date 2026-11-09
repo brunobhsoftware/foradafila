@@ -1,0 +1,18 @@
+{
+  "name": "foradafila-checkin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "App de check-in do Fora da Fila (Android e iOS): abre foradafila.com.br/app com acesso à câmera.",
+  "scripts": {
+    "android": "npx cap sync android && npx cap open android",
+    "ios": "npx cap sync ios && npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/ios": "^6.1.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  }
+}

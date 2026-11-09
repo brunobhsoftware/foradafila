@@ -5,6 +5,15 @@
 
 @section('conteudo')
 <div class="cabecalho"><div><h1>Check-in</h1><p>Portaria pelo navegador: leia o QR Code do ingresso, digite o número ou busque pelo nome.</p></div></div>
+<div class="cartao" style="padding:14px 18px;margin-bottom:14px;display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+    <div id="qr-app" data-conteudo="{{ url('/app') }}" style="width:96px" aria-hidden="true"></div>
+    <div style="flex:1;min-width:240px"><b>App de check-in no celular</b><br>
+        <small class="suave">Aponte a câmera para o QR ao lado ou abra <b>{{ url('/app') }}</b> no celular da equipe e entre com o login. Dá para instalar como app
+        (Android: "Instalar app"; iPhone: "Adicionar à Tela de Início"). O check-in só abre no dia do evento, a partir da abertura dos portões.</small></div>
+    <a href="{{ route('app.index') }}" class="botao botao--contorno botao--pequeno" target="_blank" rel="noopener">Abrir o app</a>
+</div>
+<script src="{{ asset('js/vendor/qrcode-generator.js') }}"></script>
+<script>(function () { const a = document.getElementById('qr-app'); if (!a || typeof qrcode === 'undefined') return; const q = qrcode(0, 'M'); q.addData(a.dataset.conteudo); q.make(); a.innerHTML = q.createSvgTag({ cellSize: 3, margin: 0, scalable: true }); })();</script>
 
 @if ($eventos->isEmpty())
     <div class="cartao vazio"><h3>Nenhum evento ainda</h3></div>

@@ -1,0 +1,13 @@
+{
+  "appId": "br.com.foradafila.checkin",
+  "appName": "Fora da Fila Check-in",
+  "webDir": "www",
+  "server": {
+    "url": "https://foradafila.com.br/app",
+    "allowNavigation": ["foradafila.com.br", "www.foradafila.com.br"],
+    "errorPath": "index.html"
+  },
+  "backgroundColor": "#101828",
+  "android": { "allowMixedContent": false },
+  "ios": { "contentInset": "always", "limitsNavigationsToAppBoundDomains": false }
+}

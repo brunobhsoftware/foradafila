@@ -49,6 +49,8 @@ const qr = (codigo) => `FF1.${codigo}.${crypto.createHmac('sha256', APP_KEY).upd
   await nav(V, V.click('button:has-text("Confirmar inscrição")'));
   const idEv = sql("SELECT id FROM evento WHERE slug='show-da-portaria'");
   sql(`UPDATE evento SET abertura_portoes=NULL WHERE id=${idEv}`); // o formulário preenche os portões com o início do evento
+  // check-in só no dia do evento: o evento passa a estar acontecendo agora
+  sql(`UPDATE evento SET data_inicio = DATE_SUB(UTC_TIMESTAMP(), INTERVAL 30 MINUTE), data_fim = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 4 HOUR) WHERE id=${idEv}`);
   const ing = (nome, campo) => sql(`SELECT i.${campo} FROM ingresso i JOIN participante p ON p.ingresso_id=i.id WHERE p.nome='${nome}'`);
 
   // ---- tela ----
@@ -101,11 +103,11 @@ const qr = (codigo) => `FF1.${codigo}.${crypto.createHmac('sha256', APP_KEY).upd
   ok((await P.content()).includes('desfeito') && sql(`SELECT COUNT(*) FROM ingresso WHERE evento_id=${idEv} AND status='utilizado'`) === '2', 'desfazer check-in volta o ingresso para válido');
 
   // portões fechados
-  sql(`UPDATE evento SET abertura_portoes=DATE_ADD(UTC_TIMESTAMP(), INTERVAL 2 HOUR) WHERE id=${idEv}`);
+  sql(`UPDATE evento SET data_inicio=DATE_ADD(UTC_TIMESTAMP(), INTERVAL 3 HOUR), abertura_portoes=DATE_ADD(UTC_TIMESTAMP(), INTERVAL 2 HOUR) WHERE id=${idEv}`);
   await P.reload();
   const livre = sql(`SELECT numero FROM ingresso WHERE evento_id=${idEv} AND status='valido' LIMIT 1`);
   r = await validar(livre);
-  ok(r.includes('Portões ainda fechados'), 'antes da abertura dos portões, a entrada é recusada');
+  ok(r.includes('O check-in abre em'), 'antes da abertura dos portões, a entrada é recusada (mostra quando abre)');
 
   ok(erros.length === 0, 'sem erros de JavaScript ' + erros.join(' | '));
   await b.close();

@@ -27,6 +27,8 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V014__lote_exibir.sql` | `lote.exibir` — **flag calculada** (1 = na página agora, 0 = oculto), atualizada pela regra de venda; não editável. Idempotente. Aplicado em produção em 08/11/2026 ("V014 ok") |
 | `banco/V015__formularios_inscricao.sql` | Formulários de inscrição: `formulario.padrao` e `evento.formulario_id`. Idempotente. Aplicado em produção em 08/11/2026 ("V015 ok") |
 | `banco/V016__cpf_teste_e_nascimento.sql` | Limpa o CPF de teste do MP (12345678909) de `comprador`/`pessoa` e cria `pessoa.data_nascimento`. Idempotente. Aplicado em produção em 09/11/2026 ("V016 ok") |
+| `docs/apps-checkin.md` | **Apps de check-in**: instalar sem loja (PWA) e publicar no Google Play e na App Store (projeto `apps/checkin/`, Capacitor 6) |
+| `apps/checkin/` | Projeto Capacitor dos apps Android/iOS (abre `https://foradafila.com.br/app` com câmera; `www/index.html` = tela sem internet) |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
@@ -324,6 +326,17 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   `abertura_portoes` — o cadastro preenche com o início do evento). Entrada por UPDATE condicional (dois portões não passam o mesmo
   QR); toda leitura em `checkin_log` (método, resultado, operador). Saída/reentrada só com `permite_reentrada`.
   Ainda não: PWA offline e cadastro de portões/dispositivos.
+- **App de check-in da equipe** (decisão do Bruno, 09/11/2026; `/app`, `App\Http\Controllers\App\CheckinAppController`, layout `layouts/app-checkin`,
+  CSS `public/css/checkin.css`, inspirado no app do Sympla): login da equipe (`auth` + `organizador`; volta ao `/app` depois do login); lista de eventos
+  (Hoje — check-in liberado / Próximos / Últimos 30 dias, com imagem e data); evento com abas **Vendas** (`pedido.ver`: total, ingressos, vendido hoje,
+  por ingresso) / **Check-in** (medidores realizados/restantes, atualiza a cada 15 s por `app.numeros`, botão Participantes) / **Ferramentas** (participantes,
+  adicionar pedido, divulgar, códigos promocionais, painel — conforme as permissões); botão flutuante → **leitor** `/app/evento/{uuid}/ler` (câmera traseira,
+  `BarcodeDetector` quando existe, senão **jsQR** `public/js/vendor/jsQR.js`, Apache-2.0 — funciona no iPhone; tela inteira verde/laranja/vermelha com o nome,
+  vibra e apita; digitar o número) e **participantes** (busca, filtros Todos/Faltam/Entraram, botão Check-in). Registra pelo mesmo
+  `CheckinController::registrar`. PWA: `public/app.webmanifest`, `public/app-sw.js` (cache só de CSS/JS/ícones), ícones `public/app-icons/`.
+  Painel → Check-in mostra o QR/link do app. **Regra do dia do evento** (`App\Support\JanelaCheckin`): check-in só de `abertura_portoes` (nunca antes da
+  meia-noite do dia do início; o cadastro recusa abertura em outro dia) até `data_fim`; fora disso `fora_do_horario` com "O check-in abre em ..." / "O evento
+  terminou em ...". Testes `fluxo-app.js` (18, iPhone 13) e `fluxo-checkin.js` (18, o evento passa a estar acontecendo agora).
 - **Divulgação → Cupons** (`/painel/cupons`, `CuponsController`, model `Cupom`): código (maiúsculas, único por organização),
   percentual (≤ 100%) ou valor fixo, evento ou todos os eventos, lotes específicos (`cupom_lote`; nenhum = todos), limite de usos
   e por CPF, pedido mínimo, validade; situação (ativo, agendado, esgotado, expirado, desativado); editar (limite não fica abaixo
@@ -494,5 +507,5 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 
 1. Criar a aplicação no Mercado Pago (`MP_*` no `.env`, ver `docs/integracao-pagamentos.md`).
    Financeiro: conectar e homologar a conta do Mercado Pago (OAuth), checkout pago e pedido de reembolso.
-2. Check-in (PWA) lendo o QR `FF1.<codigo>.<hmac>` e participantes no painel.
+2. Publicar os apps de check-in nas lojas (`docs/apps-checkin.md`); check-in offline (fila local) se o Bruno pedir.
 3. Confirmação de e-mail no cadastro e lembretes do evento.
