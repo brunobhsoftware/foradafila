@@ -172,7 +172,7 @@ class AdminController extends Controller
     public function emails(Request $request)
     {
         $busca = trim((string) $request->query('busca'));
-        $envios = DB::table('mensagem_envio')->where('canal', 'email')
+        $envios = DB::table('mensagem_envio')->where('canal', 'email')->whereNull('campanha_id')
             ->when($busca !== '', fn ($q) => $q->where('destinatario', 'like', '%'.$busca.'%'))
             ->when($request->query('status'), fn ($q, $s) => $q->where('status', $s))
             ->orderByDesc('id')->limit(100)->get(['id', 'tipo', 'destinatario', 'assunto', 'status', 'erro', 'criado_em', 'enviado_em']);
