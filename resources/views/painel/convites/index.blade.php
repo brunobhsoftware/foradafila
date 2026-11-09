@@ -19,8 +19,10 @@
             @foreach ($eventos as $e)<option value="{{ $e->uuid }}" @selected(old('evento') === $e->uuid)>{{ $e->titulo }} — {{ data_local($e->data_inicio, 'd/m/Y') }}</option>@endforeach</select></div>
         <div class="campo col-6"><label>Lista</label><select name="lista">
             @foreach ($listas as $l)<option value="{{ $l->uuid }}" @selected(old('lista') === $l->uuid)>{{ $l->nome }} ({{ number_format($l->total, 0, ',', '.') }})</option>@endforeach</select></div>
+        @php $porConta = intdiv(\App\Support\Convites::LIMITE_DIA, max(1, $contas->count())); @endphp
         <div class="campo col-6"><label>Enviar pela conta</label><select name="smtp">
-            @foreach ($contas as $c)<option value="{{ $c->uuid }}" @selected(old('smtp') === $c->uuid)>{{ $c->nome }} — {{ $c->remetente_email }} (até {{ $c->limite_hora }}/hora)</option>@endforeach</select></div>
+            <option value="">Todas as contas — divide automaticamente ({{ $contas->count() }} × {{ $porConta }} por dia)</option>
+            @foreach ($contas as $c)<option value="{{ $c->uuid }}" @selected(old('smtp') === $c->uuid)>{{ $c->nome }} — {{ $c->remetente_email }} (só ela: {{ $porConta }} por dia)</option>@endforeach</select></div>
         <x-campo nome="assunto" rotulo="Assunto" obrigatorio classe="col-6" placeholder="Ex.: Você está convidado para a nossa festa!" maxlength="150" />
         <div class="campo col-12"><label>Quando enviar</label>
             <div class="grade grade-2" style="gap:10px">

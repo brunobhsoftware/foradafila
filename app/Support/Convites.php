@@ -17,6 +17,9 @@ class Convites
     /** No máximo por conta em cada rodada do cron (1 por minuto), para a rodada não passar do tempo da hospedagem. */
     public const POR_RODADA = 40;
 
+    /** Limite da plataforma: cada organização envia no máximo 500 convites por dia, divididos igualmente entre as suas contas ativas. */
+    public const LIMITE_DIA = 500;
+
     public static function linkDescadastro(int $orgId, string $email): string
     {
         // assinatura só do caminho: o cron (linha de comando) e o site podem ver hosts diferentes
@@ -55,33 +58,70 @@ class Convites
         // agendadas cuja hora chegou passam a enviar
         DB::table('campanha')->where('status', 'agendada')->where('agendada_para', '<=', now())->update(['status' => 'enviando', 'iniciada_em' => now()]);
         $total = 0;
-        $campanhas = DB::table('campanha')->where('status', 'enviando')->whereNotNull('smtp_conta_id')->orderBy('id')->get();
-        foreach ($campanhas as $c) {
-            $conta = DB::table('smtp_conta')->where('id', $c->smtp_conta_id)->where('organizador_id', $c->organizador_id)->first();
-            if (! $conta || ! $conta->ativo) {
-                continue;
-            }
-            $naHora = DB::table('campanha_envio')->where('smtp_conta_id', $conta->id)->where('enviado_em', '>=', now()->subHour())->count();
-            $vagas = min(self::POR_RODADA, $conta->limite_hora - $naHora);
+        $orgs = DB::table('campanha')->where('status', 'enviando')->whereNotNull('uuid')->distinct()->pluck('organizador_id');
+        foreach ($orgs as $orgId) {
+            $total += self::rodadaDaEmpresa((int) $orgId);
+        }
+
+        return $total;
+    }
+
+    /** Início do dia de hoje no horário de Brasília, em UTC (o limite diário vira à meia-noite local). */
+    public static function inicioDoDia(): \Illuminate\Support\Carbon
+    {
+        return now('America/Sao_Paulo')->startOfDay()->utc();
+    }
+
+    /** Quantos e-mails a empresa ainda pode mandar hoje e a cota de cada conta ativa (LIMITE_DIA ÷ nº de contas). */
+    public static function capacidade(int $orgId): array
+    {
+        $contas = DB::table('smtp_conta')->where('organizador_id', $orgId)->where('ativo', 1)->orderBy('id')->get();
+        $hoje = DB::table('campanha_envio')->where('organizador_id', $orgId)->where('enviado_em', '>=', self::inicioDoDia())->count();
+
+        return ['contas' => $contas, 'cota' => $contas->count() ? intdiv(self::LIMITE_DIA, $contas->count()) : 0,
+            'hoje' => $hoje, 'restante' => max(0, self::LIMITE_DIA - $hoje)];
+    }
+
+    private static function rodadaDaEmpresa(int $orgId): int
+    {
+        $cap = self::capacidade($orgId);
+        if (! $cap['contas']->count() || $cap['restante'] <= 0) {
+            return 0;
+        }
+        $org = Organizador::find($orgId);
+        app(Tenant::class)->definir($org);
+        $restante = $cap['restante'];
+        $total = 0;
+        $eventos = [];
+        $campanhas = [];
+        foreach ($cap['contas'] as $conta) {
+            $dia = DB::table('campanha_envio')->where('smtp_conta_id', $conta->id)->where('enviado_em', '>=', self::inicioDoDia())->count();
+            $hora = DB::table('campanha_envio')->where('smtp_conta_id', $conta->id)->where('enviado_em', '>=', now()->subHour())->count();
+            $vagas = min(self::POR_RODADA, $conta->limite_hora - $hora, $cap['cota'] - $dia, $restante);
             if ($vagas <= 0) {
                 continue;
             }
-            $org = Organizador::find($c->organizador_id);
-            app(Tenant::class)->definir($org);
-            $evento = Evento::with('local')->find($c->evento_id);
-            $pendentes = DB::table('campanha_envio')->where('campanha_id', $c->id)->where('status', 'pendente')->orderBy('id')->limit($vagas)->get();
+            // pendentes das campanhas que usam "todas as contas" ou esta conta, na ordem em que foram criadas
+            $pendentes = DB::table('campanha_envio as e')->join('campanha as c', 'c.id', '=', 'e.campanha_id')
+                ->where('c.organizador_id', $orgId)->where('c.status', 'enviando')->where('e.status', 'pendente')
+                ->where(fn ($q) => $q->whereNull('c.smtp_conta_id')->orWhere('c.smtp_conta_id', $conta->id))
+                ->orderBy('c.id')->orderBy('e.id')->limit($vagas)->select('e.*', 'c.assunto', 'c.evento_id')->get();
             foreach ($pendentes as $p) {
                 // marca antes de mandar: se a rodada cair no meio, o e-mail não sai duas vezes
                 if (! DB::table('campanha_envio')->where('id', $p->id)->where('status', 'pendente')->update(['status' => 'enviado', 'smtp_conta_id' => $conta->id, 'enviado_em' => now()])) {
                     continue;
                 }
-                if (! $evento || DB::table('email_descadastro')->where('organizador_id', $c->organizador_id)->where('email', $p->email)->exists()) {
+                $campanhas[$p->campanha_id] = true;
+                $restante--;
+                $evento = $eventos[$p->evento_id] ??= Evento::with('local')->find($p->evento_id);
+                if (! $evento || DB::table('email_descadastro')->where('organizador_id', $orgId)->where('email', $p->email)->exists()) {
                     DB::table('campanha_envio')->where('id', $p->id)->update(['status' => 'pulado', 'enviado_em' => null]);
+                    $restante++;
                     continue;
                 }
-                $desc = self::linkDescadastro($c->organizador_id, $p->email);
+                $desc = self::linkDescadastro($orgId, $p->email);
                 [$html, $texto] = self::corpo($evento, $org, $p->nome, $desc);
-                $erro = SmtpEmpresa::enviar($conta, $p->email, $c->assunto, $html, $texto,
+                $erro = SmtpEmpresa::enviar($conta, $p->email, $p->assunto, $html, $texto,
                     ['List-Unsubscribe' => '<'.$desc.'>', 'List-Unsubscribe-Post' => 'List-Unsubscribe=One-Click']);
                 if ($erro) {
                     DB::table('campanha_envio')->where('id', $p->id)->update(['status' => 'erro', 'erro' => $erro]);
@@ -90,7 +130,9 @@ class Convites
                     $total++;
                 }
             }
-            self::atualizarContadores($c->id);
+        }
+        foreach (array_keys($campanhas) as $id) {
+            self::atualizarContadores($id);
         }
 
         return $total;
