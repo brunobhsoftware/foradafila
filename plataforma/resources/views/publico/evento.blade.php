@@ -131,6 +131,14 @@
           @endforeach
 
           @if ($compraveis->isNotEmpty())
+            <details class="pub-cupom" data-cupom-publico data-url="{{ route('compra.cupom', '__C__') }}?evento={{ $evento->codigoPublico() }}" @if (session('cupom_divulgacao')) open @endif>
+              <summary>Tem um cupom de desconto?</summary>
+              <div class="pub-cupom__linha">
+                <input name="cupom" maxlength="30" value="{{ session('cupom_divulgacao') }}" placeholder="Código do cupom" style="text-transform:uppercase" aria-label="Código do cupom">
+                <button type="button" class="botao botao--contorno botao--pequeno" data-cupom-aplicar>Aplicar</button>
+              </div>
+              <small data-cupom-msg></small>
+            </details>
             <button class="botao botao--amarelo botao--largo" style="margin-top:16px">{{ $compraveis->count() > $gratuitos->count() ? 'Comprar ingresso' : 'Garantir ingresso' }}</button>
             <p style="margin:10px 0 0"><small>Ingresso digital com QR Code em “Meus ingressos”.@if ($compraveis->count() > $gratuitos->count()) Pagamento seguro pelo Mercado Pago (Pix ou cartão).@endif</small></p>
           @endif

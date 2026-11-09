@@ -89,7 +89,7 @@ const webhook = async (P, id) => {
   await nav(C, C.click('button:has-text("Comprar ingresso")'));
   let t = await C.content();
   ok(t.includes('Comprar ingresso') && t.includes('R$ 210,00') && t.includes('R$ 100,00 + R$ 5,00 de taxa'), 'resumo com taxa repassada: 2 × R$ 105 = R$ 210');
-  await C.fill('[name=cpf]', '18609139034'); await C.waitForSelector('[name=nome]:visible'); await C.fill('[name=nome]', 'Ana Compradora'); await C.fill('[name=email]', 'ana@compra.test');
+  await C.fill('[name=email]', 'ana@compra.test'); await C.fill('[name=nome]', 'Ana Compradora'); await C.click('[data-continuar]'); await C.waitForSelector('[name=cpf]:visible'); await C.fill('[name=cpf]', '18609139034');
   await C.fill('[name="participantes[0][nome]"]', 'Ana Compradora'); await C.fill('[name="participantes[0][cpf]"]', '529.982.247-25');
   await C.fill('[name="participantes[1][nome]"]', 'Pedro Amigo');
   await C.check('[name=aceite_termos]');
@@ -212,14 +212,14 @@ const webhook = async (P, id) => {
   await D.goto(linkCodigo);
   await D.selectOption('select[name^="q["]', '1');
   await nav(D, D.click('button:has-text("Comprar ingresso")'));
-  await D.click('[data-botao-sem-cpf]');
-  await D.fill('[name=nome]', 'Carla Cartao'); await D.fill('[name=email]', 'carla@cartao.test');
+  await D.fill('[name=email]', 'carla@cartao.test'); await D.fill('[name=nome]', 'Carla Cartao');
+  await D.click('[data-continuar]'); await D.waitForSelector('[name=cpf]:visible'); await D.fill('[name=cpf]', '153.509.460-56');
   await D.check('[name=forma_pagamento][value=cartao]', { force: true });
   await D.check('[name=aceite_termos]');
   await nav(D, D.click('button:has-text("Ir para o pagamento")'));
   const uuidCartao = sql("SELECT uuid FROM pedido ORDER BY id DESC LIMIT 1");
   ok(D.url().endsWith('/pedido/' + uuidCartao + '/cartao') && (await D.content()).includes('Pague com cartão de crédito')
-    && await D.getAttribute('#brick-cartao', 'data-pk') === 'APP_USR-pk-falsa', 'cartão: formulário na nossa página, com a Public Key da conta, sem pedir CPF antes');
+    && await D.getAttribute('#brick-cartao', 'data-pk') === 'APP_USR-pk-falsa', 'cartão: formulário na nossa página, com a Public Key da conta');
   const csrf = await D.getAttribute('meta[name=csrf-token]', 'content');
   const pagar = (token) => D.request.post(BASE + '/pedido/' + uuidCartao + '/cartao', { headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
     data: { token, payment_method_id: 'master', payment_type_id: 'credit_card', installments: 3, issuer_id: '24', payer: { email: 'carla@cartao.test', identification: { type: 'CPF', number: '15350946056' } } } });

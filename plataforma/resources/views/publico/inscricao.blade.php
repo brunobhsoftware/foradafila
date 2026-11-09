@@ -27,29 +27,31 @@
       @if ($comprador)
         <p>Você está em <b>Meus ingressos</b> como <b>{{ $comprador->nome }}</b> ({{ $comprador->email }}). Os ingressos ficarão nesta conta.</p>
       @else
-        <div class="form-grade" style="margin-bottom:8px" data-compra-cpf data-url="{{ url('/compra/cpf') }}">
-          <input type="hidden" name="sem_cpf" value="{{ old('sem_cpf') }}" data-sem-cpf>
-          <div class="campo col-12"><label for="cpf">Seu CPF <span data-cpf-obrig>*</span> <small style="font-weight:400" data-cpf-dica>— comece pelo seu CPF para buscar os dados cadastrais.</small></label>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-              <input id="cpf" name="cpf" value="{{ old('cpf') }}" data-mascara="cpf" inputmode="numeric" autocomplete="off" style="max-width:220px">
-              <button type="button" class="botao botao--contorno botao--pequeno" data-botao-sem-cpf>Não desejo informar o CPF</button>
-            </div>
-            @error('cpf')<small class="erro">{{ $message }}</small>@enderror</div>
-          <div class="col-12" data-cpf-achado hidden>
+        <div class="form-grade" style="margin-bottom:8px" data-compra-email data-url="{{ route('compra.email') }}">
+          <x-campo nome="email" rotulo="Seu e-mail" tipo="email" obrigatorio autocomplete="email" classe="col-12" ajuda="Os ingressos chegam neste e-mail." />
+          <div class="col-12" data-email-achado hidden>
             <p style="margin:0;padding:12px 14px;background:#F2F4F7;border-left:4px solid var(--laranja);border-radius:8px">
-              Olá, <b data-achado-nome></b>! Os ingressos vão para <b data-achado-email></b><span data-achado-tel></span>.<br>
-              <a href="#" class="botao botao--contorno botao--pequeno" style="margin-top:8px" data-editar-cadastro data-url="{{ route('compra.cadastro') }}">Editar meus dados</a>
-              <small style="margin-left:8px">Não é você? Confira o CPF digitado.</small></p>
+              Olá, <b data-achado-nome></b>! Que bom ver você de novo. Vamos usar o seu cadastro.</p>
           </div>
-          <div class="col-12" data-cpf-novo hidden><div class="form-grade">
+          <div class="col-12" data-email-novo><div class="form-grade">
             <x-campo nome="nome" rotulo="Seu nome completo" obrigatorio autocomplete="name" classe="col-12" />
-            <x-campo nome="email" rotulo="E-mail" tipo="email" obrigatorio autocomplete="email" classe="col-6" ajuda="Os ingressos chegam neste e-mail." />
-            <x-campo nome="telefone" rotulo="Celular (opcional)" tipo="tel" data-mascara="telefone" autocomplete="tel" classe="col-6" />
           </div></div>
+          <div class="col-12" data-continuar-box @if (old('email')) hidden @endif>
+            <button type="button" class="botao botao--amarelo botao--largo" data-continuar>Continuar</button>
+          </div>
         </div>
       @endif
 
-      <div data-depois-cpf @if (! $comprador && ! old('nome') && ! old('cpf') && ! old('sem_cpf')) hidden @endif>
+      <div data-depois-cpf @if (! $comprador && ! old('email')) hidden @endif>
+      @unless ($comprador)
+        <div class="form-grade" style="margin-top:18px" data-cpf-box>
+          <div class="campo col-12" data-cpf-cadastro hidden><label>Seu CPF</label>
+            <p style="margin:0"><b data-cpf-mascarado></b> <small>— do seu cadastro</small></p></div>
+          <div class="campo col-6" data-cpf-campo><label for="cpf">Seu CPF <span class="obrigatorio">*</span></label>
+            <input id="cpf" name="cpf" value="{{ old('cpf') }}" data-mascara="cpf" inputmode="numeric" autocomplete="off" required>
+            @error('cpf')<small class="erro">{{ $message }}</small>@enderror</div>
+        </div>
+      @endunless
       <h2 style="font-size:1.15rem;margin-top:24px">2. Quem vai usar {{ $total > 1 ? 'os ingressos' : 'o ingresso' }}</h2>
       <p><small>Informe os dados de quem vai usar cada ingresso. Campos com * são obrigatórios.</small></p>
       <div style="display:grid;gap:12px">

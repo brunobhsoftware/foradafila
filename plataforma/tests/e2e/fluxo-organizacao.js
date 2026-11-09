@@ -81,7 +81,7 @@ const salvar = async (p) => { await p.evaluate(() => { document.querySelector('f
   ok(await V.locator('img[alt^="Logo de"]').count() === 1, 'logo do organizador na página do evento');
   await V.selectOption('select[name^="q["]', '1');
   await nav(V, V.click('button:has-text("Garantir ingresso")'));
-  await V.fill('[name=cpf]', '08301661305'); await V.waitForSelector('[name=nome]:visible'); await V.fill('[name=nome]', 'Clara'); await V.fill('[name=email]', 'clara@pub.test');
+  await V.fill('[name=email]', 'clara@pub.test'); await V.fill('[name=nome]', 'Clara'); await V.click('[data-continuar]'); await V.waitForSelector('[name=cpf]:visible'); await V.fill('[name=cpf]', '08301661305');
   await V.fill('[name="participantes[0][nome]"]', 'Clara'); await V.fill('[name="participantes[0][cpf]"]', '153.509.460-56');
   await V.check('[name=aceite_termos]');
   await nav(V, V.click('button:has-text("Confirmar inscrição")'));

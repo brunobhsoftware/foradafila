@@ -270,3 +270,10 @@ button.botao { cursor: pointer; font-family: var(--fonte-texto); }
   .pub-acao--destaque small { display: none; }
 }
 @media print { .pub-acoes-ingresso { display: none; } }
+
+/* Cupom na página do evento (09/11/2026) */
+.pub-cupom { margin-top: 14px; }
+.pub-cupom summary { cursor: pointer; color: var(--laranja, #F25C05); font-weight: 600; font-size: .92rem; }
+.pub-cupom__linha { display: flex; gap: 8px; margin: 8px 0 4px; }
+.pub-cupom__linha input { flex: 1; min-width: 0; }
+.pub-cupom .cupom-ok { color: #027A48; font-weight: 600; }

@@ -89,7 +89,7 @@ const formularioLegado = require('./_formulario-legado');
   await V.selectOption('select[name^="q["]', '2');
   await nav(V, V.click('button:has-text("Garantir ingresso")'));
   ok(V.url().includes('/inscricao'), 'vai para a inscrição');
-  await V.fill('[name=cpf]', '62819482112'); await V.waitForSelector('[name=nome]:visible'); await V.fill('[name=nome]', 'Ana Compradora'); await V.fill('[name=email]', 'ana@publico.test');
+  await V.fill('[name=email]', 'ana@publico.test'); await V.fill('[name=nome]', 'Ana Compradora'); await V.click('[data-continuar]'); await V.waitForSelector('[name=cpf]:visible'); await V.fill('[name=cpf]', '62819482112');
   await V.fill('[name="participantes[0][nome]"]', 'Ana Compradora'); await V.fill('[name="participantes[0][cpf]"]', '529.982.247-25');
   await V.fill('[name="participantes[1][nome]"]', 'Pedro Amigo'); await V.fill('[name="participantes[1][cpf]"]', '111.111.111-11');
   await V.check('[name=aceite_termos]');
@@ -166,16 +166,18 @@ const formularioLegado = require('./_formulario-legado');
   const r2 = await V.request.post(form.action, { form: form.dados, maxRedirects: 0 });
   ok(r1.status() === 302 && r2.status() === 302, 'dois envios iguais respondem sem erro');
 
-  // CPF já cadastrado: mostra os dados (e-mail mascarado), sem senha e sem entrar na conta
+  // E-mail já cadastrado: reconhece pelo e-mail (só o primeiro nome), CPF do cadastro mascarado, sem senha
   const Z = await ctx();
   await Z.goto(linkPublico); await Z.selectOption('select[name^="q["]', '1');
   await nav(Z, Z.click('button:has-text("Garantir ingresso")'));
-  ok(!(await Z.locator('[name=nome]').isVisible()) && (await Z.locator('[name=senha]').count()) === 0, 'compra pede o CPF primeiro, sem senha');
-  await Z.fill('[name=cpf]', '62819482112');
-  await Z.waitForSelector('[data-cpf-achado]:visible');
-  const achado = await Z.locator('[data-cpf-achado]').innerText();
-  ok(achado.includes('Ana Compradora') && achado.includes('an***') && !achado.includes('ana@publico.test'), 'CPF conhecido: mostra o nome e o e-mail mascarado');
-  ok(await Z.inputValue('[name="participantes[0][nome]"]') === 'Ana Compradora', 'com o CPF, o 1º ingresso já vem com o nome do comprador');
+  ok(await Z.locator('[name=email]').isVisible() && await Z.locator('[name=nome]').isVisible() && !(await Z.locator('[name=cpf]').isVisible())
+    && (await Z.locator('[name=senha]').count()) === 0 && (await Z.locator('[name=telefone]').count()) === 0, 'compra pede só e-mail e nome primeiro (sem CPF, celular nem senha)');
+  await Z.fill('[name=email]', 'ana@publico.test');
+  await Z.click('[data-continuar]');
+  await Z.waitForSelector('[data-email-achado]:visible');
+  const achado = await Z.locator('[data-email-achado]').innerText();
+  ok(achado.includes('Ana') && !achado.includes('Compradora') && !(await Z.locator('[name=nome]').isVisible()), 'e-mail conhecido: reconhece pelo primeiro nome e não pede o nome');
+  ok((await Z.locator('[data-cpf-cadastro]').innerText()).includes('***.***.821-12') && !(await Z.locator('[name=cpf]').isVisible()), 'próxima etapa: CPF já vem do cadastro (mascarado)');
   await Z.check('[name=aceite_termos]');
   await nav(Z, Z.click('button:has-text("Confirmar inscrição")'));
   ok((await Z.content()).includes('enviados para an***@publico.test') && (await Z.goto(BASE + '/minha-conta')).url().includes('/entrar'), 'compra confirmada no cadastro existente, sem entrar na conta');
@@ -211,36 +213,24 @@ const formularioLegado = require('./_formulario-legado');
 
 
 
-  // "Editar meus dados": só com o código enviado ao e-mail do cadastro
-  const E = await ctx();
-  await E.goto(linkPublico); await E.selectOption('select[name^="q["]', '1');
-  await nav(E, E.click('button:has-text("Garantir ingresso")'));
-  await E.fill('[name=cpf]', '62819482112'); await E.waitForSelector('[data-editar-cadastro]:visible');
-  await nav(E, E.click('[data-editar-cadastro]'));
-  ok((await E.content()).includes('Meu cadastro') && (await E.content()).includes('an***@publico.test') && !(await E.content()).includes('ana@publico.test'), 'editar pede o código antes de mostrar os dados');
-  await nav(E, E.click('button:has-text("Enviar código")'));
-  const logMail = require('fs').readFileSync(__dirname + '/../../storage/logs/laravel.log', 'utf8');
-  const codigo = [...logMail.matchAll(/editar o seu cadastro no Fora da Fila: (\d{6})/g)].pop()[1];
-  await E.fill('[name=codigo]', codigo); await E.fill('[name=telefone]', '31977776666');
-  await E.fill('[name=senha]', 'Nova1234'); await E.fill('[name=senha_confirmation]', 'Nova1234');
-  await nav(E, E.click('button:has-text("Salvar cadastro")'));
-  ok(E.url().includes('/inscricao') && (await E.content()).includes('Você está em') && sql("SELECT CONCAT(telefone,'|',senha_hash IS NOT NULL) FROM comprador WHERE email='ana@publico.test'") === '31977776666|1', 'salva celular e senha, entra na conta e volta à compra');
-
-  // "Não desejo informar o CPF" e "Estou comprando para outra pessoa"
+  // E-mail novo: nome, Continuar, CPF; e "Estou comprando para outra pessoa"
   const Y = await ctx();
   await Y.goto(linkPublico); await Y.selectOption('select[name^="q["]', '1');
   await nav(Y, Y.click('button:has-text("Garantir ingresso")'));
-  ok(!(await Y.locator('[data-depois-cpf]').isVisible()), 'ingressos só aparecem depois do CPF ou do botão');
-  await Y.click('[data-botao-sem-cpf]');
-  ok(await Y.locator('[name="participantes[0][nome]"]').isVisible(), '"Não desejo informar o CPF" libera os ingressos');
-  await Y.fill('[name=nome]', 'Sem Cpf Silva'); await Y.fill('[name=email]', 'semcpf@publico.test');
+  ok(!(await Y.locator('[data-depois-cpf]').isVisible()), 'ingressos só aparecem depois de "Continuar"');
+  await Y.fill('[name=email]', 'semcpf@publico.test');
+  ok(await Y.locator('[name=nome]').evaluate((e) => e.required), 'e-mail novo: o nome é obrigatório');
+  await Y.fill('[name=nome]', 'Sem Cpf Silva');
+  await Y.click('[data-continuar]');
+  ok(await Y.locator('[name="participantes[0][nome]"]').isVisible() && await Y.locator('[name=cpf]').isVisible(), '"Continuar" mostra o CPF e os ingressos');
+  await Y.fill('[name=cpf]', '529.982.247-25');
   ok(await Y.inputValue('[name="participantes[0][nome]"]') === 'Sem Cpf Silva', '1º ingresso acompanha o nome digitado');
   await Y.click('[data-outra-pessoa]');
   ok(await Y.inputValue('[name="participantes[0][nome]"]') === '', '"Estou comprando para outra pessoa" limpa o 1º ingresso');
   await Y.fill('[name="participantes[0][nome]"]', 'Amiga do Sem Cpf');
   await Y.check('[name=aceite_termos]');
   await nav(Y, Y.click('button:has-text("Confirmar inscrição")'));
-  ok(sql("SELECT CONCAT(IFNULL(c.cpf,'-'),'|',pa.nome) FROM comprador c JOIN pedido p ON p.comprador_id=c.id JOIN ingresso i ON i.pedido_id=p.id JOIN participante pa ON pa.ingresso_id=i.id WHERE c.email='semcpf@publico.test'") === '-|Amiga do Sem Cpf', 'compra sem CPF: comprador cadastrado pelo e-mail, ingresso para outra pessoa');
+  ok(sql("SELECT CONCAT(IFNULL(c.cpf,'-'),'|',pa.nome) FROM comprador c JOIN pedido p ON p.comprador_id=c.id JOIN ingresso i ON i.pedido_id=p.id JOIN participante pa ON pa.ingresso_id=i.id WHERE c.email='semcpf@publico.test'") === '52998224725|Amiga do Sem Cpf', 'comprador novo cadastrado pelo e-mail com o CPF; ingresso para outra pessoa');
   const Q = await ctx();
   await Q.goto(BASE + '/minha-conta/entrar');
   ok((await Q.locator('main input:not([type=hidden]), .pub-secao input:not([type=hidden])').count()) === 1, 'Meus ingressos pede só o e-mail');

@@ -70,7 +70,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   await nav(V, V.click('button:has-text("Garantir ingresso")'));
   t = await V.content();
   ok(['Nome completo', 'E-mail', 'CPF', 'Telefone', 'Número da camisa', 'Turma'].every((x) => t.includes(x)) && await V.locator('[name="participantes[1][cpf]"]').count() === 1, 'compra mostra os campos do formulário para cada participante');
-  await V.fill('[name=cpf]', '93786579741'); await V.waitForSelector('[name=nome]:visible'); await V.fill('[name=nome]', 'Ana Compradora'); await V.fill('[name=email]', 'ana@form.test');
+  await V.fill('[name=email]', 'ana@form.test'); await V.fill('[name=nome]', 'Ana Compradora'); await V.click('[data-continuar]'); await V.waitForSelector('[name=cpf]:visible'); await V.fill('[name=cpf]', '93786579741');
   await V.fill('[name="participantes[0][nome]"]', 'Ana Compradora'); await V.fill('[name="participantes[0][email]"]', 'ana@form.test');
   await V.fill('[name="participantes[0][cpf]"]', '111.111.111-11'); await V.fill('[name="participantes[0][c' + sql(`SELECT id FROM formulario_campo WHERE rotulo='Número da camisa'`) + ']"]', '10');
   await V.fill('[name="participantes[1][nome]"]', 'Pedro Amigo');

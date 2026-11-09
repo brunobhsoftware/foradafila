@@ -63,7 +63,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   await V.goto(BASE + '/e/' + codEv('festa-das-mensagens'));
   await V.selectOption('select[name^="q["]', '2');
   await nav(V, V.click('button:has-text("Garantir ingresso")'));
-  await V.fill('[name=cpf]', '99351819019'); await V.waitForSelector('[name=nome]:visible'); await V.fill('[name=nome]', 'Ana Compradora'); await V.fill('[name=email]', 'ana@publico.test');
+  await V.fill('[name=email]', 'ana@publico.test'); await V.fill('[name=nome]', 'Ana Compradora'); await V.click('[data-continuar]'); await V.waitForSelector('[name=cpf]:visible'); await V.fill('[name=cpf]', '99351819019');
   await V.fill('[name="participantes[0][nome]"]', 'Ana Compradora'); await V.fill('[name="participantes[0][cpf]"]', '529.982.247-25');
   await V.fill('[name="participantes[1][nome]"]', 'Pedro Amigo'); await V.fill('[name="participantes[1][cpf]"]', '153.509.460-56');
   await V.check('[name=aceite_termos]');

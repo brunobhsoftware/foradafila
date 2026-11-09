@@ -129,6 +129,15 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   caracteres do uuid do lote sem hífens (o MP aceita até 30; com 36 dava 500 em produção, 08/11/2026). O CPF enviado ao MP é o de quem paga.
   Termos: um aceite só (`aceite_termos`). Testes usam `[name=cpf]` + `[name=aceite_termos]`. `publico.css` ganhou `.opcao-cartao`,
   `.botao--contorno` e `.botao--pequeno` (faltavam: o botão aparecia transparente).
+- **Compra com E-MAIL primeiro** (decisão do Bruno, 09/11/2026; substitui o "CPF primeiro"): "1. Seus dados" pede só **e-mail e nome**
+  (sem celular); `GET /compra/email?e=` (throttle `compra-email` 10/min, `InscricaoController::email`) reconhece quem já comprou — mostra só o
+  **primeiro nome** e não pede o nome. Botão **Continuar** (`data-continuar`) mostra o resto: **CPF** (obrigatório; se a conta já tem CPF aparece
+  mascarado "***.***.821-12 — do seu cadastro" e não é pedido), ingressos, pagamento e termos. Saiu o botão "Não desejo informar o CPF" (`sem_cpf`).
+  A conta da compra é a do **e-mail** (`compradorDaCompra`/`dadosDoEmail`); o CPF só entra na conta se ela não tiver e nenhuma outra usar.
+  "Editar meus dados" saiu da tela de compra (a edição fica em Meus dados; `CadastroCompradorController` continua existindo).
+  **Cupom na página do evento**: "Tem um cupom de desconto?" (`details.pub-cupom`, `data-cupom-publico`) com **Aplicar** → `GET /compra/cupom/{codigo}?evento=`
+  (`conferirCupom`, throttle `compra-cupom`) mostra "Cupom X aplicado: 10% de desconto" ou o erro; o código segue para a compra (`?cupom=` →
+  `create`). O desconto já é aplicado no checkout pago (`reservarPago` → `Cupom::desconto`, `cupom_uso`).
 - **"Editar meus dados" na compra** (decisão do Bruno, 09/11/2026; `CadastroCompradorController`, `/compra/cadastro`): com o CPF conhecido,
   o botão leva a "Meu cadastro" (CPF, nome, e-mail, celular e senha opcional). **Só edita depois do código de 6 dígitos** enviado ao e-mail
   do cadastro (`CodigoVerificacao`, finalidade `cadastro-comprador`; throttles `compra-cadastro*`); ao salvar entra na conta e volta à compra
