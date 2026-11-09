@@ -100,7 +100,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   equipe, níveis de acesso, dados da organização, Pedidos, Participantes, Check-in, Cupons, Convidados, Mensagens e Financeiro.
 - Site público (`layouts/publico` + `site/_topo`, `site/_rodape`, CSS `public/assets/css/publico.css`):
   início, `/solucao`, `/precos`, `/ajuda`, `/eventos` (vitrine), `/e/{slug}` (evento), `/p/{slug}` (organizador),
-  `/termos/{tipo}`. **Link do evento com código fixo** (decisão do Bruno, 08/11/2026): `Evento::linkPublico()` = `/e/{10 primeiros
+  `/termos/{tipo}`. **Menu do celular** (botão de 3 linhas, 09/11/2026): abria e fechava no mesmo clique por causa do fechamento do menu lateral do painel em `app.js` (corrigido); no celular mostra também Painel do produtor, App de check-in, Meus dados e Sair (`.so-celular-pub`). **Link do evento com código fixo** (decisão do Bruno, 08/11/2026): `Evento::linkPublico()` = `/e/{10 primeiros
   caracteres do uuid}`, que nunca muda; **só o código abre** (`EventoPublicoController::buscar()`; links pelo nome/slug dão 404, decisão
   do Bruno, 08/11/2026). Todo link e formulário (painel, cupons, vitrine, compra `inscricao.create/store`) usa `codigoPublico()`.
   Nos testes, `codEv(slug)` busca o código no banco. Menu superior muda conforme quem está logado (produtor e/ou comprador).

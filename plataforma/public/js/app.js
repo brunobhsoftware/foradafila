@@ -10,7 +10,7 @@
     b.setAttribute('aria-expanded', aberto);
   }));
   document.addEventListener('click', (e) => {
-    if (document.body.classList.contains('menu-aberto') && !e.target.closest('.menu-lateral, [data-menu-alternar]')) {
+    if (document.body.classList.contains('menu-aberto') && !e.target.closest('.menu-lateral, [data-menu-alternar], .menu, .menu-botao')) {
       document.body.classList.remove('menu-aberto');
     }
   });
