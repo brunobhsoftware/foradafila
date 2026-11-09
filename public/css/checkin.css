@@ -87,3 +87,22 @@ h1, h2, h3 { font-family: 'Space Grotesk', Inter, sans-serif; margin: 0; }
 .ck-resultado h2 { font-size: 2rem; margin-bottom: 8px; }
 .ck-resultado p { font-size: 1.15rem; margin: 4px 0; }
 .ck-resultado small { margin-top: 24px; opacity: .9; }
+
+/* Painel de vendas do app (09/11/2026) */
+.ck-verde { color: var(--verde); }
+.ck-suave { color: var(--suave); }
+.ck-vendas-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.ck-rosca { width: 120px; height: 120px; border-radius: 50%; flex: none; display: grid; place-items: center; }
+.ck-rosca span { width: 74px; height: 74px; border-radius: 50%; background: #fff; display: grid; place-content: center; text-align: center; line-height: 1.1; }
+.ck-rosca b { font: 700 1.3rem 'Space Grotesk', sans-serif; } .ck-rosca small { font-size: .7rem; color: var(--suave); }
+.ck-barra-venda { height: 8px; background: var(--fundo); border-radius: 99px; overflow: hidden; margin: 14px 0 6px; }
+.ck-barra-venda span { display: block; height: 100%; background: var(--laranja); }
+.ck-indicadores { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.ck-indicadores > div { background: #fff; border-radius: var(--raio); padding: 12px 14px; box-shadow: 0 1px 3px rgba(16,24,40,.08); display: flex; flex-direction: column; gap: 2px; }
+.ck-indicadores small { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--suave); }
+.ck-indicadores b { font: 700 1.25rem 'Space Grotesk', sans-serif; }
+.ck-indicadores em { font-style: normal; font-size: .78rem; color: var(--suave); }
+.ck-legenda { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+.ck-selo { font-size: .75rem; padding: 3px 9px; border-radius: 99px; background: var(--fundo); color: var(--suave); white-space: nowrap; }
+.ck-selo--a-venda { background: #ECFDF3; color: #027A48; } .ck-selo--esgotado { background: #FEF3F2; color: #B42318; }
+.ck-botao-vender { display: block; text-align: center; margin: 18px 0 0; padding: 15px; border-radius: var(--raio); background: var(--amarelo); color: var(--tinta); font-weight: 700; text-decoration: none; }
