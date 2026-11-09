@@ -10,24 +10,61 @@
 </nav>
 <main class="ck-conteudo">
   @if ($aba === 'vendas' && $vendas)
+    @php
+        $cores = ['#F25C05', '#7A5AF8', '#12B76A', '#2E90FA', '#FFD60A', '#F04438', '#98A2B3'];
+        $fatias = []; $acc = 0;
+        foreach ($vendas['por_lote'] as $k => $l) { $ini = $acc; $acc += $vendas['ingressos'] ? $l->qtd / $vendas['ingressos'] * 100 : 0; $fatias[] = $cores[$k % 7].' '.$ini.'% '.$acc.'%'; }
+        $pct = $vendas['ofertados'] ? min(100, round($vendas['ingressos'] / $vendas['ofertados'] * 100)) : null;
+    @endphp
     <div class="ck-cartao">
       <div class="ck-cartao__topo">Total em vendas · {{ now()->setTimezone('America/Sao_Paulo')->format('d/m/Y \à\s H:i') }}</div>
       <div class="ck-cartao__corpo">
-        <div class="ck-rotulo">Total vendido</div><div class="ck-numero-grande">{{ moeda($vendas['total']) }}</div>
-        <div class="ck-grade2" style="margin-top:14px">
-          <div><div class="ck-rotulo">Ingressos vendidos</div><div class="ck-numero-grande">{{ number_format($vendas['ingressos'], 0, ',', '.') }}</div></div>
-          <div><div class="ck-rotulo">Vendido hoje</div><div class="ck-numero-grande">{{ moeda($vendas['hoje']) }}</div></div>
+        <div class="ck-vendas-topo">
+          <div>
+            <div class="ck-rotulo">Total vendido</div><div class="ck-numero-grande">{{ moeda($vendas['total']) }}</div>
+            <div class="ck-rotulo" style="margin-top:12px">Líquido a receber</div><div class="ck-numero-grande ck-verde">{{ moeda($vendas['liquido']) }}</div>
+          </div>
+          @if ($vendas['ingressos'])
+            <div class="ck-rosca" style="background: conic-gradient({{ implode(', ', $fatias) }})"><span><b>{{ number_format($vendas['ingressos'], 0, ',', '.') }}</b><small>ingressos</small></span></div>
+          @endif
         </div>
+        @if ($pct !== null)
+          <div class="ck-barra-venda" title="{{ $pct }}% dos ingressos"><span style="width:{{ $pct }}%"></span></div>
+          <small class="ck-suave">{{ number_format($vendas['ingressos'], 0, ',', '.') }} de {{ number_format($vendas['ofertados'], 0, ',', '.') }} ingressos ofertados ({{ $pct }}%)</small>
+        @endif
       </div>
     </div>
+
+    <div class="ck-indicadores">
+      <div><small>Ingressos vendidos</small><b>{{ number_format($vendas['ingressos'], 0, ',', '.') }}</b>@if ($vendas['cortesias'])<em>{{ $vendas['cortesias'] }} gratuitos/cortesia</em>@endif</div>
+      <div><small>Vendidos hoje</small><b>{{ number_format($vendas['ingressos_hoje'], 0, ',', '.') }}</b><em>{{ moeda($vendas['hoje']) }}</em></div>
+      <div><small>Pedidos</small><b>{{ number_format($vendas['pedidos'], 0, ',', '.') }}</b><em>ticket médio {{ moeda($vendas['ticket']) }}</em></div>
+      <div><small>Taxa da plataforma</small><b>{{ moeda($vendas['taxa']) }}</b><em>dos ingressos pagos</em></div>
+      <div><small>Devolvido</small><b>{{ moeda($vendas['devolvido']) }}</b><em>cancelamentos</em></div>
+      <div><small>Líquido</small><b class="ck-verde">{{ moeda($vendas['liquido']) }}</b><em>vendido − taxa − devoluções</em></div>
+    </div>
+
     @if ($vendas['por_lote']->isNotEmpty())
       <div class="ck-secao">Por ingresso</div>
       <div class="ck-cartao">
-        @foreach ($vendas['por_lote'] as $l)
-          <div class="ck-item"><span><b>{{ $l->tipo }}</b><small>{{ $l->lote }}</small></span>
+        @foreach ($vendas['por_lote'] as $k => $l)
+          <div class="ck-item"><span><b><i class="ck-legenda" style="background:{{ $cores[$k % 7] }}"></i>{{ $l->tipo }}</b><small>{{ $l->lote }}</small></span>
             <span style="text-align:right"><b>{{ $l->qtd }}</b><small>{{ moeda($l->valor) }}</small></span></div>
         @endforeach
       </div>
+    @endif
+
+    <div class="ck-secao">Ingressos para venda</div>
+    <div class="ck-cartao">
+      @forelse ($vendas['lotes'] as $l)
+        <div class="ck-item"><span><b>{{ $l->nome }}</b><small>{{ $l->preco > 0 ? moeda($l->preco) : 'Gratuito' }} · {{ $l->vendidos }} de {{ $l->quantidade }}</small></span>
+          <span class="ck-selo ck-selo--{{ \Illuminate\Support\Str::slug($l->situacao) }}">{{ $l->situacao }}</span></div>
+      @empty
+        <div class="ck-item"><span><small>Nenhum ingresso cadastrado.</small></span></div>
+      @endforelse
+    </div>
+    @if (in_array($evento->status, ['publicado', 'pausado']))
+      <a href="{{ $evento->linkPublico() }}" class="ck-botao-vender">🎟 Vender ingressos</a>
     @endif
   @elseif ($aba === 'ferramentas')
     <div class="ck-cartao">

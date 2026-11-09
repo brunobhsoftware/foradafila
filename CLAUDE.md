@@ -341,7 +341,9 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   `CheckinController::registrar`. PWA: `public/app.webmanifest`, `public/app-sw.js` (cache só de CSS/JS/ícones), ícones `public/app-icons/`.
   Painel → Check-in mostra o QR/link do app; no celular o menu lateral tem **App** logo abaixo de Meus eventos (`.so-celular`, some acima de 900 px) e fica compacto, com altura `100dvh` e rolagem própria (Equipe, Níveis de acesso e Organização ficavam escondidos embaixo). **Regra do dia do evento** (`App\Support\JanelaCheckin`): check-in só de `abertura_portoes` (nunca antes da
   meia-noite do dia do início; o cadastro recusa abertura em outro dia) até `data_fim`; fora disso `fora_do_horario` com "O check-in abre em ..." / "O evento
-  terminou em ...". Testes `fluxo-app.js` (18, iPhone 13) e `fluxo-checkin.js` (18, o evento passa a estar acontecendo agora).
+  terminou em ...". **Aba Vendas completa** (decisão do Bruno, 09/11/2026; `CheckinAppController::vendas`): total vendido, líquido a receber, gráfico
+  de rosca por ingresso (`conic-gradient`), barra vendidos/ofertados, cartões (vendidos + cortesias, vendidos hoje + valor, pedidos + ticket médio, taxa,
+  devolvido, líquido), por ingresso, "Ingressos para venda" (situação de cada lote) e botão **Vender ingressos** (página pública). Testes `fluxo-app.js` (20, iPhone 13) e `fluxo-checkin.js` (18, o evento passa a estar acontecendo agora).
 - **Divulgação → Cupons** (`/painel/cupons`, `CuponsController`, model `Cupom`): código (maiúsculas, único por organização),
   percentual (≤ 100%) ou valor fixo, evento ou todos os eventos, lotes específicos (`cupom_lote`; nenhum = todos), limite de usos
   e por CPF, pedido mínimo, validade; situação (ativo, agendado, esgotado, expirado, desativado); editar (limite não fica abaixo

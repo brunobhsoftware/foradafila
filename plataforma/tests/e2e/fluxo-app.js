@@ -69,6 +69,9 @@ const qr = (codigo) => `FF1.${codigo}.${crypto.createHmac('sha256', APP_KEY).upd
   ok((await M.locator('[data-num=entraram]').innerText()) === '0' && (await M.locator('[data-num=restam]').innerText()) === '3' && (await M.content()).includes('Check-in aberto'), 'Check-in: 0 realizados, 3 restantes, aberto');
   await nav(M, M.click('.ck-abas a:has-text("Vendas")'));
   ok((await M.content()).includes('Ingressos vendidos') && (await M.locator('.ck-item').count()) >= 1, 'Vendas: totais e por ingresso');
+  ok((await M.content()).includes('Líquido a receber') && (await M.content()).includes('Vendidos hoje') && (await M.content()).includes('Taxa da plataforma')
+    && await M.isVisible('.ck-rosca') && await M.isVisible('a:has-text("Vender ingressos")') && (await M.content()).includes('Ingressos para venda'), 'Vendas: painel completo (hoje, taxa, líquido, gráfico, lotes, Vender ingressos)');
+  if (process.env.PRINT) await M.screenshot({ path: process.env.PRINT, fullPage: true });
   await nav(M, M.click('.ck-abas a:has-text("Ferramentas")'));
   ok((await M.content()).includes('Participantes') && (await M.content()).includes('Divulgue') && (await M.content()).includes('Códigos promocionais'), 'Ferramentas conforme o nível (produtor vê todas)');
 
