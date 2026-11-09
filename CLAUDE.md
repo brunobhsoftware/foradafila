@@ -115,8 +115,10 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   senha (`compradorDaCompra`: comprador do CPF, do e-mail ou novo com `senha_hash` NULL e CPF se houver). Só o comprador **novo** entra na
   conta. O **1º ingresso já vem com os dados do comprador** (`participantes[0][usar_comprador]` = 1, completado também no servidor);
   botão **"Estou comprando para outra pessoa"** limpa e desliga. Compra paga: **"Forma de pagamento"** em cartões Pix/Cartão
-  (`forma_pagamento` → `config.payment_method` da order: Pix só Pix com `default_id`, cartão sem Pix/boleto); **cartão exige CPF**
-  mesmo com "não desejo informar", e o CPF informado vai para o comprador e o cadastro único. O CPF enviado ao MP é o de quem paga.
+  (`forma_pagamento` → `config.payment_method` da order: Pix só Pix com `default_id`, cartão sem Pix/boleto); **cartão sem CPF
+  abre o pré-cadastro** `publico/inscricao-dados` (CPF do titular, celular opcional, nome e e-mail já preenchidos; a compra segue em campos
+  ocultos via `achatar()`, `etapa_dados`), e o CPF vai para o comprador e o cadastro único. `items[].external_code` = 30 primeiros
+  caracteres do uuid do lote sem hífens (o MP aceita até 30; com 36 dava 500 em produção, 08/11/2026). O CPF enviado ao MP é o de quem paga.
   Termos: um aceite só (`aceite_termos`). Testes usam `[name=cpf]` + `[name=aceite_termos]`. `publico.css` ganhou `.opcao-cartao`,
   `.botao--contorno` e `.botao--pequeno` (faltavam: o botão aparecia transparente).
 - **Checkout pago** (`App\Support\Checkout`, 08/11/2026): a mesma tela de inscrição vira "Comprar ingresso" com o resumo (preço + taxa

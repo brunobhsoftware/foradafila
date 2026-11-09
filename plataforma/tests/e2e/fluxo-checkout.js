@@ -20,7 +20,10 @@ const falso = http.createServer((req, res) => {
     const json = (s, o) => { res.writeHead(s, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(o)); };
     if (req.url.startsWith('/oauth/token')) return json(200, { access_token: 'APP_USR-bh-cc', expires_in: 21600 });
     if (req.url === '/v1/orders' && req.method === 'POST') {
-      const id = 'ORD' + (++n); ultimoCorpo = JSON.parse(corpo); orders[id] = { status: 'action_required', status_detail: 'waiting_payment' };
+      const corpoOrder = JSON.parse(corpo);
+      // como o MP real: external_code do item tem no máximo 30 caracteres
+      if ((corpoOrder.items || []).some((i) => String(i.external_code || '').length > 30)) return json(400, { errors: [{ code: 'property_value', message: 'Invalid value for property', details: ["'$.items[0].external_code' - length must be <= 30"] }] });
+      const id = 'ORD' + (++n); ultimoCorpo = corpoOrder; orders[id] = { status: 'action_required', status_detail: 'waiting_payment' };
       return json(201, { id, status: 'action_required', checkout_url: 'http://127.0.0.1:8099/pagar/' + id });
     }
     const rf = req.url.match(/^\/v1\/orders\/(ORD\d+)\/refund/);
@@ -134,6 +137,27 @@ const webhook = async (P, id) => {
   sql("UPDATE pedido SET expira_em = DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 MINUTE) WHERE status='aguardando_pagamento'");
   await C.goto(BASE + '/e/' + codEv('show-pago'));
   ok(sql("SELECT reservado FROM lote") === '0' && sql("SELECT status FROM pedido ORDER BY id DESC LIMIT 1") === 'expirado', 'reserva vencida e não paga volta ao estoque ao abrir o evento');
+
+  // ---- cartão sem CPF: pré-cadastro antes do pagamento ----
+  const D = await (await b.newContext()).newPage();
+  await D.goto(BASE + '/e/' + codEv('show-pago'));
+  await D.selectOption('select[name^="q["]', '1');
+  await nav(D, D.click('button:has-text("Comprar ingresso")'));
+  await D.click('[data-botao-sem-cpf]');
+  await D.fill('[name=nome]', 'Carla Cartao'); await D.fill('[name=email]', 'carla@cartao.test');
+  await D.check('[name=forma_pagamento][value=cartao]', { force: true });
+  await D.check('[name=aceite_termos]');
+  await nav(D, D.click('button:has-text("Ir para o pagamento")'));
+  ok((await D.content()).includes('Seus dados para o cartão') && await D.inputValue('[name=nome]') === 'Carla Cartao' && await D.inputValue('[name=email]') === 'carla@cartao.test', 'cartão sem CPF abre o pré-cadastro com nome e e-mail');
+  await D.fill('[name=cpf]', '000.000.000-00');
+  await nav(D, D.click('button:has-text("Ir para o pagamento")'));
+  ok((await D.content()).includes('Seus dados para o cartão') && (await D.content()).includes('CPF'), 'CPF inválido continua no pré-cadastro');
+  await D.fill('[name=cpf]', '153.509.460-56');
+  await nav(D, D.click('button:has-text("Ir para o pagamento")'));
+  ok(D.url().includes('/pagar/ORD') && ultimoCorpo.payer.identification.number === '15350946056' && ultimoCorpo.config.payment_method.not_allowed_types.includes('bank_transfer')
+    && sql("SELECT cpf FROM comprador WHERE email='carla@cartao.test'") === '15350946056', 'com o CPF vai ao pagamento só com cartão e grava o CPF no cadastro');
+  sql("UPDATE pedido SET expira_em = DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 MINUTE) WHERE status='aguardando_pagamento'");
+  await C.goto(BASE + '/e/' + codEv('show-pago'));
 
   // ---- extrato e repasse ----
   await P.goto(BASE + '/painel/financeiro');

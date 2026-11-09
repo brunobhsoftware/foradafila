@@ -110,7 +110,7 @@
         <label class="opcao-cartao"><input type="radio" name="forma_pagamento" value="pix" @checked(old('forma_pagamento', 'pix') === 'pix') data-forma>
           <span><b>Pix</b><small>Gera o Pix na hora; o ingresso sai assim que o pagamento cai.</small></span></label>
         <label class="opcao-cartao"><input type="radio" name="forma_pagamento" value="cartao" @checked(old('forma_pagamento') === 'cartao') data-forma>
-          <span><b>Cartão de crédito</b><small>Para pagar com cartão é preciso informar o CPF do titular.</small></span></label>
+          <span><b>Cartão de crédito</b><small>Sem o CPF informado acima, pedimos na próxima tela (exigência do cartão).</small></span></label>
       </div>
       @error('forma_pagamento')<small class="erro">{{ $message }}</small>@enderror
       @endif

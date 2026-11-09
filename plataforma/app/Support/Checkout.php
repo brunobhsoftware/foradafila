@@ -111,7 +111,7 @@ class Checkout
             $repassada = (float) $pedido->valor_taxa_servico > 0;
             $unit = round((float) $item->preco_unitario - (float) $item->desconto_unitario + ($repassada ? (float) $item->taxa_unitaria : 0), 2); // o que o comprador paga por ingresso
             $itens[] = [
-                'external_code' => $item->lote->uuid,
+                'external_code' => substr(str_replace('-', '', $item->lote->uuid), 0, 30), // o MP aceita até 30 caracteres
                 'title' => mb_substr($evento->titulo.' — '.$item->lote->tipo->nome.' ('.$item->lote->nome.')', 0, 250),
                 'description' => mb_substr('Ingresso para '.$evento->titulo.' em '.data_local($evento->data_inicio, 'd/m/Y H:i'), 0, 250),
                 'category_id' => 'tickets',
