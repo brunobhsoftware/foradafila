@@ -121,6 +121,16 @@
     </section>
 @endif
 
+@if (\App\Support\Esquema::temV017())
+<section class="cartao" style="margin-top:18px">
+    <div class="cartao__titulo"><h2>Opções de marketing</h2></div>
+    <div class="cartao__corpo">
+        <p>Cadastre até {{ \App\Support\SmtpEmpresa::MAXIMO }} contas de e-mail (SMTP) da sua empresa para enviar convites de eventos às suas listas de e-mail.</p>
+        <a href="{{ route('marketing.index') }}" class="botao botao--escuro">Configurar e-mails de divulgação</a>
+    </div>
+</section>
+@endif
+
 <section class="cartao" style="margin-top:18px">
     <div class="cartao__titulo"><h2>Minha conta de acesso</h2></div>
     <div class="cartao__corpo">

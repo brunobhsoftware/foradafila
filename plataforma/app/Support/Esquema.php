@@ -86,4 +86,10 @@ class Esquema
 
         return self::$cache['v005'];
     }
+
+    /** V017: contas SMTP da empresa, listas de e-mail e descadastro (Opções de marketing). */
+    public static function temV017(): bool
+    {
+        return self::$cache['v017'] ??= Schema::hasTable('smtp_conta') && Schema::hasTable('lista_email_contato') && Schema::hasTable('email_descadastro');
+    }
 }

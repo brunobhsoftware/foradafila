@@ -27,6 +27,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V014__lote_exibir.sql` | `lote.exibir` — **flag calculada** (1 = na página agora, 0 = oculto), atualizada pela regra de venda; não editável. Idempotente. Aplicado em produção em 08/11/2026 ("V014 ok") |
 | `banco/V015__formularios_inscricao.sql` | Formulários de inscrição: `formulario.padrao` e `evento.formulario_id`. Idempotente. Aplicado em produção em 08/11/2026 ("V015 ok") |
 | `banco/V016__cpf_teste_e_nascimento.sql` | Limpa o CPF de teste do MP (12345678909) de `comprador`/`pessoa` e cria `pessoa.data_nascimento`. Idempotente. Aplicado em produção em 09/11/2026 ("V016 ok") |
+| `banco/V017__marketing_smtp_listas.sql` | Opções de marketing: `smtp_conta` (até 5 SMTP da empresa, senha criptografada), `lista_email`/`lista_email_contato` e `email_descadastro`. Idempotente. **Aguardando importação em produção** (sem ele, menu e telas ficam ocultos: `Esquema::temV017()`) |
 | `docs/apps-checkin.md` | **Apps de check-in**: instalar sem loja (PWA) e publicar no Google Play e na App Store (projeto `apps/checkin/`, Capacitor 6) |
 | `apps/checkin/` | Projeto Capacitor dos apps Android/iOS, **com os projetos nativos gerados** (`android/`, `ios/`: ícones, tela de abertura, nome "FF Check-in", permissão de câmera); abre `https://foradafila.com.br/app`. Compilado pelo GitHub em `.github/workflows/apps-checkin.yml` (APK de teste, AAB assinado com os segredos `ANDROID_*`, build iOS de simulador) |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
@@ -360,6 +361,15 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   (desativa o texto próprio: `ativo = 0`, porque `mensagem_envio.modelo_id` aponta para ele); comunicado avulso para quem tem
   ingresso válido no evento (compradores ou participantes com e-mail; até 300 por envio, throttle `comunicado` 5/hora); histórico
   dos últimos 40 envios. Os módulos do menu do produtor não mostram mais "em breve" (só a rota genérica continua existindo).
+- **Opções de marketing** (V017, decisão do Bruno 09/11/2026): Organização → "Configurar e-mails de divulgação" (`/painel/organizacao/marketing`,
+  `MarketingController`, `organizador.editar`): até 5 contas SMTP da empresa (`App\Support\SmtpEmpresa`: `Mail::build` na hora, senha
+  `Crypt`, em branco mantém; "Enviar teste" grava `testado_em`/`ultimo_erro`; limite por hora). Só para divulgação: ingressos/senha/avisos
+  continuam pelo fique@/noreply@. Cartão "E-mail marketing do Fora da Fila — em breve" (pacotes da Hostinger, 2º passo).
+  **Divulgação → Listas de e-mail** (`/painel/listas-email`, `ListasEmailController`, `campanha.gerenciar`): criar lista, colar e-mails
+  ("Nome; e-mail"), importar CSV (`;` ou `,`, cabeçalho email/nome/telefone ou coluna com @, UTF-8 ou Windows-1252 do Excel, até 10 MB),
+  trazer compradores/participantes de eventos, busca, remover, exportar CSV, renomear/excluir; repetidos e inválidos contados.
+  `email_descadastro` (por empresa) marca "Descadastrado" e será pulado nos envios. Teste `fluxo-marketing.js` (16).
+  **Ainda não:** o envio do "Convite por e-mail" (campanha com assunto, imagem e descrição do evento) — em discussão com o Bruno.
 - **Política de cancelamento:** ao criar/editar evento o produtor marca a declaração
   `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
   (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores
