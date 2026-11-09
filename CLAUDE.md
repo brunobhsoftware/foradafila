@@ -504,7 +504,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 
 ## Pendências
 
-- [ ] Configurar o cron do agendador no hPanel (expirar reservas, virar lotes) quando houver vendas
+- [x] Cron do agendador no hPanel criado em 09/11/2026 pela API (`* * * * *` `/opt/alt/php83/usr/bin/php .../public_html/artisan schedule:run`, uid JJ009pnPPs); hoje roda `convites:enviar`. Próximos: expirar reservas, virar lotes, lembretes
 - [ ] Área administrativa da plataforma (equipe BH Software) — futuro próximo
 - [ ] **Preços:** tabela de valores (o site não cita mais "1% no primeiro evento"; aguarda definição do Bruno): percentuais de
   cada faixa, base de cálculo, o que é "primeiro evento", demais eventos, gratuitos/cortesias. O schema atual (`plano`:
