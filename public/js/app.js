@@ -220,10 +220,26 @@
     let fluxo = null; let ultimo = ''; let ultimoEm = 0;
     botaoCam.addEventListener('click', async () => {
       if (fluxo) { fluxo.getTracks().forEach((t) => t.stop()); fluxo = null; video.hidden = true; botaoCam.textContent = 'Ler com a câmera'; return; }
-      if (!('BarcodeDetector' in window) || !navigator.mediaDevices) { raiz.querySelector('[data-camera-aviso]').hidden = false; return; }
+      const aviso = raiz.querySelector('[data-camera-aviso]');
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { aviso.hidden = false; aviso.textContent = 'Este navegador não dá acesso à câmera. Use um leitor USB/Bluetooth ou digite o número.'; return; }
       try {
-        const det = new window.BarcodeDetector({ formats: ['qr_code'] });
-        fluxo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        // Leitor nativo quando existe (Chrome/Android); senão jsQR (iPhone, Safari, Firefox, computador).
+        let det = null;
+        if ('BarcodeDetector' in window) { try { det = new window.BarcodeDetector({ formats: ['qr_code'] }); } catch (e) { det = null; } }
+        if (!det && typeof window.jsQR === 'function') {
+          const tela = document.createElement('canvas'); const ctx = tela.getContext('2d', { willReadFrequently: true });
+          det = { detect: async (v) => {
+            const w = v.videoWidth, h = v.videoHeight; if (!w) return [];
+            const lado = Math.min(w, h), s = Math.min(1, 640 / lado);
+            tela.width = Math.round(lado * s); tela.height = tela.width;
+            ctx.drawImage(v, (w - lado) / 2, (h - lado) / 2, lado, lado, 0, 0, tela.width, tela.height);
+            const img = ctx.getImageData(0, 0, tela.width, tela.height);
+            const r = window.jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+            return r ? [{ rawValue: r.data }] : [];
+          } };
+        }
+        if (!det) { aviso.hidden = false; aviso.textContent = 'Não foi possível carregar o leitor de QR. Recarregue a página.'; return; }
+        fluxo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } });
         video.srcObject = fluxo; video.hidden = false; await video.play(); botaoCam.textContent = 'Parar câmera';
         const loop = async () => {
           if (!fluxo) return;
@@ -235,7 +251,7 @@
           setTimeout(loop, 250);
         };
         loop();
-      } catch (e) { raiz.querySelector('[data-camera-aviso]').hidden = false; raiz.querySelector('[data-camera-aviso]').textContent = 'Não foi possível abrir a câmera (permissão negada?).'; }
+      } catch (e) { const av = raiz.querySelector('[data-camera-aviso]'); av.hidden = false; av.textContent = 'Não foi possível abrir a câmera. Libere a câmera para este site nas configurações do navegador e tente de novo.'; }
     });
 
     // busca manual
