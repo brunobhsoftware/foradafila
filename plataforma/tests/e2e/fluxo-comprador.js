@@ -174,6 +174,21 @@ const formularioLegado = require('./_formulario-legado');
   await Z.check('[name=aceite_termos]');
   await nav(Z, Z.click('button:has-text("Confirmar inscrição")'));
   ok((await Z.content()).includes('enviados para an***@publico.test') && (await Z.goto(BASE + '/minha-conta')).url().includes('/entrar'), 'compra confirmada no cadastro existente, sem entrar na conta');
+  // "Acessar meus ingressos": código no e-mail e entra na conta (sem senha obrigatória)
+  const codigoDoLog = (acao) => { const l = require('fs').readFileSync(__dirname + '/../../storage/logs/laravel.log', 'utf8');
+    return [...l.matchAll(new RegExp(acao + ' no Fora da Fila: (\\d{6})', 'g'))].pop()[1]; };
+  const urlIngressosZ = BASE + '/pedido/' + sql("SELECT p.uuid FROM pedido p JOIN comprador c ON c.id=p.comprador_id WHERE c.email='ana@publico.test' ORDER BY p.id DESC LIMIT 1") + '/ingressos';
+  await Z.goto(urlIngressosZ);
+  await nav(Z, Z.click('button:has-text("Acessar meus ingressos")'));
+  ok(Z.url().endsWith('/minha-conta/codigo') && (await Z.content()).includes('an***@publico.test') && (await Z.content()).includes('Aproveite e cadastre a sua senha'), 'pede o código enviado ao e-mail e oferece criar a senha (opcional)');
+  await Z.fill('[name=codigo]', codigoDoLog('acessar os seus ingressos'));
+  await nav(Z, Z.click('button:has-text("Entrar")'));
+  ok(Z.url().endsWith('/minha-conta') && (await Z.content()).includes('Você entrou na sua conta'), 'com o código entra direto em Meus ingressos');
+  await nav(Z, Z.click('a:has-text("Meus dados")'));
+  await Z.fill('[name=telefone]', '31955554444');
+  await nav(Z, Z.click('button:has-text("Salvar")'));
+  ok((await Z.content()).includes('Dados salvos') && sql("SELECT telefone FROM comprador WHERE email='ana@publico.test'") === '31955554444', 'Meus dados: altera o celular');
+
 
   // "Editar meus dados": só com o código enviado ao e-mail do cadastro
   const E = await ctx();
@@ -205,6 +220,20 @@ const formularioLegado = require('./_formulario-legado');
   await Y.check('[name=aceite_termos]');
   await nav(Y, Y.click('button:has-text("Confirmar inscrição")'));
   ok(sql("SELECT CONCAT(IFNULL(c.cpf,'-'),'|',pa.nome) FROM comprador c JOIN pedido p ON p.comprador_id=c.id JOIN ingresso i ON i.pedido_id=p.id JOIN participante pa ON pa.ingresso_id=i.id WHERE c.email='semcpf@publico.test'") === '-|Amiga do Sem Cpf', 'compra sem CPF: comprador cadastrado pelo e-mail, ingresso para outra pessoa');
+  const Q = await ctx();
+  await Q.goto(BASE + '/minha-conta/entrar');
+  await Q.fill('form[action$="/codigo/enviar"] [name=email]', 'semcpf@publico.test');
+  await nav(Q, Q.click('button:has-text("Receber código")'));
+  ok((await Q.content()).includes('Aproveite e cadastre a sua senha'), 'entrar com código: quem não tem senha pode criar');
+  await Q.fill('[name=codigo]', '000000');
+  await nav(Q, Q.click('button:has-text("Entrar")'));
+  ok((await Q.content()).includes('Código incorreto'), 'código errado é recusado');
+  const codSemCpf = [...require('fs').readFileSync(__dirname + '/../../storage/logs/laravel.log', 'utf8').matchAll(/acessar os seus ingressos no Fora da Fila: (\d{6})/g)].pop()[1];
+  await Q.fill('[name=codigo]', codSemCpf); await Q.fill('[name=senha]', 'Criada123'); await Q.fill('[name=senha_confirmation]', 'Criada123');
+  await nav(Q, Q.click('button:has-text("Entrar")'));
+  ok(Q.url().endsWith('/minha-conta') && (await Q.content()).includes('Senha criada') && (await Q.content()).includes('Amiga do Sem Cpf')
+    && sql("SELECT senha_hash IS NOT NULL FROM comprador WHERE email='semcpf@publico.test'") === '1', 'entra com o código, cria a senha e vê os ingressos');
+
 
   // celular
   const M = await (await browser.newContext({ ...devices['iPhone 13'] })).newPage();

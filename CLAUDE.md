@@ -147,6 +147,12 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   WinAnsi, QR em retângulos por `App\Support\QrCode` — porte em PHP do qrcode-generator, módulo a módulo igual ao do navegador, conferido
   com jsQR) e, para quem não tem senha, "Crie a sua senha" (`SenhaController::link`, 72 h, removido do corpo gravado). Anexos do
   `Email` vão em base64 (o dispatch serializa em JSON). Sem dependência nova no composer (o download do GitHub é bloqueado na nuvem).
+- **Acesso do comprador por código** (decisão do Bruno, 09/11/2026; `AcessoCompradorController`): botão **"Acessar meus ingressos"** na tela
+  dos ingressos (`POST /pedido/{uuid}/acessar`, só para o pedido desta sessão; logado e dono → direto) e **"Entrar com código"** em
+  `/minha-conta/entrar` (`codigo.enviar`, resposta igual exista ou não a conta) mandam um código de 6 dígitos (`CodigoVerificacao`,
+  finalidade `acesso-comprador`) → `/minha-conta/codigo`: com o código entra (lembrar sessão, marca `email_verificado_em`) e, sem senha,
+  "Aproveite e cadastre a sua senha" (opcional). Área do comprador com abas (`comprador/_abas`): **Meus ingressos** (Próximos eventos /
+  Eventos que você já foi) e **Meus dados** (`/minha-conta/dados`: nome, celular, CPF se ainda não tem, criar/trocar senha; e-mail só leitura).
 - **Checkout pago** (`App\Support\Checkout`, 08/11/2026): a mesma tela de inscrição vira "Comprar ingresso" com o resumo (preço + taxa
   repassada) e "Ir para o pagamento". `InscricaoController::reservarPago` reserva o estoque (`lote.reservado`, UPDATE condicional) por
   `RESERVA_MIN` (30) min, cria o pedido `aguardando_pagamento` (participantes em `dados_participantes`; `pedido_item.taxa_unitaria` =
