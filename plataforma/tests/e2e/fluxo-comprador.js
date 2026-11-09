@@ -259,7 +259,7 @@ const formularioLegado = require('./_formulario-legado');
   await nav(Q, Q.click('.pub-abas a:has-text("Alterar senha")'));
   await Q.fill('[name=senha]', 'Trocada456'); await Q.fill('[name=senha_confirmation]', 'Trocada456');
   await nav(Q, Q.click('button:has-text("Salvar nova senha")'));
-  ok((await Q.content()).includes('Sua senha foi alterada'), 'Alterar senha troca a senha');
+  ok((await Q.content()).includes('Sua senha foi salva'), 'Alterar senha troca a senha');
 
 
 
