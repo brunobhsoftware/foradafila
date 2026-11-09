@@ -63,7 +63,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   await V.fill('[name="participantes[0][nome]"]', 'Ana Compradora'); await V.fill('[name="participantes[1][nome]"]', 'Pedro Amigo');
   await V.check('[name=aceite_termos]');
   await nav(V, V.click('button:has-text("Confirmar inscrição")'));
-  ok(V.url().endsWith('/minha-conta'), 'inscrição confirmada');
+  ok(/\/pedido\/.*\/ingressos$/.test(V.url()), 'inscrição confirmada');
   ok(sql("SELECT COUNT(*) FROM pedido p JOIN cupom c ON c.id=p.cupom_id WHERE c.codigo='JOAO'") === '1' && sql("SELECT usos FROM cupom WHERE codigo='JOAO'") === '1', 'pedido ligado ao cupom');
 
   // ---- código digitado e código inválido ----
@@ -80,7 +80,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   await W.fill('[name=cupom]', 'joao');
   await W.check('[name=aceite_termos]');
   await nav(W, W.click('button:has-text("Confirmar inscrição")'));
-  ok(W.url().endsWith('/minha-conta') && sql("SELECT usos FROM cupom WHERE codigo='JOAO'") === '2', 'código digitado (minúsculas) também conta');
+  ok(/\/pedido\/.*\/ingressos$/.test(W.url()) && sql("SELECT usos FROM cupom WHERE codigo='JOAO'") === '2', 'código digitado (minúsculas) também conta');
 
   // ---- contagem na lista ----
   await P.reload();

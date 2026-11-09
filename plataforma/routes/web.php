@@ -81,6 +81,10 @@ Route::middleware('auth')->group(function () {
 });
 
 // ---------- Avisos das operadoras de pagamento (sem login e sem CSRF) ----------
+Route::get('/pedido/{pedido}/ingressos', [\App\Http\Controllers\Publico\PagamentoController::class, 'ingressos'])->name('pedido.ingressos')
+    ->whereUuid('pedido')->middleware('throttle:60,1,pedido-ingressos');
+Route::get('/pedido/{pedido}/ingressos.pdf', [\App\Http\Controllers\Publico\PagamentoController::class, 'pdf'])->name('pedido.pdf')
+    ->whereUuid('pedido')->middleware('throttle:20,1,pedido-pdf');
 Route::get('/pedido/{pedido}/pix', [\App\Http\Controllers\Publico\PagamentoController::class, 'pix'])->name('pedido.pix')
     ->whereUuid('pedido')->middleware('throttle:30,1,pedido-pix');
 Route::get('/pedido/{pedido}/cartao', [\App\Http\Controllers\Publico\PagamentoController::class, 'cartao'])->name('pedido.cartao')

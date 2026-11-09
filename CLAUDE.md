@@ -139,6 +139,14 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   recusado → mensagem (`mensagemRecusa`) e o pedido segue reservado para outro cartão. O CPF do titular vai para o comprador e o cadastro
   único. O pré-cadastro do cartão (`publico/inscricao-dados`) ficou desativado. **Sem a Public Key cadastrada o cartão mostra
   "indisponível, escolha Pix".**
+- **Ingressos na hora, sem login, e PDF por e-mail** (decisão do Bruno, 09/11/2026): toda compra (gratuita, Pix, cartão) termina em
+  `/pedido/{uuid}/ingressos` ("Seus ingressos": QR de cada ingresso, "Baixar ingressos em PDF" `/pedido/{uuid}/ingressos.pdf`, imprimir).
+  Acesso (`PagamentoController::podeVer`): pedido feito neste navegador (sessão `pedidos_compra`, `PagamentoController::lembrar`), comprador
+  dono logado ou **link assinado do e-mail** (`linkIngressos`, 90 dias, assinatura só do caminho). O e-mail de confirmação leva o botão
+  "Ver meus ingressos" (esse link), o **PDF anexo** (`App\Support\IngressoPdf`: PDF escrito à mão, uma página A4 por ingresso, Helvetica
+  WinAnsi, QR em retângulos por `App\Support\QrCode` — porte em PHP do qrcode-generator, módulo a módulo igual ao do navegador, conferido
+  com jsQR) e, para quem não tem senha, "Crie a sua senha" (`SenhaController::link`, 72 h, removido do corpo gravado). Anexos do
+  `Email` vão em base64 (o dispatch serializa em JSON). Sem dependência nova no composer (o download do GitHub é bloqueado na nuvem).
 - **Checkout pago** (`App\Support\Checkout`, 08/11/2026): a mesma tela de inscrição vira "Comprar ingresso" com o resumo (preço + taxa
   repassada) e "Ir para o pagamento". `InscricaoController::reservarPago` reserva o estoque (`lote.reservado`, UPDATE condicional) por
   `RESERVA_MIN` (30) min, cria o pedido `aguardando_pagamento` (participantes em `dados_participantes`; `pedido_item.taxa_unitaria` =

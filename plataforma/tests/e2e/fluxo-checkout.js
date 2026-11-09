@@ -124,7 +124,7 @@ const webhook = async (P, id) => {
   await webhook(P, 'ORD1');
   ok(sql('SELECT COUNT(*) FROM ingresso') === '2', 'webhook repetido não emite de novo');
   await C.goto(BASE + '/pedido/' + uuid + '/pagamento?resultado=sucesso');
-  ok(C.url().endsWith('/minha-conta') && (await C.content()).includes('Pagamento aprovado'), 'retorno aprovado leva a Meus ingressos');
+  ok(/\/pedido\/[0-9a-f-]{36}\/ingressos$/.test(C.url()) && (await C.content()).includes('Pagamento aprovado') && (await C.content()).includes('Seus ingressos'), 'retorno aprovado mostra os ingressos na hora');
 
   // ---- pagamento recusado libera a reserva ----
   await C.goto(BASE + '/e/' + codEv('show-pago'));

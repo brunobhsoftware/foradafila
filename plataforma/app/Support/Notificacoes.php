@@ -28,7 +28,9 @@ class Notificacoes
     /** fique@ — confirmação do pedido com a lista de ingressos (modelo "confirmacao_compra"). */
     public static function ingressosConfirmados(Pedido $pedido, Comprador $comprador, Evento $evento, Organizador $org, Collection $ingressos): void
     {
-        $link = route('comprador.ingressos');
+        // Link que abre os ingressos sem login (assinado, 90 dias) e PDF anexo (decisão do Bruno, 09/11/2026).
+        $link = \App\Http\Controllers\Publico\PagamentoController::linkIngressos($pedido);
+        $linkSenha = ($comprador->senha_hash || ! $comprador->exists || ! $comprador->uuid) ? null : \App\Http\Controllers\Auth\SenhaController::link($comprador, 'comprador');
         $vars = [
             'comprador_nome' => $comprador->nome, 'pedido_codigo' => $pedido->codigo, 'evento_titulo' => $evento->titulo,
             'evento_data' => data_local($evento->data_inicio, 'd/m/Y \à\s H:i'), 'local_nome' => $evento->local?->nome ?? 'online',
@@ -43,13 +45,23 @@ class Notificacoes
         $html = Email::layout(
             'Ingressos confirmados',
             '<p>'.nl2br(self::e($modelo['texto'])).'</p><p style="margin:16px 0 6px"><b>Seus ingressos</b></p><ul style="padding-left:18px;margin:0">'.$lista.'</ul>'
-            .'<p style="margin-top:16px;font-size:13px;color:#667085">Na entrada, apresente o QR Code de cada ingresso, que fica em Meus ingressos. Não compartilhe o QR Code.</p>',
-            'Abrir Meus ingressos', $link, self::rodapeOrganizador($org)
+            .'<p style="margin-top:16px;font-size:13px;color:#667085">Os ingressos estão em PDF neste e-mail. Na entrada, apresente o QR Code de cada ingresso (impresso ou no celular). Não compartilhe o QR Code.</p>'
+            .(! $linkSenha ? '' : '<p style="margin-top:12px;font-size:13px;color:#667085">Quer acessar os seus ingressos com e-mail e senha? <a href="'
+                .self::e((string) $linkSenha).'" style="color:#F25C05">Crie a sua senha</a> (link válido por 3 dias). É opcional.</p>'),
+            'Ver meus ingressos', $link, self::rodapeOrganizador($org)
         );
         $texto = $modelo['texto']."\n\nIngressos:\n".$ingressos->map(fn ($i) => '- '.$i->numeroExibicao().' — '.($i->participante?->nome ?? ''))->implode("\n")."\n\nMeus ingressos: $link";
 
+        $anexos = [];
+        try {
+            $anexos[] = ['nome' => 'ingressos-'.$pedido->codigo.'.pdf', 'mime' => 'application/pdf',
+                'conteudo' => IngressoPdf::gerar($pedido, $evento, $ingressos->whereIn('status', ['valido', 'utilizado'])->values())];
+        } catch (\Throwable $e) {
+            report($e); // sem o PDF o e-mail sai mesmo assim, com o link
+        }
         Email::operacao('confirmacao_compra', $comprador->email, $modelo['assunto'], $html, $texto, [
             'organizador_id' => $org->id, 'modelo_id' => $modelo['modelo_id'], 'comprador_id' => $comprador->id, 'pedido_id' => $pedido->id,
+            'anexos' => $anexos, 'ocultar' => array_filter([$linkSenha ? self::e($linkSenha) : null]),
         ]);
     }
 

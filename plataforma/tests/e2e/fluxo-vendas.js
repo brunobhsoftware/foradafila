@@ -48,7 +48,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   }
   await V.check('[name=aceite_termos]');
   await nav(V, V.click('button:has-text("Confirmar inscrição")'));
-  ok(V.url().endsWith('/minha-conta'), 'comprador inscrito com 3 ingressos');
+  ok(/\/pedido\/.*\/ingressos$/.test(V.url()), 'comprador inscrito com 3 ingressos');
   // simula ingresso pago (venda paga ainda não existe): Pedro pagou R$ 80
   sql("UPDATE ingresso i JOIN participante p ON p.ingresso_id=i.id SET i.valor_pago=80 WHERE p.nome='Pedro Amigo'");
   sql("UPDATE participante SET email='carla@publico.test' WHERE nome='Carla Prima'");

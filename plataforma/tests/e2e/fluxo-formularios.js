@@ -89,7 +89,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   await V.selectOption(`select[name="participantes[1][c${turma}]"]`, 'Tarde');
   await V.check('[name=aceite_termos]');
   await nav(V, V.click('button:has-text("Confirmar inscrição")'));
-  ok(V.url().endsWith('/minha-conta'), 'inscrição confirmada');
+  ok(/\/pedido\/.*\/ingressos$/.test(V.url()), 'inscrição confirmada');
   ok(sql("SELECT CONCAT_WS('|', nome, email, cpf, telefone, tamanho_camiseta) FROM participante WHERE nome='Ana Compradora'").startsWith('Ana Compradora|ana@form.test|52998224725|31988887777|'), 'campos do catálogo gravados no participante');
   ok(sql("SELECT GROUP_CONCAT(r.valor ORDER BY fc.rotulo) FROM participante_resposta r JOIN formulario_campo fc ON fc.id=r.formulario_campo_id JOIN participante p ON p.id=r.participante_id WHERE p.nome='Pedro Amigo'") === '7,Tarde',
     'campos personalizados gravados (número da camisa e turma)');

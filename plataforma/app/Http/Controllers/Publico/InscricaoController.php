@@ -157,7 +157,9 @@ class InscricaoController extends Controller
 
         // Pedido já criado com esta chave (clique duplo, voltar e reenviar): leva ao mesmo pedido.
         if ($existente = Pedido::withoutGlobalScope('organizador')->where('chave_idempotencia', $dados['chave'])->first()) {
-            return redirect()->route('comprador.ingressos')->with('ok', 'Seu pedido '.$existente->codigo.' já está confirmado.');
+            PagamentoController::lembrar($existente);
+
+            return redirect()->route('pedido.ingressos', $existente->uuid)->with('ok', 'Seu pedido '.$existente->codigo.' já está confirmado.');
         }
 
         $cupom = $this->cupomValido($evento, $dados['cupom'] ?? null);
@@ -258,14 +260,11 @@ class InscricaoController extends Controller
         Notificacoes::ingressosConfirmados($pedido, $compradorFinal, $evento->loadMissing('local'), $evento->organizador, $pedido->ingressos);
         Notificacoes::novaCompraParaEquipe($pedido, $compradorFinal, $evento, $evento->organizador, $pedido->ingressos->count());
 
-        if (! Auth::guard('comprador')->check()) {
-            // Cadastro que já existia: não entra na conta só com o CPF; os ingressos vão para o e-mail cadastrado.
-            return redirect()->to($evento->linkPublico())
-                ->with('ok', "Pronto! Pedido {$pedido->codigo} confirmado. Os ingressos foram enviados para ".self::mascararEmail($compradorFinal->email).'.');
-        }
+        // Quem acabou de comprar vê os ingressos na hora, sem login (decisão do Bruno, 09/11/2026); também vão por e-mail em PDF.
+        PagamentoController::lembrar($pedido);
 
-        return redirect()->route('comprador.ingressos')
-            ->with('ok', "Pronto! Pedido {$pedido->codigo} confirmado. Seus ingressos estão abaixo.");
+        return redirect()->route('pedido.ingressos', $pedido->uuid)
+            ->with('ok', "Pronto! Pedido {$pedido->codigo} confirmado. Os ingressos também foram enviados para ".self::mascararEmail($compradorFinal->email).', em PDF.');
     }
 
     /**
@@ -355,6 +354,7 @@ class InscricaoController extends Controller
             $compradorFinal->forceFill(['cpf' => $cpf])->save();
             \App\Support\CadastroPessoa::registrar($cpf, $compradorFinal->nome, $compradorFinal->email, $compradorFinal->telefone, 'compra');
         }
+        PagamentoController::lembrar($pedido);
         if (($dados['forma_pagamento'] ?? null) === 'cartao') {
             return redirect()->route('pedido.cartao', $pedido->uuid); // formulário de cartão na nossa página
         }
