@@ -21,6 +21,9 @@ class ListasEmailController extends Controller
 {
     public const MAX_CSV_KB = 10240;
 
+    /** Declaração obrigatória ao adicionar contatos (decisão do Bruno, 09/11/2026), registrada na auditoria e no contato. */
+    public const DECLARACAO = 'Declaro que estes contatos autorizaram receber divulgação de eventos da minha empresa';
+
     public function index(Tenant $tenant)
     {
         Gate::authorize('campanha.gerenciar');
@@ -80,6 +83,7 @@ class ListasEmailController extends Controller
     {
         Gate::authorize('campanha.gerenciar');
         $lista = $this->lista($tenant, $uuid);
+        $request->validate(['declaracao' => ['accepted']], ['declaracao.accepted' => 'Marque a declaração de que os contatos autorizaram receber divulgação.']);
         $texto = (string) $request->validate(['texto' => ['required', 'string', 'max:500000']])['texto'];
         $linhas = array_map(fn ($l) => preg_split('/[;,\t]/', $l), preg_split('/\R/', $texto));
 
@@ -91,6 +95,7 @@ class ListasEmailController extends Controller
     {
         Gate::authorize('campanha.gerenciar');
         $lista = $this->lista($tenant, $uuid);
+        $request->validate(['declaracao' => ['accepted']], ['declaracao.accepted' => 'Marque a declaração de que os contatos autorizaram receber divulgação.']);
         $request->validate(['arquivo' => ['required', 'file', 'max:'.self::MAX_CSV_KB, 'mimes:csv,txt']],
             ['arquivo.max' => 'O arquivo pode ter no máximo 10 MB.', 'arquivo.mimes' => 'Envie um arquivo .csv ou .txt.'], ['arquivo' => 'arquivo']);
         $conteudo = file_get_contents($request->file('arquivo')->getRealPath());
@@ -110,6 +115,7 @@ class ListasEmailController extends Controller
     {
         Gate::authorize('campanha.gerenciar');
         $lista = $this->lista($tenant, $uuid);
+        $request->validate(['declaracao' => ['accepted']], ['declaracao.accepted' => 'Marque a declaração de que os contatos autorizaram receber divulgação.']);
         $d = $request->validate(['eventos' => ['required', 'array', 'min:1'], 'eventos.*' => ['string'],
             'quem' => ['required', 'in:compradores,participantes,todos']], ['eventos.required' => 'Escolha ao menos um evento.']);
         $ids = Evento::visiveis()->whereIn('uuid', $d['eventos'])->pluck('id')->all();
@@ -219,17 +225,19 @@ class ListasEmailController extends Controller
 
     private function gravar(Tenant $tenant, object $lista, array $lidos, ?string $origem, string $verbo)
     {
+        request()->validate(['declaracao' => ['accepted']], ['declaracao.accepted' => 'Marque a declaração de que os contatos autorizaram receber divulgação.']);
         $antes = DB::table('lista_email_contato')->where('lista_id', $lista->id)->count();
         foreach (array_chunk(array_values($lidos['validos']), 500) as $lote) {
             DB::table('lista_email_contato')->insertOrIgnore(array_map(fn ($c) => [
                 'lista_id' => $lista->id, 'organizador_id' => $tenant->id(), 'email' => $c['email'], 'nome' => $c['nome'],
                 'telefone' => $c['telefone'], 'origem' => $c['origem'] ?? $origem ?? 'manual',
+            ] + (Esquema::temV018() ? ['consentimento_em' => now(), 'consentimento_por' => auth()->id()] : []) + [
             ], $lote));
         }
         $novos = DB::table('lista_email_contato')->where('lista_id', $lista->id)->count() - $antes;
         $repetidos = count($lidos['validos']) - $novos;
         Auditoria::registrar('lista_email.adicionar', Organizador::findOrFail($tenant->id()), null,
-            ['lista' => $lista->nome, 'novos' => $novos, 'repetidos' => $repetidos, 'invalidos' => $lidos['invalidos'], 'origem' => $origem ?? 'eventos']);
+            ['declaracao' => self::DECLARACAO, 'ip' => request()->ip(), 'lista' => $lista->nome, 'novos' => $novos, 'repetidos' => $repetidos, 'invalidos' => $lidos['invalidos'], 'origem' => $origem ?? 'eventos']);
         $msg = "$novos e-mail(s) $verbo.";
         if ($repetidos) { $msg .= " $repetidos já estavam na lista."; }
         if ($lidos['invalidos']) { $msg .= " {$lidos['invalidos']} linha(s) sem e-mail válido foram ignoradas."; }

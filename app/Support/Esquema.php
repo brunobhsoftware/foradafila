@@ -92,4 +92,10 @@ class Esquema
     {
         return self::$cache['v017'] ??= Schema::hasTable('smtp_conta') && Schema::hasTable('lista_email_contato') && Schema::hasTable('email_descadastro');
     }
+
+    /** V018: convite por e-mail (campanha.uuid/lista_id/smtp_conta_id e campanha_envio). */
+    public static function temV018(): bool
+    {
+        return self::$cache['v018'] ??= self::temV017() && Schema::hasTable('campanha_envio') && Schema::hasColumn('campanha', 'smtp_conta_id');
+    }
 }

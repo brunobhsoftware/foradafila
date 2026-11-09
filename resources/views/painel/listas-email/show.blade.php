@@ -16,6 +16,7 @@
         <p class="suave">Separado por ; ou vírgula, até 10 MB. Com cabeçalho, reconhecemos as colunas <b>email</b>, <b>nome</b> e <b>telefone</b>; sem cabeçalho, a coluna com @.</p>
         <form method="post" action="{{ route('listas-email.importar', $lista->uuid) }}" enctype="multipart/form-data">@csrf
             <input type="file" name="arquivo" accept=".csv,.txt,text/csv" required>
+            <label class="opcao" style="display:flex;gap:6px;margin-top:8px"><input type="checkbox" name="declaracao" value="1" required> <small>{{ \App\Http\Controllers\Painel\ListasEmailController::DECLARACAO }}.</small></label>
             <button class="botao botao--primario" style="margin-top:10px">Importar</button>
         </form>
     </section>
@@ -23,6 +24,7 @@
         <h2 style="margin-top:0">Colar e-mails</h2>
         <form method="post" action="{{ route('listas-email.colar', $lista->uuid) }}">@csrf
             <textarea name="texto" rows="5" placeholder="Um por linha: e-mail ou Nome; e-mail" style="width:100%" required></textarea>
+            <label class="opcao" style="display:flex;gap:6px;margin-top:8px"><input type="checkbox" name="declaracao" value="1" required> <small>{{ \App\Http\Controllers\Painel\ListasEmailController::DECLARACAO }}.</small></label>
             <button class="botao botao--primario" style="margin-top:10px">Adicionar</button>
         </form>
     </section>
@@ -36,6 +38,7 @@
             <select name="quem" style="margin-top:8px;width:100%">
                 <option value="todos">Compradores e participantes</option><option value="compradores">Só compradores</option><option value="participantes">Só participantes</option>
             </select>
+            <label class="opcao" style="display:flex;gap:6px;margin-top:8px"><input type="checkbox" name="declaracao" value="1" required> <small>{{ \App\Http\Controllers\Painel\ListasEmailController::DECLARACAO }}.</small></label>
             <button class="botao botao--primario" style="margin-top:10px">Trazer contatos</button>
         </form>
         @endif
