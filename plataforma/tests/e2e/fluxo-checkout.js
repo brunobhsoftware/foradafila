@@ -24,6 +24,12 @@ const falso = http.createServer((req, res) => {
       // como o MP real: external_code do item tem no máximo 30 caracteres
       if ((corpoOrder.items || []).some((i) => String(i.external_code || '').length > 30)) return json(400, { errors: [{ code: 'property_value', message: 'Invalid value for property', details: ["'$.items[0].external_code' - length must be <= 30"] }] });
       const id = 'ORD' + (++n); ultimoCorpo = corpoOrder; orders[id] = { status: 'action_required', status_detail: 'waiting_payment' };
+      const pmCartao = corpoOrder.transactions && corpoOrder.transactions.payments[0].payment_method;
+      if (pmCartao && pmCartao.token) { // cartão direto (formulário do MP na nossa página): "REJ" simula recusa
+        if (pmCartao.token === 'REJ') return json(201, { id, status: 'failed', status_detail: 'cc_rejected_insufficient_amount' });
+        orders[id] = { status: 'processed', status_detail: 'accredited', tipo: 'credit_card', parcelas: pmCartao.installments };
+        return json(201, { id, status: 'processed', status_detail: 'accredited', transactions: { payments: [{ id: 'PAY' + id, payment_method: { type: 'credit_card', installments: pmCartao.installments } }] } });
+      }
       if (corpoOrder.processing_mode === 'automatic') // Pix direto: devolve o copia e cola, sem checkout_url
         return json(201, { id, status: 'action_required', transactions: { payments: [{ id: 'PAY' + id, payment_method: { id: 'pix', type: 'bank_transfer', qr_code: '00020126580014br.gov.bcb.pix-' + id, ticket_url: 'http://127.0.0.1:8099/pix/' + id } }] } });
       return json(201, { id, status: 'action_required', checkout_url: 'http://127.0.0.1:8099/pagar/' + id });
@@ -31,7 +37,7 @@ const falso = http.createServer((req, res) => {
     const rf = req.url.match(/^\/v1\/orders\/(ORD\d+)\/refund/);
     if (rf && req.method === 'POST') { reembolsos.push({ id: rf[1], corpo: corpo ? JSON.parse(corpo) : null, token: req.headers.authorization }); return json(201, { id: rf[1], status: 'refunded' }); }
     const m = req.url.match(/^\/v1\/orders\/(ORD\d+)/);
-    if (m && orders[m[1]]) return json(200, { id: m[1], ...orders[m[1]], transactions: { payments: [{ id: 'PAY' + m[1], payment_method: { type: 'bank_transfer', installments: 1 } }] } });
+    if (m && orders[m[1]]) return json(200, { id: m[1], ...orders[m[1]], transactions: { payments: [{ id: 'PAY' + m[1], payment_method: { type: orders[m[1]].tipo || 'bank_transfer', installments: orders[m[1]].parcelas || 1 } }] } });
     if (req.url.startsWith('/pagar/')) { res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end('<h1>Checkout falso do Mercado Pago</h1>'); }
     json(404, {});
   });
@@ -145,27 +151,6 @@ const webhook = async (P, id) => {
   await C.goto(BASE + '/e/' + codEv('show-pago'));
   ok(sql("SELECT reservado FROM lote") === '0' && sql("SELECT status FROM pedido ORDER BY id DESC LIMIT 1") === 'expirado', 'reserva vencida e não paga volta ao estoque ao abrir o evento');
 
-  // ---- cartão sem CPF: pré-cadastro antes do pagamento ----
-  const D = await (await b.newContext()).newPage();
-  await D.goto(BASE + '/e/' + codEv('show-pago'));
-  await D.selectOption('select[name^="q["]', '1');
-  await nav(D, D.click('button:has-text("Comprar ingresso")'));
-  await D.click('[data-botao-sem-cpf]');
-  await D.fill('[name=nome]', 'Carla Cartao'); await D.fill('[name=email]', 'carla@cartao.test');
-  await D.check('[name=forma_pagamento][value=cartao]', { force: true });
-  await D.check('[name=aceite_termos]');
-  await nav(D, D.click('button:has-text("Ir para o pagamento")'));
-  ok((await D.content()).includes('Seus dados para o cartão') && await D.inputValue('[name=nome]') === 'Carla Cartao' && await D.inputValue('[name=email]') === 'carla@cartao.test', 'cartão sem CPF abre o pré-cadastro com nome e e-mail');
-  await D.fill('[name=cpf]', '000.000.000-00');
-  await nav(D, D.click('button:has-text("Ir para o pagamento")'));
-  ok((await D.content()).includes('Seus dados para o cartão') && (await D.content()).includes('CPF'), 'CPF inválido continua no pré-cadastro');
-  await D.fill('[name=cpf]', '153.509.460-56');
-  await nav(D, D.click('button:has-text("Ir para o pagamento")'));
-  ok(D.url().includes('/pagar/ORD') && ultimoCorpo.payer.identification.number === '15350946056' && ultimoCorpo.config.payment_method.not_allowed_types.includes('bank_transfer')
-    && sql("SELECT cpf FROM comprador WHERE email='carla@cartao.test'") === '15350946056', 'com o CPF vai ao pagamento só com cartão e grava o CPF no cadastro');
-  sql("UPDATE pedido SET expira_em = DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 MINUTE) WHERE status='aguardando_pagamento'");
-  await C.goto(BASE + '/e/' + codEv('show-pago'));
-
   // ---- extrato e repasse ----
   await P.goto(BASE + '/painel/financeiro');
   t = (await P.locator('section:has(h2:text("Extrato do recebimento"))').innerText()).replace(/\s+/g, ' ');
@@ -211,6 +196,33 @@ const webhook = async (P, id) => {
   sql("UPDATE lote SET venda_fim = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 6 DAY)");
   await C.goto(linkCodigo);
   ok((await C.content()).includes('Ambiente de teste (homologação)'), 'página do evento avisa que é teste');
+
+  // ---- cartão na nossa página (formulário do Mercado Pago), sem login nem pré-cadastro ----
+  await P.goto(BASE + '/painel/financeiro');
+  await P.check('input[name=ambiente_vendas][value=producao]', { force: true });
+  await nav(P, P.click('button:has-text("Salvar ambiente")'));
+  sql("INSERT INTO parametro_sistema (chave, valor) VALUES ('mp_public_key', 'APP_USR-pk-falsa') ON DUPLICATE KEY UPDATE valor='APP_USR-pk-falsa'");
+  const D = await (await b.newContext()).newPage();
+  await D.goto(linkCodigo);
+  await D.selectOption('select[name^="q["]', '1');
+  await nav(D, D.click('button:has-text("Comprar ingresso")'));
+  await D.click('[data-botao-sem-cpf]');
+  await D.fill('[name=nome]', 'Carla Cartao'); await D.fill('[name=email]', 'carla@cartao.test');
+  await D.check('[name=forma_pagamento][value=cartao]', { force: true });
+  await D.check('[name=aceite_termos]');
+  await nav(D, D.click('button:has-text("Ir para o pagamento")'));
+  const uuidCartao = sql("SELECT uuid FROM pedido ORDER BY id DESC LIMIT 1");
+  ok(D.url().endsWith('/pedido/' + uuidCartao + '/cartao') && (await D.content()).includes('Pague com cartão de crédito')
+    && await D.getAttribute('#brick-cartao', 'data-pk') === 'APP_USR-pk-falsa', 'cartão: formulário na nossa página, com a Public Key da conta, sem pedir CPF antes');
+  const csrf = await D.getAttribute('meta[name=csrf-token]', 'content');
+  const pagar = (token) => D.request.post(BASE + '/pedido/' + uuidCartao + '/cartao', { headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
+    data: { token, payment_method_id: 'master', payment_type_id: 'credit_card', installments: 3, issuer_id: '24', payer: { email: 'carla@cartao.test', identification: { type: 'CPF', number: '15350946056' } } } });
+  let rc = await pagar('REJ');
+  ok(rc.status() === 422 && (await rc.json()).erro.includes('sem limite') && sql("SELECT status FROM pedido WHERE uuid='" + uuidCartao + "'") === 'aguardando_pagamento', 'cartão recusado: mostra o motivo e o pedido continua reservado');
+  rc = await pagar('tok-ok');
+  ok(rc.status() === 200 && (await rc.json()).redirect.includes('/pagamento') && ultimoCorpo.transactions.payments[0].payment_method.token === 'tok-ok' && ultimoCorpo.transactions.payments[0].payment_method.installments === 3
+    && sql("SELECT status FROM pedido WHERE uuid='" + uuidCartao + "'") === 'pago' && sql("SELECT CONCAT_WS('|', metodo, parcelas) FROM pagamento ORDER BY id DESC LIMIT 1") === 'cartao|3'
+    && sql("SELECT cpf FROM comprador WHERE email='carla@cartao.test'") === '15350946056', 'cartão aprovado na hora: ingressos emitidos, 3 parcelas e CPF do titular no cadastro');
 
   sql("UPDATE taxa_regra SET percentual=0, valor_fixo=0, valor_minimo=0 WHERE operacao='ingresso_pago'");
   ok(erros.length === 0, 'sem erros de JavaScript ' + erros.join(' | '));

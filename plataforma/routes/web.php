@@ -83,6 +83,10 @@ Route::middleware('auth')->group(function () {
 // ---------- Avisos das operadoras de pagamento (sem login e sem CSRF) ----------
 Route::get('/pedido/{pedido}/pix', [\App\Http\Controllers\Publico\PagamentoController::class, 'pix'])->name('pedido.pix')
     ->whereUuid('pedido')->middleware('throttle:30,1,pedido-pix');
+Route::get('/pedido/{pedido}/cartao', [\App\Http\Controllers\Publico\PagamentoController::class, 'cartao'])->name('pedido.cartao')
+    ->whereUuid('pedido')->middleware('throttle:30,1,pedido-cartao');
+Route::post('/pedido/{pedido}/cartao', [\App\Http\Controllers\Publico\PagamentoController::class, 'pagarCartao'])->name('pedido.cartao.pagar')
+    ->whereUuid('pedido')->middleware('throttle:8,10,pedido-cartao-pagar');
 Route::get('/pedido/{pedido}/situacao', [\App\Http\Controllers\Publico\PagamentoController::class, 'situacao'])->name('pedido.situacao')
     ->whereUuid('pedido')->middleware('throttle:40,1,pedido-situacao');
 Route::get('/pedido/{pedido}/pagamento', [\App\Http\Controllers\Publico\PagamentoController::class, 'retorno'])->name('pedido.retorno')

@@ -129,7 +129,16 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   a order vai com `processing_mode: automatic` e `transactions.payments[{payment_method: {id: pix, type: bank_transfer}, expiration_time: PT30M}]`
   (sem `config.online`); o "copia e cola" (`qr_code`) fica em `pagamento.resposta_gateway.pix` e `link_pagamento` aponta para
   `/pedido/{uuid}/pix` (`PagamentoController::pix`: QR desenhado com `qrcode-generator.js`, botão copiar, consulta `/pedido/{uuid}/situacao`
-  a cada 5 s e vai ao resultado quando aprova). Cartão continua no Checkout Pro (`metodo = cartao`).
+  a cada 5 s e vai ao resultado quando aprova).
+- **Cartão na nossa página** (decisão do Bruno, 09/11/2026: nada de login no Mercado Pago/Mercado Livre): `forma_pagamento=cartao` cria o
+  pedido reservado e vai para `/pedido/{uuid}/cartao` com o **Card Payment Brick** (`sdk.mercadopago.com/js/v2`, Public Key da conta:
+  `Checkout::publicKey` → `conta_pagamento.public_key/teste_public_key` na aplicação própria ou `mp_public_key`/`mp_teste_public_key`
+  da BH, campos novos nos blocos 2/3 da Administração → Mercado Pago). O Brick pede número, validade, CVV, titular, **CPF** e parcelas
+  (até 12) e devolve o token; `POST /pedido/{uuid}/cartao` → `Checkout::pagarCartao` cria a order `processing_mode: automatic` com
+  `transactions.payments[{payment_method: {id, type, token, installments}}]` e decide na hora: aprovado → `sincronizar`/`aprovar`;
+  recusado → mensagem (`mensagemRecusa`) e o pedido segue reservado para outro cartão. O CPF do titular vai para o comprador e o cadastro
+  único. O pré-cadastro do cartão (`publico/inscricao-dados`) ficou desativado. **Sem a Public Key cadastrada o cartão mostra
+  "indisponível, escolha Pix".**
 - **Checkout pago** (`App\Support\Checkout`, 08/11/2026): a mesma tela de inscrição vira "Comprar ingresso" com o resumo (preço + taxa
   repassada) e "Ir para o pagamento". `InscricaoController::reservarPago` reserva o estoque (`lote.reservado`, UPDATE condicional) por
   `RESERVA_MIN` (30) min, cria o pedido `aguardando_pagamento` (participantes em `dados_participantes`; `pedido_item.taxa_unitaria` =

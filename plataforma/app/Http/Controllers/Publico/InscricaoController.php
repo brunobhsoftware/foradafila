@@ -147,7 +147,7 @@ class InscricaoController extends Controller
         }
 
         // Cartão sem CPF: abre o pré-cadastro (nome, e-mail, CPF e celular) antes do pagamento, com o resto da compra já preenchido.
-        if (! $comprador && ($dados['forma_pagamento'] ?? null) === 'cartao' && empty($dados['cpf'])) {
+        if (false) { // pré-cadastro do cartão desativado: o formulário de cartão do Mercado Pago já pede o CPF do titular
             return response()->view('publico.inscricao-dados', [
                 'evento' => $evento, 'selecao' => $selecao,
                 'ocultos' => self::achatar($request->except(['_token', 'nome', 'email', 'cpf', 'telefone', 'sem_cpf', 'etapa_dados'])),
@@ -354,6 +354,9 @@ class InscricaoController extends Controller
         if ($cpf && ! $compradorFinal->cpf) {
             $compradorFinal->forceFill(['cpf' => $cpf])->save();
             \App\Support\CadastroPessoa::registrar($cpf, $compradorFinal->nome, $compradorFinal->email, $compradorFinal->telefone, 'compra');
+        }
+        if (($dados['forma_pagamento'] ?? null) === 'cartao') {
+            return redirect()->route('pedido.cartao', $pedido->uuid); // formulário de cartão na nossa página
         }
         try {
             $link = \App\Support\Checkout::criarOrder($pedido, $evento, $compradorFinal, $conta, $cpf, $dados['forma_pagamento'] ?? null);
