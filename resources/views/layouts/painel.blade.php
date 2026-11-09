@@ -6,6 +6,8 @@
         null => [
             ['rota' => 'painel', 'ativo' => 'painel', 'icone' => 'painel', 'texto' => 'Painel', 'pode' => ['dashboard.ver']],
             ['rota' => 'eventos.index', 'ativo' => 'eventos.*', 'icone' => 'evento', 'texto' => 'Meus eventos', 'pode' => ['evento.ver']],
+            // Atalho para o app de check-in (só no celular; decisão do Bruno, 09/11/2026)
+            ['rota' => 'app.index', 'ativo' => 'app.*', 'icone' => 'checkin', 'texto' => 'App', 'pode' => ['checkin.realizar', 'checkin.acompanhar', 'participante.ver', 'pedido.ver'], 'classe' => 'so-celular'],
         ],
         'Vendas' => [
             ['rota' => 'pedidos.index', 'ativo' => 'pedidos.*', 'icone' => 'vendas', 'texto' => 'Pedidos', 'pode' => ['pedido.ver']],
@@ -45,7 +47,7 @@
                         $url = $emBreve ? route('em-breve', $item['modulo']) : route($item['rota']);
                         $ativo = $emBreve ? request()->is('painel/'.$item['modulo']) : request()->routeIs($item['ativo']);
                     @endphp
-                    <a href="{{ $url }}" class="{{ $ativo ? 'ativo' : '' }}" @if ($ativo) aria-current="page" @endif>
+                    <a href="{{ $url }}" class="{{ $ativo ? 'ativo' : '' }} {{ $item['classe'] ?? '' }}" @if ($ativo) aria-current="page" @endif>
                         <x-icone :nome="$item['icone']" /> {{ $item['texto'] }}
                         @if ($emBreve)<span class="selo-breve">em breve</span>@endif
                     </a>

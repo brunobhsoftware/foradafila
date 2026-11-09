@@ -432,3 +432,6 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 .evento-painel__link .copiar input { flex: 1 1 260px; min-width: 0; }
 @media (max-width: 1100px) { .evento-painel__numeros { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .evento-painel__numeros { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Itens do menu só para o celular (ex.: atalho para o app de check-in) */
+@media (min-width: 901px) { .menu-lateral .so-celular { display: none; } }
