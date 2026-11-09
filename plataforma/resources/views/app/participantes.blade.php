@@ -3,7 +3,7 @@
 
 @section('corpo')
 <header class="ck-barra">
-  <a href="{{ route('app.evento', $evento) }}" aria-label="Voltar" style="font-size:1.5rem">‹</a>
+  <a href="{{ route('app.evento', [$evento, 'aba' => 'checkin']) }}" aria-label="Voltar" style="font-size:1.5rem">‹</a>
   <h1>Participantes <small style="font:500 .85rem Inter;opacity:.75">{{ $numeros['entraram'] }}/{{ $numeros['total'] }}</small></h1>
 </header>
 <main class="ck-conteudo">

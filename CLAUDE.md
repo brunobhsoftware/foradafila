@@ -343,7 +343,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   meia-noite do dia do início; o cadastro recusa abertura em outro dia) até `data_fim`; fora disso `fora_do_horario` com "O check-in abre em ..." / "O evento
   terminou em ...". **Aba Vendas completa** (decisão do Bruno, 09/11/2026; `CheckinAppController::vendas`): total vendido, líquido a receber, gráfico
   de rosca por ingresso (`conic-gradient`), barra vendidos/ofertados, cartões (vendidos + cortesias, vendidos hoje + valor, pedidos + ticket médio, taxa,
-  devolvido, líquido), por ingresso, "Ingressos para venda" (situação de cada lote) e botão **Vender ingressos** (página pública). Testes `fluxo-app.js` (20, iPhone 13) e `fluxo-checkin.js` (18, o evento passa a estar acontecendo agora).
+  devolvido, líquido), por ingresso, "Ingressos para venda" (situação de cada lote) e botão **Vender ingressos** (página pública). **Abre em Vendas** para quem tem `pedido.ver`; só quem é de check-in abre no Check-in (decisão do Bruno, 09/11/2026). Service worker `ff-checkin-v2`:
+  CSS/JS **rede primeiro** (a v1 servia o CSS antigo do cache com `ignoreSearch` e o painel novo aparecia sem estilo). Testes `fluxo-app.js` (21, iPhone 13) e `fluxo-checkin.js` (18, o evento passa a estar acontecendo agora).
 - **Divulgação → Cupons** (`/painel/cupons`, `CuponsController`, model `Cupom`): código (maiúsculas, único por organização),
   percentual (≤ 100%) ou valor fixo, evento ou todos os eventos, lotes específicos (`cupom_lote`; nenhum = todos), limite de usos
   e por CPF, pedido mínimo, validade; situação (ativo, agendado, esgotado, expirado, desativado); editar (limite não fica abaixo

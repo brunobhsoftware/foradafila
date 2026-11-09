@@ -37,7 +37,8 @@ class CheckinAppController extends Controller
     public function evento(Request $request, Evento $evento)
     {
         $this->acesso($evento);
-        $aba = in_array($request->query('aba'), ['vendas', 'checkin', 'ferramentas'], true) ? $request->query('aba') : 'checkin';
+        // abre em Vendas para quem vê vendas (gerente/produtor); só quem é de check-in abre no Check-in (decisão do Bruno, 09/11/2026)
+        $aba = in_array($request->query('aba'), ['vendas', 'checkin', 'ferramentas'], true) ? $request->query('aba') : (Gate::allows('pedido.ver') ? 'vendas' : 'checkin');
         if ($aba === 'vendas' && ! Gate::allows('pedido.ver')) {
             $aba = 'checkin';
         }

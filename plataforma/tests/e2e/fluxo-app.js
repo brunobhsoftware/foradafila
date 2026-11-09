@@ -66,6 +66,8 @@ const qr = (codigo) => `FF1.${codigo}.${crypto.createHmac('sha256', APP_KEY).upd
   ok((await M.getAttribute('a:has-text("Abrir o painel completo")', 'href')).endsWith('/painel'), 'atalho "Abrir o painel completo" antes dos eventos');
   await nav(M, M.click('a.ck-evento'));
   ok((await M.locator('.ck-abas').innerText()).replace(/\s+/g, ' ').includes('VENDAS CHECK-IN FERRAMENTAS') || (await M.locator('.ck-abas a').count()) === 3, 'abas Vendas / Check-in / Ferramentas');
+  ok(await M.isVisible('.ck-abas a.ativa:has-text("Vendas")'), 'produtor abre o evento direto na aba Vendas');
+  await nav(M, M.click('.ck-abas a:has-text("Check-in")'));
   ok((await M.locator('[data-num=entraram]').innerText()) === '0' && (await M.locator('[data-num=restam]').innerText()) === '3' && (await M.content()).includes('Check-in aberto'), 'Check-in: 0 realizados, 3 restantes, aberto');
   await nav(M, M.click('.ck-abas a:has-text("Vendas")'));
   ok((await M.content()).includes('Ingressos vendidos') && (await M.locator('.ck-item').count()) >= 1, 'Vendas: totais e por ingresso');
