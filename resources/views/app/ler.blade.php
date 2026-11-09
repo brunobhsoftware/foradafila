@@ -6,7 +6,7 @@
   <video playsinline muted autoplay></video>
   <canvas hidden></canvas>
   <div class="ck-leitor__topo">
-    <a href="{{ route('app.evento', $evento) }}" aria-label="Voltar">‹</a>
+    <a href="{{ route('app.evento', [$evento, 'aba' => 'checkin']) }}" aria-label="Voltar">‹</a>
     <div><b>{{ $evento->titulo }}</b><small data-contagem-topo>{{ $numeros['entraram'] }} de {{ $numeros['total'] }} entraram</small></div>
   </div>
   @if ($janela['aberta'])
