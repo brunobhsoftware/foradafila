@@ -3,7 +3,7 @@
 
 @section('conteudo')
 <div class="cabecalho">
-    <div><h1>{{ $c->assunto }}</h1><p>{{ $evento?->titulo }} · lista {{ $lista?->nome ?? '(excluída)' }} · pela conta {{ $conta?->nome }} ({{ $conta?->remetente_email }})</p></div>
+    <div><h1>{{ $c->assunto }}</h1><p>{{ $evento?->titulo }} · lista {{ $lista?->nome ?? '(excluída)' }} · {{ $c->smtp_conta_id ? 'pela conta '.$conta?->nome.' ('.$conta?->remetente_email.')' : 'por todas as contas da empresa' }}</p></div>
     <a href="{{ route('convites.index') }}" class="botao botao--contorno">Todos os convites</a>
 </div>
 
@@ -19,7 +19,7 @@
     </div>
     @if ($c->status === 'agendada')<p style="margin:14px 0 0"><b>Começa em {{ data_local($c->agendada_para, 'd/m/Y \à\s H:i') }}.</b></p>@endif
     @if ($c->status === 'enviando' && $pendentes)
-        <p class="suave" style="margin:14px 0 0">Os e-mails saem aos poucos, até {{ $conta?->limite_hora }} por hora (a cada minuto um pouco). Pode fechar esta tela.</p>
+        <p class="suave" style="margin:14px 0 0">Os e-mails saem aos poucos (a cada minuto um pouco), até {{ \App\Support\Convites::LIMITE_DIA }} por dia para a empresa. O que não sair hoje continua amanhã. Pode fechar esta tela.</p>
     @endif
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
         @if ($c->status === 'enviando' && $pendentes)<form method="post" action="{{ route('convites.situacao', [$c->uuid, 'pausar']) }}">@csrf<button class="botao botao--contorno">Pausar</button></form>@endif

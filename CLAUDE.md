@@ -377,8 +377,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   no contato (`consentimento_em/_por`) e na auditoria (com IP).
   **Divulgação → Convite por e-mail** (V018, `/painel/convites`, `ConvitesController`, `App\Support\Convites`): evento publicado futuro + lista +
   conta SMTP + **assunto** (o resto vem do evento: imagem, saudação, data, local, resumo/descrição, botão "Garantir meu ingresso"); pré-visualização
-  em iframe, "Enviar um teste para mim"; "Enviar para a lista" grava a foto da lista em `campanha_envio` (sem descadastrados e sem quem já recebeu
-  convite do mesmo evento) e a campanha fica `enviando`. **Cron** (`php artisan schedule:run` a cada minuto no hPanel → `convites:enviar`,
+  em iframe, "Enviar um teste para mim"; "Enviar para a lista" grava a foto da lista em `campanha_envio` (sem descadastrados) e a campanha fica `enviando`. **Cron** (`php artisan schedule:run` a cada minuto no hPanel → `convites:enviar`,
   `withoutOverlapping`): até 40 por conta por rodada, respeitando `smtp_conta.limite_hora` na última hora; marca antes de mandar (não duplica).
   Cabeçalhos `List-Unsubscribe` + One-Click; rodapé "Não quero mais receber" → `/descadastro/{org}?email=` (assinatura só do caminho,
   `DescadastroController`, sem CSRF) grava `email_descadastro`. Acompanhamento com barra, enviados/faltam/erros, Pausar (status `rascunho`),
@@ -387,6 +386,12 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   agendados/enviando/pausados com previsão de término e o quadro "Como funciona o envio" + última rodada do cron, cache `convites_ultima_rodada`),
   Listas de e-mail e **Contas de e-mail** (= Opções de marketing). Convite tem "Começar agora" ou **"Agendar"** (`agendada_para`, status `agendada`;
   a rodada do cron vira `enviando` quando chega a hora; tem de ser antes do fim do evento).
+  **Limite diário por organização** (decisão do Bruno, 09/11/2026): `Convites::LIMITE_DIA` = **500 e-mails por dia por empresa**, divididos
+  igualmente entre as contas ativas (`capacidade()`: 10 contas → 50 por conta/dia; vira à meia-noite de Brasília), além do limite por hora de cada
+  conta. Convite com **"Todas as contas"** (`campanha.smtp_conta_id` NULL, padrão) usa todas; com uma conta, só a cota dela. A rodada é por empresa
+  (`rodadaDaEmpresa`): cada conta pega pendentes na ordem dos convites; o que não sai hoje continua amanhã até acabar. **Repetição só dentro do mesmo
+  convite** (UNIQUE campanha+e-mail): um novo convite do mesmo evento (outro assunto) manda de novo para todos. Agendamentos mostra "Hoje: X de 500",
+  contas × cota e a previsão em dias (fila acumulada ÷ 500). Teste `fluxo-marketing.js` (37).
 - **Política de cancelamento:** ao criar/editar evento o produtor marca a declaração
   `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
   (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores

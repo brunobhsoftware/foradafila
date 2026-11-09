@@ -68,19 +68,17 @@ class ConvitesController extends Controller
         $id = DB::transaction(function () use ($evento, $conta, $d, $lista, $org, $agendar) {
             $id = DB::table('campanha')->insertGetId([
                 'uuid' => (string) Str::uuid(), 'organizador_id' => $org, 'evento_id' => $evento->id, 'lista_id' => $lista->id,
-                'smtp_conta_id' => $conta->id, 'nome' => mb_substr('Convite — '.$evento->titulo, 0, 100), 'canal' => 'email',
+                'smtp_conta_id' => $conta->todas ? null : $conta->id, 'nome' => mb_substr('Convite — '.$evento->titulo, 0, 100), 'canal' => 'email',
                 'assunto' => $d['assunto'], 'corpo_texto' => '(montado do evento)', 'status' => $agendar ? 'agendada' : 'enviando',
                 'agendada_para' => $agendar, 'iniciada_em' => $agendar ? null : now(),
                 'criado_por' => auth()->id(),
             ]);
-            // foto da lista neste momento, sem descadastrados e sem quem já recebeu convite deste evento
+            // foto da lista neste momento, sem descadastrados (cada convite manda uma vez por e-mail; outro convite manda de novo)
             DB::statement('INSERT IGNORE INTO campanha_envio (campanha_id, organizador_id, email, nome)
                 SELECT ?, ?, c.email, c.nome FROM lista_email_contato c
                 WHERE c.lista_id = ?
-                  AND NOT EXISTS (SELECT 1 FROM email_descadastro d WHERE d.organizador_id = ? AND d.email = c.email)
-                  AND NOT EXISTS (SELECT 1 FROM campanha_envio x JOIN campanha k ON k.id = x.campanha_id
-                                  WHERE k.organizador_id = ? AND k.evento_id = ? AND x.email = c.email AND x.status = \'enviado\')',
-                [$id, $org, $lista->id, $org, $org, $evento->id]);
+                  AND NOT EXISTS (SELECT 1 FROM email_descadastro d WHERE d.organizador_id = ? AND d.email = c.email)',
+                [$id, $org, $lista->id, $org]);
             $total = DB::table('campanha_envio')->where('campanha_id', $id)->count();
             DB::table('campanha')->where('id', $id)->update(['total_destinatarios' => $total] + ($total ? [] : ['status' => 'concluida', 'concluida_em' => now()]));
 
@@ -88,15 +86,15 @@ class ConvitesController extends Controller
         });
         $c = DB::table('campanha')->find($id);
         Auditoria::registrar('campanha.criar', $evento, null, ['campanha' => $c->uuid, 'lista' => $lista->nome, 'total' => $c->total_destinatarios, 'assunto' => $d['assunto']]);
-        $horas = $c->total_destinatarios ? (int) ceil($c->total_destinatarios / max(1, $conta->limite_hora)) : 0;
+        $dias = (int) ceil($c->total_destinatarios / Convites::LIMITE_DIA);
 
         if ($c->total_destinatarios && $agendar) {
             return redirect()->route('convites.agendamentos')->with('ok', 'Convite agendado para '.data_local($agendar, 'd/m/Y \\à\\s H:i')." ({$c->total_destinatarios} e-mail(s)).");
         }
 
         return redirect()->route('convites.show', $c->uuid)->with('ok', $c->total_destinatarios
-            ? "Convite na fila para {$c->total_destinatarios} e-mail(s). Saem até {$conta->limite_hora} por hora".($horas > 1 ? " (cerca de $horas horas)." : '.')
-            : 'Ninguém para enviar: a lista está vazia, todos se descadastraram ou já receberam convite deste evento.');
+            ? "Convite na fila para {$c->total_destinatarios} e-mail(s). A empresa envia até ".Convites::LIMITE_DIA.' por dia'.($dias > 1 ? " (cerca de $dias dias, somando os outros convites na fila)." : '.')
+            : 'Ninguém para enviar: a lista está vazia ou todos se descadastraram.');
     }
 
     /** Fila: agendados, enviando e pausados, com a previsão de término e a explicação de como o envio funciona. */
@@ -110,7 +108,7 @@ class ConvitesController extends Controller
                 DB::raw("(SELECT COUNT(*) FROM campanha_envio x WHERE x.campanha_id = c.id AND x.status = 'pendente') as pendentes"))
             ->orderByRaw("FIELD(c.status, 'enviando', 'agendada', 'rascunho')")->orderBy('c.agendada_para')->get();
 
-        return view('painel.convites.agendamentos', ['fila' => $fila, 'ultimaRodada' => cache('convites_ultima_rodada')]);
+        return view('painel.convites.agendamentos', ['fila' => $fila, 'ultimaRodada' => cache('convites_ultima_rodada'), 'cap' => Convites::capacidade($tenant->id())]);
     }
 
     public function show(Tenant $tenant, string $uuid)
@@ -150,12 +148,18 @@ class ConvitesController extends Controller
     private function dados(Request $request, Tenant $tenant, bool $comLista): array
     {
         $d = $request->validate([
-            'evento' => ['required', 'string'], 'smtp' => ['required', 'string'], 'assunto' => ['required', 'string', 'max:150'],
+            'evento' => ['required', 'string'], 'smtp' => ['nullable', 'string'], 'assunto' => ['required', 'string', 'max:150'],
             'quando' => ['nullable', 'in:agora,agendar'], 'agendar_para' => ['nullable', 'required_if:quando,agendar', 'date'],
             'lista' => [$comLista ? 'required' : 'nullable', 'string'],
         ], ['smtp.required' => 'Cadastre uma conta de e-mail em Organização → Opções de marketing.'], ['smtp' => 'conta de envio']);
         $evento = Evento::visiveis()->where('uuid', $d['evento'])->with('local')->firstOrFail();
-        $conta = DB::table('smtp_conta')->where('organizador_id', $tenant->id())->where('uuid', $d['smtp'])->where('ativo', 1)->first() ?? abort(422);
+        // vazio = todas as contas ativas (divisão automática); para o teste usa a primeira
+        $conta = DB::table('smtp_conta')->where('organizador_id', $tenant->id())->where('ativo', 1)
+            ->when(! empty($d['smtp']), fn ($q) => $q->where('uuid', $d['smtp']))->orderBy('id')->first();
+        if (! $conta) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['smtp' => 'Cadastre uma conta de e-mail ativa em Marketing → Contas de e-mail.']);
+        }
+        $conta->todas = empty($d['smtp']);
         $lista = $comLista ? (DB::table('lista_email')->where('organizador_id', $tenant->id())->where('uuid', $d['lista'])->first() ?? abort(422)) : null;
 
         return [$evento, $conta, $d, $lista];

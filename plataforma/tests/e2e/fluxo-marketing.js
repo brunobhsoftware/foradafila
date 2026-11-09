@@ -127,13 +127,26 @@ net.createServer((s) => {
   await P.goto(BASE + '/painel/convites');
   await P.fill('[name=assunto]', 'Segunda chamada');
   await nav(P, P.click('button:has-text("Enviar para a lista")'));
-  ok((await P.content()).includes('Convite na fila para 1 e-mail(s)'), 'segundo convite do mesmo evento só para quem não recebeu');
+  ok((await P.content()).includes('Convite na fila para 3 e-mail(s)'), 'segundo convite do mesmo evento (outro assunto) vai de novo para todos');
   await new Promise((r) => require('child_process').exec('php artisan convites:enviar', { cwd: __dirname + '/../..' }, (e, o, se) => { if (e) console.log(o, se); r(); }));
   ok(recebidos.length === 2, 'limite por hora da conta respeitado (2/hora)');
+
   await P.reload();
   ok((await P.content()).includes('Pausar') && (await P.content()).includes('Faltam'), 'acompanhamento mostra o que falta');
   await nav(P, P.click('button:has-text("Cancelar envio")'));
   ok(sql("SELECT status FROM campanha ORDER BY id DESC LIMIT 1") === 'cancelada', 'cancelar envio');
+  // limite diário da empresa (500, dividido entre as contas): com 500 já enviados hoje, nada sai
+  sql("UPDATE smtp_conta SET limite_hora=1000");
+  await P.goto(BASE + '/painel/convites');
+  await P.fill('[name=assunto]', 'Terceira chamada');
+  await nav(P, P.click('button:has-text("Enviar para a lista")'));
+  recebidos.length = 0;
+  sql("INSERT INTO campanha_envio (campanha_id, organizador_id, email, status, enviado_em) SELECT c.id, c.organizador_id, CONCAT('lote', n.n, '@x.test'), 'enviado', UTC_TIMESTAMP() FROM campanha c JOIN (SELECT seq AS n FROM seq_1_to_500) n WHERE c.status='cancelada' LIMIT 500");
+  await new Promise((r) => require('child_process').exec('php artisan convites:enviar', { cwd: __dirname + '/../..' }, () => r()));
+  ok(recebidos.length === 0, 'limite diário da empresa (500) respeitado');
+  sql("UPDATE campanha_envio SET enviado_em = UTC_TIMESTAMP() - INTERVAL 2 DAY WHERE email LIKE 'lote%'");
+  await new Promise((r) => require('child_process').exec('php artisan convites:enviar', { cwd: __dirname + '/../..' }, () => r()));
+  ok(recebidos.length === 3 && sql("SELECT status FROM campanha ORDER BY id DESC LIMIT 1") === 'concluida', 'no dia seguinte continua de onde parou: ' + recebidos.length);
   // agendamento
   await P.goto(BASE + '/painel/convites');
   ok(await P.isVisible('.menu-lateral a:has-text("Agendamentos")') && (await P.locator('.menu-lateral').innerText()).toLowerCase().includes('marketing'), 'menu Marketing com Agendamentos');
