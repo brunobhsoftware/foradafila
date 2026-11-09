@@ -379,7 +379,11 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   `withoutOverlapping`): até 40 por conta por rodada, respeitando `smtp_conta.limite_hora` na última hora; marca antes de mandar (não duplica).
   Cabeçalhos `List-Unsubscribe` + One-Click; rodapé "Não quero mais receber" → `/descadastro/{org}?email=` (assinatura só do caminho,
   `DescadastroController`, sem CSRF) grava `email_descadastro`. Acompanhamento com barra, enviados/faltam/erros, Pausar (status `rascunho`),
-  Retomar e Cancelar. Teste `fluxo-marketing.js` (28, com SMTP falso na porta 2526).
+  Retomar e Cancelar. Teste `fluxo-marketing.js` (32, com SMTP falso na porta 2526).
+  **Grupo "Marketing" no menu** (decisão do Bruno, 09/11/2026): Convite por e-mail, **Agendamentos** (`/painel/convites/agendamentos`: fila de
+  agendados/enviando/pausados com previsão de término e o quadro "Como funciona o envio" + última rodada do cron, cache `convites_ultima_rodada`),
+  Listas de e-mail e **Contas de e-mail** (= Opções de marketing). Convite tem "Começar agora" ou **"Agendar"** (`agendada_para`, status `agendada`;
+  a rodada do cron vira `enviando` quando chega a hora; tem de ser antes do fim do evento).
 - **Política de cancelamento:** ao criar/editar evento o produtor marca a declaração
   `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
   (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores

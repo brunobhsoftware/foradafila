@@ -127,6 +127,19 @@ net.createServer((s) => {
   ok((await P.content()).includes('Pausar') && (await P.content()).includes('Faltam'), 'acompanhamento mostra o que falta');
   await nav(P, P.click('button:has-text("Cancelar envio")'));
   ok(sql("SELECT status FROM campanha ORDER BY id DESC LIMIT 1") === 'cancelada', 'cancelar envio');
+  // agendamento
+  await P.goto(BASE + '/painel/convites');
+  ok(await P.isVisible('.menu-lateral a:has-text("Agendamentos")') && (await P.locator('.menu-lateral').innerText()).toLowerCase().includes('marketing'), 'menu Marketing com Agendamentos');
+  await P.fill('[name=assunto]', 'Convite agendado');
+  await P.check('[data-quando][value=agendar]');
+  await P.fill('[name=agendar_para]', local(2, '09:00'));
+  await nav(P, P.click('button:has-text("Enviar para a lista")'));
+  ok((await P.content()).includes('Convite agendado para') && (await P.content()).includes('Como funciona o envio'), 'agendado vai para Agendamentos');
+  ok(sql("SELECT status FROM campanha ORDER BY id DESC LIMIT 1") === 'agendada', 'campanha agendada');
+  sql("UPDATE campanha SET agendada_para = UTC_TIMESTAMP() - INTERVAL 1 MINUTE WHERE status='agendada'");
+  sql("UPDATE smtp_conta SET limite_hora=100");
+  await new Promise((r) => require('child_process').exec('php artisan convites:enviar', { cwd: __dirname + '/../..' }, () => r()));
+  ok(sql("SELECT status FROM campanha ORDER BY id DESC LIMIT 1") !== 'agendada', 'na hora marcada o agendado começa');
   // descadastro pelo link do e-mail
   const m = recebidos[0].replace(/\n\s+/g, '').match(/List-Unsubscribe: <([^>]+)>/);
   const link = m[1].replace(/^https?:\/\/[^/]+/, BASE);

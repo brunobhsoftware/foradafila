@@ -17,9 +17,13 @@
         'Divulgação' => [
             ['rota' => 'cupons.index', 'ativo' => 'cupons.*', 'icone' => 'cupom', 'texto' => 'Cupons', 'pode' => ['cupom.gerenciar']],
             ['rota' => 'convidados.index', 'ativo' => 'convidados.*', 'icone' => 'convidados', 'texto' => 'Convidados', 'pode' => ['convidado.gerenciar']],
-            ['rota' => 'convites.index', 'ativo' => 'convites.*', 'icone' => 'mensagem', 'texto' => 'Convite por e-mail', 'pode' => ['campanha.gerenciar'], 'esquema' => 'v018'],
-            ['rota' => 'listas-email.index', 'ativo' => 'listas-email.*', 'icone' => 'mensagem', 'texto' => 'Listas de e-mail', 'pode' => ['campanha.gerenciar'], 'esquema' => 'v017'],
             ['rota' => 'mensagens.index', 'ativo' => 'mensagens.*', 'icone' => 'mensagem', 'texto' => 'Mensagens', 'pode' => ['mensagem.gerenciar']],
+        ],
+        'Marketing' => [
+            ['rota' => 'convites.index', 'ativo' => 'convites.index', 'icone' => 'mensagem', 'texto' => 'Convite por e-mail', 'pode' => ['campanha.gerenciar'], 'esquema' => 'v018'],
+            ['rota' => 'convites.agendamentos', 'ativo' => 'convites.agendamentos', 'icone' => 'checkin', 'texto' => 'Agendamentos', 'pode' => ['campanha.gerenciar'], 'esquema' => 'v018'],
+            ['rota' => 'listas-email.index', 'ativo' => 'listas-email.*', 'icone' => 'participantes', 'texto' => 'Listas de e-mail', 'pode' => ['campanha.gerenciar'], 'esquema' => 'v017'],
+            ['rota' => 'marketing.index', 'ativo' => 'marketing.*', 'icone' => 'organizacao', 'texto' => 'Contas de e-mail', 'pode' => ['organizador.editar'], 'esquema' => 'v017'],
         ],
         'Gestão' => [
             ['rota' => 'financeiro', 'ativo' => 'financeiro*', 'icone' => 'financeiro', 'texto' => 'Financeiro', 'pode' => ['financeiro.ver']],

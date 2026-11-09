@@ -286,6 +286,7 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::post('/listas-email/{lista}/contatos/{contato}/remover', [\App\Http\Controllers\Painel\ListasEmailController::class, 'removerContato'])->name('listas-email.contato.remover')->whereNumber('contato');
 
     Route::get('/convites', [\App\Http\Controllers\Painel\ConvitesController::class, 'index'])->name('convites.index');
+    Route::get('/convites/agendamentos', [\App\Http\Controllers\Painel\ConvitesController::class, 'agendamentos'])->name('convites.agendamentos');
     Route::get('/convites/previa', [\App\Http\Controllers\Painel\ConvitesController::class, 'previa'])->name('convites.previa');
     Route::post('/convites', [\App\Http\Controllers\Painel\ConvitesController::class, 'criar'])->name('convites.criar')->middleware('throttle:10,60,convites-criar');
     Route::post('/convites/teste', [\App\Http\Controllers\Painel\ConvitesController::class, 'teste'])->name('convites.teste')->middleware('throttle:10,10,convites-teste');
