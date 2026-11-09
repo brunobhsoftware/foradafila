@@ -45,7 +45,7 @@
         <div class="form-grade">
             <x-campo nome="data_inicio" rotulo="Início" tipo="datetime-local" :valor="para_input_data($evento->data_inicio)" obrigatorio classe="col-4" />
             <x-campo nome="data_fim" rotulo="Término" tipo="datetime-local" :valor="para_input_data($evento->data_fim)" obrigatorio classe="col-4" />
-            <x-campo nome="abertura_portoes" rotulo="Abertura dos portões" tipo="datetime-local" :valor="para_input_data($evento->abertura_portoes)" classe="col-4" ajuda="O check-in só é aceito a partir daqui." />
+            <x-campo nome="abertura_portoes" rotulo="Abertura dos portões" tipo="datetime-local" :valor="para_input_data($evento->abertura_portoes)" classe="col-4" ajuda="Início do check-in: no mesmo dia do evento (pode ser 1 ou 2 horas antes do início)." />
         </div>
     </section>
 

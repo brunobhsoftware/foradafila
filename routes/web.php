@@ -171,6 +171,15 @@ Route::get('/cadastro-unico/{cpf}', function (string $cpf) {
     return response()->json($p ? ['encontrado' => true] + $p : ['encontrado' => false]);
 })->middleware(['auth', 'throttle:30,1,cadastro-unico'])->where('cpf', '[0-9]{11}')->name('cadastro-unico');
 
+// ---------- App de check-in da equipe (celular / PWA / apps Android e iOS) ----------
+Route::middleware(['auth', 'organizador'])->prefix('app')->name('app.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\App\CheckinAppController::class, 'index'])->name('index');
+    Route::get('/evento/{evento}', [\App\Http\Controllers\App\CheckinAppController::class, 'evento'])->name('evento');
+    Route::get('/evento/{evento}/ler', [\App\Http\Controllers\App\CheckinAppController::class, 'ler'])->name('ler');
+    Route::get('/evento/{evento}/participantes', [\App\Http\Controllers\App\CheckinAppController::class, 'participantes'])->name('participantes');
+    Route::get('/evento/{evento}/numeros', [\App\Http\Controllers\App\CheckinAppController::class, 'numeros'])->name('numeros')->middleware('throttle:60,1,app-numeros');
+});
+
 Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () {
     Route::get('/', DashboardController::class)->name('painel');
 

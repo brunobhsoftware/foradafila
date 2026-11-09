@@ -19,7 +19,7 @@ class CheckinController extends Controller
     public const RESULTADOS = [
         'aceito' => 'Entrada liberada', 'ja_utilizado' => 'Ingresso já utilizado', 'cancelado' => 'Ingresso cancelado',
         'outro_evento' => 'Ingresso de outro evento', 'inexistente' => 'Ingresso não encontrado',
-        'assinatura_invalida' => 'QR Code inválido (assinatura não confere)', 'fora_do_horario' => 'Portões ainda fechados',
+        'assinatura_invalida' => 'QR Code inválido (assinatura não confere)', 'fora_do_horario' => 'Check-in fora do horário do evento',
         'setor_nao_permitido' => 'Setor não permitido',
     ];
 
@@ -27,7 +27,7 @@ class CheckinController extends Controller
     {
         Gate::authorize('checkin.realizar');
         [$eventos, $evento] = ParticipantesController::eventoEscolhido($request);
-        $numeros = $evento ? $this->numeros($evento) : null;
+        $numeros = $evento ? self::numeros($evento) : null;
         $ultimos = $evento ? $this->ultimos($evento) : collect();
 
         return view('painel.checkin.index', compact('eventos', 'evento', 'numeros', 'ultimos'));
@@ -96,12 +96,13 @@ class CheckinController extends Controller
         return response()->json([
             'resultado' => $resultado,
             'aceito' => $resultado === 'aceito',
-            'mensagem' => $resultado === 'aceito' && $sentido === 'saida' ? 'Saída registrada' : (self::RESULTADOS[$resultado] ?? $resultado),
+            'mensagem' => $resultado === 'aceito' && $sentido === 'saida' ? 'Saída registrada'
+                : ($resultado === 'fora_do_horario' ? (\App\Support\JanelaCheckin::situacao($evento)['motivo'] ?? self::RESULTADOS[$resultado]) : (self::RESULTADOS[$resultado] ?? $resultado)),
             'ingresso' => $ingresso && $ingresso->evento_id === $evento->id ? [
                 'numero' => $ingresso->numeroExibicao(), 'nome' => $ingresso->participante?->nome, 'tipo' => $ingresso->tipo?->nome,
                 'lote' => $ingresso->lote?->nome, 'primeiro_checkin' => $ingresso->primeiro_checkin_em ? data_local($ingresso->fresh()->primeiro_checkin_em, 'd/m H:i') : null,
             ] : null,
-            'numeros' => $this->numeros($evento),
+            'numeros' => self::numeros($evento),
         ]);
     }
 
@@ -152,8 +153,8 @@ class CheckinController extends Controller
         if ($sentido === 'saida') {
             return $ingresso->dentro_do_evento ? 'aceito' : 'ja_utilizado';
         }
-        if ($evento->abertura_portoes && now()->lt($evento->abertura_portoes)) {
-            return 'fora_do_horario';
+        if (! \App\Support\JanelaCheckin::situacao($evento)['aberta']) {
+            return 'fora_do_horario'; // só no dia do evento, da abertura dos portões ao término
         }
         if ($ingresso->status === 'utilizado' && ! ($evento->permite_reentrada && ! $ingresso->dentro_do_evento)) {
             return 'ja_utilizado';
@@ -162,7 +163,7 @@ class CheckinController extends Controller
         return 'aceito';
     }
 
-    private function numeros(Evento $evento): array
+    public static function numeros(Evento $evento): array
     {
         $r = Ingresso::where('evento_id', $evento->id)->selectRaw("SUM(status IN ('valido','utilizado')) total, SUM(status = 'utilizado') entraram, SUM(dentro_do_evento = 1) dentro")->first();
 

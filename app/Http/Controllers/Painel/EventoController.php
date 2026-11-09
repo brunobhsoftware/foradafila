@@ -279,6 +279,10 @@ class EventoController extends Controller
             'data_inicio' => 'início', 'data_fim' => 'término', 'abertura_portoes' => 'abertura dos portões',
         ]);
 
+        // Check-in só no dia do evento (decisão do Bruno, 09/11/2026): a abertura dos portões — quando o check-in começa — fica no mesmo dia do início.
+        if (! empty($v['abertura_portoes']) && substr((string) $v['abertura_portoes'], 0, 10) !== substr((string) $v['data_inicio'], 0, 10)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['abertura_portoes' => 'A abertura dos portões (início do check-in) tem de ser no mesmo dia do evento.']);
+        }
         $dadosEvento = collect($v)->except(['local', 'imagem', 'aceite_cancelamento'])->all();
         $dadosEvento['capacidade'] = $dadosEvento['capacidade'] ?? null;
         foreach (['data_inicio', 'data_fim', 'abertura_portoes'] as $campo) {
