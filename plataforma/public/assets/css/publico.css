@@ -230,3 +230,13 @@ button.botao { cursor: pointer; font-family: var(--fonte-texto); }
 .pub-cancelar p { margin: 6px 0; }
 .pub-pedido__ingressos > .pub-cancelar { display: block; border-bottom: 0; }
 .pub-pedido__ingressos > .pub-cancelar[hidden] { display: none; }
+
+/* Celular: imagem do evento, depois os ingressos, depois as informações (decisão do Bruno, 09/11/2026) */
+@media (max-width: 960px) {
+  .pub-evento { gap: 20px; }
+  .pub-evento__info { display: contents; }
+  .pub-evento__info > * { order: 3; margin-top: 0 !important; }
+  .pub-evento__info > .pub-evento__capa { order: 1; }
+  .pub-evento__info > .pub-aviso { order: 1; }
+  .pub-evento > .pub-compra { order: 2; }
+}
