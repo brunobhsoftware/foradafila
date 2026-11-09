@@ -163,6 +163,21 @@ const formularioLegado = require('./_formulario-legado');
   await nav(Z, Z.click('button:has-text("Confirmar inscrição")'));
   ok((await Z.content()).includes('enviados para an***@publico.test') && (await Z.goto(BASE + '/minha-conta')).url().includes('/entrar'), 'compra confirmada no cadastro existente, sem entrar na conta');
 
+  // "Editar meus dados": só com o código enviado ao e-mail do cadastro
+  const E = await ctx();
+  await E.goto(linkPublico); await E.selectOption('select[name^="q["]', '1');
+  await nav(E, E.click('button:has-text("Garantir ingresso")'));
+  await E.fill('[name=cpf]', '62819482112'); await E.waitForSelector('[data-editar-cadastro]:visible');
+  await nav(E, E.click('[data-editar-cadastro]'));
+  ok((await E.content()).includes('Meu cadastro') && (await E.content()).includes('an***@publico.test') && !(await E.content()).includes('ana@publico.test'), 'editar pede o código antes de mostrar os dados');
+  await nav(E, E.click('button:has-text("Enviar código")'));
+  const logMail = require('fs').readFileSync(__dirname + '/../../storage/logs/laravel.log', 'utf8');
+  const codigo = [...logMail.matchAll(/editar o seu cadastro no Fora da Fila: (\d{6})/g)].pop()[1];
+  await E.fill('[name=codigo]', codigo); await E.fill('[name=telefone]', '31977776666');
+  await E.fill('[name=senha]', 'Nova1234'); await E.fill('[name=senha_confirmation]', 'Nova1234');
+  await nav(E, E.click('button:has-text("Salvar cadastro")'));
+  ok(E.url().includes('/inscricao') && (await E.content()).includes('Você está em') && sql("SELECT CONCAT(telefone,'|',senha_hash IS NOT NULL) FROM comprador WHERE email='ana@publico.test'") === '31977776666|1', 'salva celular e senha, entra na conta e volta à compra');
+
   // "Não desejo informar o CPF" e "Estou comprando para outra pessoa"
   const Y = await ctx();
   await Y.goto(linkPublico); await Y.selectOption('select[name^="q["]', '1');

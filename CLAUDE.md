@@ -121,6 +121,10 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   caracteres do uuid do lote sem hífens (o MP aceita até 30; com 36 dava 500 em produção, 08/11/2026). O CPF enviado ao MP é o de quem paga.
   Termos: um aceite só (`aceite_termos`). Testes usam `[name=cpf]` + `[name=aceite_termos]`. `publico.css` ganhou `.opcao-cartao`,
   `.botao--contorno` e `.botao--pequeno` (faltavam: o botão aparecia transparente).
+- **"Editar meus dados" na compra** (decisão do Bruno, 09/11/2026; `CadastroCompradorController`, `/compra/cadastro`): com o CPF conhecido,
+  o botão leva a "Meu cadastro" (CPF, nome, e-mail, celular e senha opcional). **Só edita depois do código de 6 dígitos** enviado ao e-mail
+  do cadastro (`CodigoVerificacao`, finalidade `cadastro-comprador`; throttles `compra-cadastro*`); ao salvar entra na conta e volta à compra
+  (`volta`, só caminho interno). CPF só no cadastro único com e-mail → cria o comprador.
 - **Checkout pago** (`App\Support\Checkout`, 08/11/2026): a mesma tela de inscrição vira "Comprar ingresso" com o resumo (preço + taxa
   repassada) e "Ir para o pagamento". `InscricaoController::reservarPago` reserva o estoque (`lote.reservado`, UPDATE condicional) por
   `RESERVA_MIN` (30) min, cria o pedido `aguardando_pagamento` (participantes em `dados_participantes`; `pedido_item.taxa_unitaria` =

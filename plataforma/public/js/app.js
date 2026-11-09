@@ -105,6 +105,11 @@
       } catch (e) { mostrar('novo'); }
     };
     cpf.addEventListener('input', buscar); cpf.addEventListener('blur', buscar);
+    const editar = box.querySelector('[data-editar-cadastro]');
+    if (editar) editar.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      location.href = editar.dataset.url + '?cpf=' + cpf.value.replace(/\D/g, '') + '&volta=' + encodeURIComponent(location.pathname + location.search);
+    });
     box.querySelector('[data-botao-sem-cpf]').addEventListener('click', () => {
       semCpf.value = '1'; conhecido = null; ultimo = '';
       cpf.value = '';
