@@ -192,7 +192,7 @@ const formularioLegado = require('./_formulario-legado');
   await nav(Z, Z.click('a:has-text("Meus dados")'));
   await Z.fill('[name=telefone]', '31955554444'); await Z.fill('[name=data_nascimento]', '1985-04-20');
   await nav(Z, Z.click('button:has-text("Salvar")'));
-  ok((await Z.content()).includes('Dados salvos') && sql("SELECT CONCAT(telefone,'|',data_nascimento) FROM comprador WHERE email='ana@publico.test'") === '31955554444|1985-04-20', 'Meus dados (após o código): altera celular e data de nascimento');
+  ok((await Z.content()).includes('Seu cadastro foi atualizado') && sql("SELECT CONCAT(telefone,'|',data_nascimento) FROM comprador WHERE email='ana@publico.test'") === '31955554444|1985-04-20', 'Meus dados (após o código): altera celular e data de nascimento');
 
 
   // "Editar meus dados": só com o código enviado ao e-mail do cadastro
@@ -238,6 +238,13 @@ const formularioLegado = require('./_formulario-legado');
   await nav(Q, Q.click('button:has-text("Entrar")'));
   ok(Q.url().endsWith('/minha-conta') && (await Q.content()).includes('Senha criada') && (await Q.content()).includes('Amiga do Sem Cpf')
     && sql("SELECT senha_hash IS NOT NULL FROM comprador WHERE email='semcpf@publico.test'") === '1', 'entra com o código, cria a senha e vê os ingressos');
+  await nav(Q, Q.click('.pub-abas a:has-text("Meus dados")'));
+  ok((await Q.locator('[name=senha]').count()) === 0 && await Q.locator('.pub-abas a:has-text("Alterar senha")').isVisible(), 'com senha definida, Meus dados não mostra a senha: há o botão Alterar senha');
+  await nav(Q, Q.click('.pub-abas a:has-text("Alterar senha")'));
+  await Q.fill('[name=senha]', 'Trocada456'); await Q.fill('[name=senha_confirmation]', 'Trocada456');
+  await nav(Q, Q.click('button:has-text("Salvar nova senha")'));
+  ok((await Q.content()).includes('Sua senha foi alterada'), 'Alterar senha troca a senha');
+
 
 
   // celular

@@ -25,10 +25,13 @@
       <x-campo nome="nome" rotulo="Nome completo" obrigatorio classe="col-12" :valor="$comprador->nome" autocomplete="name" />
       <x-campo nome="telefone" rotulo="Celular (opcional)" tipo="tel" classe="col-6" :valor="$comprador->telefone" data-mascara="telefone" autocomplete="tel" />
       <x-campo nome="data_nascimento" rotulo="Data de nascimento" tipo="date" classe="col-6" :valor="$comprador->data_nascimento?->format('Y-m-d')" autocomplete="bday" ajuda="Para saber a idade (eventos com classificação etária)." />
-      <div class="col-12" style="margin-top:6px"><b>{{ $comprador->senha_hash ? 'Trocar a senha' : 'Criar uma senha' }}</b> <small>(opcional; em branco mantém)</small></div>
-      <x-campo nome="senha" rotulo="Nova senha" tipo="password" classe="col-6" autocomplete="new-password" ajuda="Mínimo de 8 caracteres, com letras e números." />
-      <x-campo nome="senha_confirmation" rotulo="Repita a senha" tipo="password" classe="col-6" autocomplete="new-password" />
-      @if ($verificado)<div class="col-12"><button class="botao botao--amarelo">Salvar</button></div>@endif
+      @unless ($comprador->senha_hash)
+        <div class="col-12" style="margin-top:6px"><b>Criar uma senha</b> <small>(opcional) — para entrar com e-mail e senha, sem código</small></div>
+        <x-campo nome="senha" rotulo="Senha" tipo="password" classe="col-6" autocomplete="new-password" ajuda="Mínimo de 8 caracteres, com letras e números." />
+        <x-campo nome="senha_confirmation" rotulo="Repita a senha" tipo="password" classe="col-6" autocomplete="new-password" />
+      @endunless
+      @if ($verificado)<div class="col-12" style="display:flex;gap:10px;flex-wrap:wrap"><button class="botao botao--amarelo">Salvar cadastro</button>
+        @if ($comprador->senha_hash)<a href="{{ route('comprador.senha') }}" class="botao botao--contorno">Alterar senha</a>@endif</div>@endif
       </fieldset>
     </form>
   </div>

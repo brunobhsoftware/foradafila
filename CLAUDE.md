@@ -158,6 +158,9 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   nunca inventado —, criar/trocar senha; e-mail só leitura). **Editar só com o e-mail validado nesta sessão** (`AcessoCompradorController::verificado`,
   sessão `comprador_verificado`: entrou com e-mail+senha, com o código ou salvou "Meu cadastro" com código); quem entrou só pela compra vê os dados
   travados e "Enviar código para o meu e-mail" (`comprador.dados.codigo`, volta a Meus dados).
+  **Senha separada dos dados** (decisão do Bruno, 09/11/2026): Meus dados só mostra "Criar uma senha" para quem ainda não tem; quem tem usa a aba/botão
+  **Alterar senha** (`/minha-conta/senha`, `comprador.senha`, exige e-mail validado na sessão, avisa por e-mail). Salvar mostra "Seu cadastro foi atualizado".
+  Abas numa faixa clara abaixo do cabeçalho escuro (`.pub-abas` em `publico.css`: pílulas, ativa laranja, Sair à direita).
 - **Checkout pago** (`App\Support\Checkout`, 08/11/2026): a mesma tela de inscrição vira "Comprar ingresso" com o resumo (preço + taxa
   repassada) e "Ir para o pagamento". `InscricaoController::reservarPago` reserva o estoque (`lote.reservado`, UPDATE condicional) por
   `RESERVA_MIN` (30) min, cria o pedido `aguardando_pagamento` (participantes em `dados_participantes`; `pedido_item.taxa_unitaria` =

@@ -129,8 +129,8 @@ class AcessoCompradorController extends Controller
             'telefone' => ['nullable', 'string', 'max:20'],
             'data_nascimento' => ['nullable', 'date', 'before:today', 'after:1900-01-01'],
             'cpf' => [$c->cpf ? 'prohibited' : 'nullable', new DocumentoValido('PF')],
-            'senha' => ['nullable', 'confirmed', Password::min(8)->letters()->numbers()],
-        ], ['cpf.prohibited' => 'O CPF já está cadastrado.', 'data_nascimento.before' => 'A data de nascimento tem de ser anterior a hoje.'],
+            'senha' => [$c->senha_hash ? 'prohibited' : 'nullable', 'confirmed', Password::min(8)->letters()->numbers()],
+        ], ['senha.prohibited' => 'Use “Alterar senha” para trocar a senha.', 'cpf.prohibited' => 'O CPF já está cadastrado.', 'data_nascimento.before' => 'A data de nascimento tem de ser anterior a hoje.'],
             ['senha' => 'senha', 'cpf' => 'CPF', 'data_nascimento' => 'data de nascimento']);
         $c->forceFill(array_filter([
             'nome' => trim($d['nome']), 'telefone' => preg_replace('/\D/', '', (string) ($d['telefone'] ?? '')) ?: null,
@@ -146,6 +146,30 @@ class AcessoCompradorController extends Controller
             }
         }
 
-        return redirect()->route('comprador.dados')->with('ok', 'Dados salvos.');
+        return redirect()->route('comprador.dados')->with('ok', 'Seu cadastro foi atualizado.');
+    }
+
+    /** Alterar senha (botão próprio; só quem já tem senha e com o e-mail validado nesta sessão). */
+    public function senha(Request $request)
+    {
+        $c = $request->user('comprador');
+        if (! $c->senha_hash) {
+            return redirect()->route('comprador.dados');
+        }
+
+        return view('comprador.senha', ['verificado' => self::verificado(), 'emailMascarado' => InscricaoController::mascararEmail($c->email)]);
+    }
+
+    public function salvarSenha(Request $request)
+    {
+        abort_unless(self::verificado(), 403, 'Confirme o seu e-mail com o código antes de alterar a senha.');
+        $c = $request->user('comprador');
+        $d = $request->validate([
+            'senha' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+        ], [], ['senha' => 'nova senha']);
+        $c->forceFill(['senha_hash' => Hash::make($d['senha'])])->save();
+        Notificacoes::contaAlterada($c->nome, $c->email, 'A senha da sua conta no Fora da Fila foi alterada.');
+
+        return redirect()->route('comprador.dados')->with('ok', 'Sua senha foi alterada.');
     }
 }
