@@ -178,6 +178,8 @@ const formularioLegado = require('./_formulario-legado');
   const achado = await Z.locator('[data-email-achado]').innerText();
   ok(achado.includes('Ana') && !achado.includes('Compradora') && !(await Z.locator('[name=nome]').isVisible()), 'e-mail conhecido: reconhece pelo primeiro nome e não pede o nome');
   ok((await Z.locator('[data-cpf-cadastro]').innerText()).includes('***.***.821-12') && !(await Z.locator('[name=cpf]').isVisible()), 'próxima etapa: CPF já vem do cadastro (mascarado)');
+  ok(await Z.inputValue('[name="participantes[0][nome]"]') === 'Ana Compradora' && (await Z.inputValue('[name="participantes[0][email]"]').catch(() => 'ana@publico.test')) === 'ana@publico.test'
+    && !(await Z.content()).includes('O mesmo do seu cadastro'), '1º ingresso já vem preenchido com o nome do cadastro (sem "O mesmo do seu cadastro")');
   await Z.check('[name=aceite_termos]');
   await nav(Z, Z.click('button:has-text("Confirmar inscrição")'));
   ok((await Z.content()).includes('enviados para an***@publico.test') && (await Z.goto(BASE + '/minha-conta')).url().includes('/entrar'), 'compra confirmada no cadastro existente, sem entrar na conta');

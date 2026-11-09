@@ -71,14 +71,20 @@
     const valido = () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
     const preencher = () => {
       if (!marca || marca.value !== '1') return;
-      const dados = { nome: conhecido ? '' : nome.value, email: email.value.trim() };
+      // 1º ingresso preenchido com os dados do comprador (do cadastro, quando o e-mail já é conhecido)
+      const dados = { nome: conhecido ? conhecido.nome : nome.value, email: email.value.trim() };
       if (cpf && cpf.value.replace(/\D/g, '').length === 11) dados.cpf = cpf.value;
-      Object.entries(dados).forEach(([k, v]) => { const el = p0(k); if (el && v) el.value = v; });
-      if (conhecido) ['nome', 'cpf', 'telefone'].forEach((k) => { const el = p0(k); if (el && !el.value) { el.required = false; el.placeholder = 'O mesmo do seu cadastro'; } });
+      else if (conhecido && conhecido.cpf) dados.cpf = conhecido.cpf;
+      if (conhecido && conhecido.telefone) dados.telefone = conhecido.telefone;
+      Object.entries(dados).forEach(([k, v]) => {
+        const el = p0(k); if (!el || !v) return;
+        el.value = v;
+        el.readOnly = String(v).includes('*'); // dado mascarado do cadastro: o servidor usa o guardado
+      });
     };
     const aplicar = () => {
       achado.hidden = !conhecido; novo.hidden = !!conhecido; nome.required = !conhecido;
-      if (conhecido) achado.querySelector('[data-achado-nome]').textContent = conhecido.nome;
+      if (conhecido) achado.querySelector('[data-achado-nome]').textContent = conhecido.primeiro || conhecido.nome;
       const temCpf = !!(conhecido && conhecido.cpf);
       if (cpfCad) { cpfCad.hidden = !temCpf; if (temCpf) cpfCad.querySelector('[data-cpf-mascarado]').textContent = conhecido.cpf; }
       if (cpfCampo) { cpfCampo.hidden = temCpf; cpf.required = !temCpf; }
@@ -110,7 +116,7 @@
       marca.value = '0';
       outra.closest('.pub-participante').querySelectorAll('input:not([type=hidden]), select, textarea').forEach((el) => {
         if (el.type === 'checkbox') el.checked = false; else el.value = '';
-        el.placeholder = '';
+        el.readOnly = false;
       });
       const pn = p0('nome'); if (pn) { pn.required = true; pn.focus(); }
       outra.textContent = 'Preencha os dados de quem vai usar o ingresso';

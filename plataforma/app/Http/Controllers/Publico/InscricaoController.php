@@ -120,6 +120,9 @@ class InscricaoController extends Controller
                     'telefone' => $conhecido['telefone'] ?? null, 'cpf' => ($conhecido['cpf'] ?? null) ?: $request->input('cpf')];
             $p0 = (array) $request->input('participantes.0', []);
             foreach ($base as $k => $v) {
+                if (str_contains((string) ($p0[$k] ?? ''), '*')) {
+                    $p0[$k] = ''; // valor mascarado vindo do cadastro: usa o dado guardado
+                }
                 if (($p0[$k] ?? '') === '' && $v) {
                     $p0[$k] = $k === 'cpf' ? Documento::formatar($v) : $v;
                 }
@@ -417,7 +420,9 @@ class InscricaoController extends Controller
     {
         $d = self::dadosDoEmail((string) $request->query('e'));
 
-        return response()->json($d ? ['encontrado' => true, 'nome' => strtok(trim($d['nome']), ' '),
+        // nome completo para preencher o 1º ingresso (decisão do Bruno, 09/11/2026); CPF e celular só mascarados
+        return response()->json($d ? ['encontrado' => true, 'nome' => trim($d['nome']), 'primeiro' => strtok(trim($d['nome']), ' '),
+            'telefone' => self::mascararTelefone($d['telefone']),
             'cpf' => $d['cpf'] ? '***.***.'.substr($d['cpf'], 6, 3).'-'.substr($d['cpf'], 9, 2) : null] : ['encontrado' => false]);
     }
 

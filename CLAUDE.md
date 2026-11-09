@@ -132,7 +132,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - **Compra com E-MAIL primeiro** (decisão do Bruno, 09/11/2026; substitui o "CPF primeiro"): "1. Seus dados" pede só **e-mail e nome**
   (sem celular); `GET /compra/email?e=` (throttle `compra-email` 10/min, `InscricaoController::email`) reconhece quem já comprou — mostra só o
   **primeiro nome** e não pede o nome. Botão **Continuar** (`data-continuar`) mostra o resto: **CPF** (obrigatório; se a conta já tem CPF aparece
-  mascarado "***.***.821-12 — do seu cadastro" e não é pedido), ingressos, pagamento e termos. Saiu o botão "Não desejo informar o CPF" (`sem_cpf`).
+  mascarado "***.***.821-12 — do seu cadastro" e não é pedido), ingressos, pagamento e termos. O **1º ingresso já vem preenchido** com o nome completo do cadastro
+  (e CPF/celular mascarados, só leitura; o servidor troca valor com `*` pelo dado guardado) — nada de "O mesmo do seu cadastro" (decisão do Bruno, 09/11/2026). Saiu o botão "Não desejo informar o CPF" (`sem_cpf`).
   A conta da compra é a do **e-mail** (`compradorDaCompra`/`dadosDoEmail`); o CPF só entra na conta se ela não tiver e nenhuma outra usar.
   "Editar meus dados" saiu da tela de compra (a edição fica em Meus dados; `CadastroCompradorController` continua existindo).
   **Cupom na página do evento**: "Tem um cupom de desconto?" (`details.pub-cupom`, `data-cupom-publico`) com **Aplicar** → `GET /compra/cupom/{codigo}?evento=`
