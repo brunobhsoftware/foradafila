@@ -19,6 +19,9 @@ class MercadoPago
         'webhook_secret' => ['parametro' => 'mp_webhook_secret', 'secreto' => true, 'env' => 'MP_WEBHOOK_SECRET'],
         'access_token' => ['parametro' => 'mp_access_token', 'secreto' => true, 'env' => 'MP_ACCESS_TOKEN'],
         // Credencial de TESTE da aplicação (Credenciais > Teste > Access Token): usada só no pagamento de teste.
+        // Public Key (não é segredo): o formulário de cartão do Mercado Pago na nossa página precisa dela.
+        'public_key' => ['parametro' => 'mp_public_key', 'secreto' => false, 'env' => 'MP_PUBLIC_KEY'],
+        'teste_public_key' => ['parametro' => 'mp_teste_public_key', 'secreto' => false, 'env' => 'MP_TESTE_PUBLIC_KEY'],
         'teste_access_token' => ['parametro' => 'mp_teste_access_token', 'secreto' => true, 'env' => 'MP_TESTE_ACCESS_TOKEN'],
         'teste_webhook_secret' => ['parametro' => 'mp_teste_webhook_secret', 'secreto' => true, 'env' => 'MP_TESTE_WEBHOOK_SECRET'],
         'teste_client_id' => ['parametro' => 'mp_teste_client_id', 'secreto' => false, 'env' => 'MP_TESTE_CLIENT_ID'],

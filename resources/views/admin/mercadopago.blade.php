@@ -55,7 +55,7 @@
     $prefixo = ['teste' => 'teste_', 'producao' => ''];
     // Client ID, Client Secret e assinatura dos webhooks são da APLICAÇÃO (um só); cada ambiente tem só o Access Token.
     $nomesApp = ['client_id' => ['Client ID', 'text'], 'client_secret' => ['Client Secret', 'password']];
-    $nomes = ['access_token' => ['Access Token', 'password'], 'webhook_secret' => ['Assinatura secreta dos webhooks', 'password']];
+    $nomes = ['access_token' => ['Access Token', 'password'], 'public_key' => ['Public Key (formulário de cartão na nossa página)', 'text'], 'webhook_secret' => ['Assinatura secreta dos webhooks', 'password']];
     $v = session('verificacao');
 @endphp
 

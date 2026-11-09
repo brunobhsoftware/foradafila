@@ -91,6 +91,64 @@ class Checkout
         return ['valor' => $valor, 'ambiente' => $ambiente];
     }
 
+    /** Public Key da conta de recebimento no ambiente das vendas da empresa (formulário de cartão na nossa página). */
+    public static function publicKey(ContaPagamento $conta): ?string
+    {
+        $teste = self::modoTeste($conta->organizador_id);
+        if ($conta->modo === 'propria') {
+            return ($teste ? $conta->teste_public_key : $conta->public_key) ?: null;
+        }
+
+        return MercadoPago::credencial($teste ? 'teste_public_key' : 'public_key') ?: null;
+    }
+
+    /** Última order criada (para o cartão direto saber na hora se aprovou). */
+    public static ?array $ultimaOrder = null;
+
+    /**
+     * Cartão na nossa página (Card Payment Brick, decisão do Bruno 09/11/2026): o formulário do Mercado Pago gera o token do
+     * cartão; aqui a order é criada e processada na hora. Devolve 'aprovado', 'pendente' ou a mensagem de recusa.
+     */
+    public static function pagarCartao(Pedido $pedido, Evento $evento, Comprador $comprador, ContaPagamento $conta, array $f): string
+    {
+        $cpf = preg_replace('/\D/', '', (string) data_get($f, 'payer.identification.number', '')) ?: $comprador->cpf;
+        self::criarOrder($pedido, $evento, $comprador, $conta, $cpf, 'cartao', [
+            'id' => (string) $f['payment_method_id'], 'type' => (string) ($f['payment_type_id'] ?? 'credit_card'), 'token' => (string) $f['token'],
+            'installments' => max(1, (int) ($f['installments'] ?? 1)), 'issuer_id' => $f['issuer_id'] ?? null,
+            'email' => data_get($f, 'payer.email'),
+        ]);
+        if ($cpf && strlen($cpf) === 11 && ! $comprador->cpf) {
+            $comprador->forceFill(['cpf' => $cpf])->save();
+            CadastroPessoa::registrar($cpf, $comprador->nome, $comprador->email, $comprador->telefone, 'compra');
+        }
+        $o = self::$ultimaOrder ?? [];
+        $status = (string) ($o['status'] ?? ''); $detalhe = (string) ($o['status_detail'] ?? data_get($o, 'transactions.payments.0.status_detail', ''));
+        if ($status === 'processed' || in_array($detalhe, ['accredited', 'processed'], true)) {
+            return self::sincronizar($pedido->fresh());
+        }
+        if ($status === 'failed' || in_array($detalhe, ['rejected', 'cc_rejected_other_reason'], true) || str_starts_with($detalhe, 'cc_rejected') || str_starts_with($detalhe, 'rejected')) {
+            // Recusa: o pedido continua reservado para tentar outro cartão.
+            DB::table('pagamento')->where('pedido_id', $pedido->id)->orderByDesc('id')->limit(1)
+                ->update(['status' => 'recusado', 'status_gateway' => mb_substr($status, 0, 60), 'motivo_recusa' => mb_substr($detalhe, 0, 255) ?: null]);
+
+            return self::mensagemRecusa($detalhe);
+        }
+
+        return 'pendente';
+    }
+
+    public static function mensagemRecusa(string $detalhe): string
+    {
+        return match (true) {
+            str_contains($detalhe, 'insufficient') => 'Cartão sem limite suficiente. Tente outro cartão ou pague com Pix.',
+            str_contains($detalhe, 'security_code') => 'Código de segurança (CVV) incorreto.',
+            str_contains($detalhe, 'date') || str_contains($detalhe, 'expir') => 'Data de validade incorreta.',
+            str_contains($detalhe, 'call_for_authorize') => 'O banco pediu autorização: ligue para o seu banco ou use outro cartão.',
+            str_contains($detalhe, 'duplicated') => 'Pagamento duplicado: confira se já não foi aprovado.',
+            default => 'O cartão foi recusado. Confira os dados, tente outro cartão ou pague com Pix.',
+        };
+    }
+
     public static function contaDoEvento(Evento $evento): ?ContaPagamento
     {
         $conta = Recebimento::contaAtual($evento->organizador_id)
@@ -100,7 +158,7 @@ class Checkout
     }
 
     /** Monta e cria a order; grava a linha em pagamento. Devolve o link do checkout. */
-    public static function criarOrder(Pedido $pedido, Evento $evento, Comprador $comprador, ContaPagamento $conta, ?string $cpf, ?string $forma = null): string
+    public static function criarOrder(Pedido $pedido, Evento $evento, Comprador $comprador, ContaPagamento $conta, ?string $cpf, ?string $forma = null, ?array $cartao = null): string
     {
         $pedido->loadMissing('itens.lote.tipo');
         $volta = fn (string $r) => route('pedido.retorno', ['pedido' => $pedido->uuid, 'resultado' => $r]);
@@ -167,8 +225,24 @@ class Checkout
                 'expiration_time' => 'PT'.self::RESERVA_MIN.'M',
             ]]];
         }
+        if ($cartao) {
+            // Cartão direto: token do formulário do Mercado Pago; processa na hora (sem a tela do Mercado Pago).
+            $dados['processing_mode'] = 'automatic';
+            unset($dados['config']['payment_method'], $dados['config']['online']);
+            if (! empty($cartao['email'])) {
+                $dados['payer']['email'] = (string) $cartao['email'];
+            }
+            $dados['transactions'] = ['payments' => [[
+                'amount' => $dados['total_amount'],
+                'payment_method' => array_filter(['id' => $cartao['id'], 'type' => $cartao['type'], 'token' => $cartao['token'],
+                    'installments' => $cartao['installments']]),
+            ]]];
+        }
         $order = MercadoPago::criarOrder(self::token($conta), $dados);
-        if ($forma === 'pix') {
+        self::$ultimaOrder = $order;
+        if ($cartao) {
+            $link = route('pedido.retorno', ['pedido' => $pedido->uuid]);
+        } elseif ($forma === 'pix') {
             $pm = (array) data_get($order, 'transactions.payments.0.payment_method', []);
             $pix = ['qr' => (string) ($pm['qr_code'] ?? ''), 'ticket' => (string) ($pm['ticket_url'] ?? '')];
             if ($pix['qr'] === '') {
