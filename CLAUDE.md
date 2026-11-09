@@ -149,6 +149,10 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   WinAnsi, QR em retângulos por `App\Support\QrCode` — porte em PHP do qrcode-generator, módulo a módulo igual ao do navegador, conferido
   com jsQR) e, para quem não tem senha, "Crie a sua senha" (`SenhaController::link`, 72 h, removido do corpo gravado). Anexos do
   `Email` vão em base64 (o dispatch serializa em JSON). Sem dependência nova no composer (o download do GitHub é bloqueado na nuvem).
+- **Entrada de "Meus ingressos" só com o e-mail** (decisão do Bruno, 09/11/2026; `AcessoCompradorController::identificar`, `POST /minha-conta/identificar`):
+  tem senha → `/minha-conta/entrar/senha` (senha, "Receber um código no e-mail", "Esqueci a senha"; o POST continua em `CompradorAuthController::autenticar`);
+  tem cadastro sem senha → código direto; **sem cadastro** → código (`cadastro-novo`, chave `crc32` do e-mail) → `/minha-conta/completar` ("Complete seu
+  cadastro": nome, CPF, nascimento, celular e senha, todos obrigatórios) → cria o comprador já com `email_verificado_em` e entra.
 - **Acesso do comprador por código** (decisão do Bruno, 09/11/2026; `AcessoCompradorController`): botão **"Acessar meus ingressos"** na tela
   dos ingressos (`POST /pedido/{uuid}/acessar`, só para o pedido desta sessão; logado e dono → direto) e **"Entrar com código"** em
   `/minha-conta/entrar` (`codigo.enviar`, resposta igual exista ou não a conta) mandam um código de 6 dígitos (`CodigoVerificacao`,

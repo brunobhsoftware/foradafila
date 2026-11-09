@@ -243,9 +243,10 @@ const formularioLegado = require('./_formulario-legado');
   ok(sql("SELECT CONCAT(IFNULL(c.cpf,'-'),'|',pa.nome) FROM comprador c JOIN pedido p ON p.comprador_id=c.id JOIN ingresso i ON i.pedido_id=p.id JOIN participante pa ON pa.ingresso_id=i.id WHERE c.email='semcpf@publico.test'") === '-|Amiga do Sem Cpf', 'compra sem CPF: comprador cadastrado pelo e-mail, ingresso para outra pessoa');
   const Q = await ctx();
   await Q.goto(BASE + '/minha-conta/entrar');
-  await Q.fill('form[action$="/codigo/enviar"] [name=email]', 'semcpf@publico.test');
-  await nav(Q, Q.click('button:has-text("Receber código")'));
-  ok((await Q.content()).includes('Aproveite e cadastre a sua senha'), 'entrar com código: quem não tem senha pode criar');
+  ok((await Q.locator('main input:not([type=hidden]), .pub-secao input:not([type=hidden])').count()) === 1, 'Meus ingressos pede só o e-mail');
+  await Q.fill('[name=email]', 'semcpf@publico.test');
+  await nav(Q, Q.click('button:has-text("Continuar")'));
+  ok(Q.url().endsWith('/minha-conta/codigo') && (await Q.content()).includes('Aproveite e cadastre a sua senha'), 'cadastro sem senha: manda o código direto (e oferece criar a senha)');
   await Q.fill('[name=codigo]', '000000');
   await nav(Q, Q.click('button:has-text("Entrar")'));
   ok((await Q.content()).includes('Código incorreto'), 'código errado é recusado');
@@ -260,6 +261,27 @@ const formularioLegado = require('./_formulario-legado');
   await Q.fill('[name=senha]', 'Trocada456'); await Q.fill('[name=senha_confirmation]', 'Trocada456');
   await nav(Q, Q.click('button:has-text("Salvar nova senha")'));
   ok((await Q.content()).includes('Sua senha foi salva'), 'Alterar senha troca a senha');
+  // com senha: o e-mail leva à senha
+  const R = await ctx();
+  await R.goto(BASE + '/minha-conta/entrar'); await R.fill('[name=email]', 'semcpf@publico.test');
+  await nav(R, R.click('button:has-text("Continuar")'));
+  ok(R.url().endsWith('/minha-conta/entrar/senha') && (await R.content()).includes('Receber um código no e-mail'), 'com senha: pede a senha (ou código)');
+  await R.fill('[name=senha]', 'Errada999'); await nav(R, R.click('button:has-text("Entrar")'));
+  ok((await R.content()).includes('E-mail ou senha incorretos') && R.url().endsWith('/entrar/senha'), 'senha errada volta para a senha');
+  await R.fill('[name=senha]', 'Trocada456'); await nav(R, R.click('button:has-text("Entrar")'));
+  ok(R.url().endsWith('/minha-conta'), 'entra com a senha');
+  // sem cadastro: código e "Complete seu cadastro"
+  const N = await ctx();
+  await N.goto(BASE + '/minha-conta/entrar'); await N.fill('[name=email]', 'novo.cliente@publico.test');
+  await nav(N, N.click('button:has-text("Continuar")'));
+  ok((await N.content()).includes('Criar a sua conta'), 'e-mail sem cadastro: manda código para criar a conta');
+  const codNovo = [...require('fs').readFileSync(__dirname + '/../../storage/logs/laravel.log', 'utf8').matchAll(/criar a sua conta no Fora da Fila: (\d{6})/g)].pop()[1];
+  await N.fill('[name=codigo]', codNovo); await nav(N, N.click('button:has-text("Confirmar e-mail")'));
+  ok(N.url().endsWith('/minha-conta/completar'), 'código confirmado abre Complete seu cadastro');
+  for (const [k, v] of [['nome', 'Novo Cliente'], ['cpf', '153.509.460-56'], ['data_nascimento', '1990-01-15'], ['telefone', '31988887777'], ['senha', 'Novo1234'], ['senha_confirmation', 'Novo1234']]) await N.fill(`[name=${k}]`, v);
+  await nav(N, N.click('button:has-text("Criar minha conta")'));
+  ok(N.url().endsWith('/minha-conta') && (await N.content()).includes('Sua conta foi criada')
+    && sql("SELECT CONCAT_WS('|', nome, cpf, data_nascimento, telefone, senha_hash IS NOT NULL, email_verificado_em IS NOT NULL) FROM comprador WHERE email='novo.cliente@publico.test'") === 'Novo Cliente|15350946056|1990-01-15|31988887777|1|1', 'cria a conta com todos os dados e entra');
 
 
 
