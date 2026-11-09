@@ -37,6 +37,23 @@ class PagamentoController extends Controller
         return false;
     }
 
+    /** Link de UM ingresso (copiado no painel e mandado ao participante): assinado, 90 dias, só esse ingresso. */
+    public static function linkIngresso(\App\Models\Ingresso $i): string
+    {
+        return url(\Illuminate\Support\Facades\URL::temporarySignedRoute('ingresso.publico', now()->addDays(90), ['ingresso' => $i->uuid], absolute: false));
+    }
+
+    public function ingressoUnico(\Illuminate\Http\Request $request, string $ingresso)
+    {
+        abort_unless($request->hasValidSignature(absolute: false), 403, 'Link inválido ou expirado.');
+        $i = \App\Models\Ingresso::withoutGlobalScopes()->where('uuid', $ingresso)->firstOrFail();
+        $p = Pedido::withoutGlobalScopes()->findOrFail($i->pedido_id);
+        [$evento, $ingressos] = self::dadosIngressos($p);
+
+        return view('publico.ingressos-pedido', ['pedido' => $p, 'evento' => $evento, 'ingressos' => $ingressos->where('id', $i->id)->values(),
+            'comprador' => null, 'unico' => true]);
+    }
+
     /** "Seus ingressos": logo depois da compra (ou pelo link do e-mail), sem pedir login. */
     public function ingressos(\Illuminate\Http\Request $request, string $pedido)
     {

@@ -73,17 +73,29 @@
                                 </div>
                                 <small class="suave">Participante: {{ $i->participante?->email ?? 'sem e-mail' }} · Comprador: {{ $i->pedido?->comprador?->email }}</small>
                             </div>
-                            @can('pedido.reembolsar')
-                                <div>
-                                    <p class="linha-acoes__titulo">Cancelar este ingresso</p>
-                                    @if ($i->status === 'valido')
-                                        @include('painel._cancelar-form', ['acao' => route('ingressos.cancelar', $i), 'valor' => (float) $i->valor_pago, 'rotulo' => 'Cancelar ingresso'])
-                                    @else
-                                        <p class="suave"><small>Ingresso já usado no check-in: não pode ser cancelado.</small></p>
-                                    @endif
+                            <div>
+                                <p class="linha-acoes__titulo">Ingresso</p>
+                                <div class="acoes-linha" style="justify-content:flex-start">
+                                    <a href="{{ route('ingressos.pdf', $i) }}" target="_blank" rel="noopener" class="botao botao--contorno botao--pequeno">Imprimir ingresso (PDF)</a>
+                                    <input type="hidden" id="link-ing-{{ $i->uuid }}" value="{{ \App\Http\Controllers\Publico\PagamentoController::linkIngresso($i) }}">
+                                    <button type="button" class="botao botao--contorno botao--pequeno" data-copiar="link-ing-{{ $i->uuid }}">Copiar link do ingresso</button>
+                                    @can('pedido.reembolsar')
+                                        @if ($i->status === 'valido')
+                                            <button type="button" class="botao botao--perigo botao--pequeno" data-alternar="cancelar-{{ $i->uuid }}" aria-expanded="false">Cancelar este ingresso</button>
+                                        @endif
+                                    @endcan
                                 </div>
-                            @endcan
+                                <small class="suave">O link abre só este ingresso, sem login, por 90 dias (para mandar pelo WhatsApp, por exemplo).</small>
+                            </div>
                         </div>
+                        @can('pedido.reembolsar')
+                            @if ($i->status === 'valido')
+                                <div id="cancelar-{{ $i->uuid }}" @unless (old('_ingresso') === $i->uuid && $errors->any()) hidden @endunless style="margin-top:14px;padding-top:14px;border-top:1px solid var(--borda)">
+                                    <p class="linha-acoes__titulo">Cancelar este ingresso</p>
+                                    @include('painel._cancelar-form', ['acao' => route('ingressos.cancelar', $i), 'valor' => (float) $i->valor_pago, 'rotulo' => 'Cancelar ingresso'])
+                                </div>
+                            @endif
+                        @endcan
                     </td>
                 </tr>
                 @endif
