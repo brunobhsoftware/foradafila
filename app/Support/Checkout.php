@@ -74,14 +74,17 @@ class Checkout
      */
     public static function reembolsar(Pedido $pedido, float $valor): ?array
     {
-        $pg = DB::table('pagamento')->where('pedido_id', $pedido->id)->where('status', 'aprovado')->whereNotNull('gateway_pedido_id')->orderByDesc('id')->first();
+        // Também depois de uma devolução parcial (estorno_parcial): o segundo cancelamento do mesmo pedido devolve o que falta.
+        $pg = DB::table('pagamento')->where('pedido_id', $pedido->id)->whereIn('status', ['aprovado', 'estorno_parcial'])->whereNotNull('gateway_pedido_id')->orderByDesc('id')->first();
         if (! $pg || $valor <= 0) {
             return null;
         }
         $conta = ContaPagamento::withoutGlobalScopes()->findOrFail($pg->conta_pagamento_id);
         $ambiente = json_decode((string) $pg->resposta_gateway, true)['ambiente'] ?? 'producao';
-        $total = round($valor, 2) >= round((float) $pg->valor, 2);
-        $corpo = $total || ! $pg->gateway_pagamento_id ? null
+        $jaDevolvido = (float) DB::table('reembolso')->where('pedido_id', $pedido->id)->where('status', 'concluido')->sum('valor');
+        $total = round($valor + $jaDevolvido, 2) >= round((float) $pg->valor, 2);
+        // Devolução "total" (sem corpo) só quando nada foi devolvido antes; depois de uma parcial, sempre com o valor.
+        $corpo = ($total && $jaDevolvido <= 0) || ! $pg->gateway_pagamento_id ? null
             : ['transactions' => [['id' => $pg->gateway_pagamento_id, 'amount' => number_format($valor, 2, '.', '')]]];
         $r = MercadoPago::reembolsarOrder(self::tokenDoAmbiente($conta, $ambiente), $pg->gateway_pedido_id, $corpo);
         DB::table('pagamento')->where('id', $pg->id)->update(['status' => $total ? 'estornado' : 'estorno_parcial',

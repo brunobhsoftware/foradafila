@@ -49,8 +49,32 @@
               <span style="display:flex;gap:10px;align-items:center">
                 <span class="pub-selo {{ $ingresso->status === 'valido' ? '' : 'pub-selo--vermelho' }}">{{ \App\Models\Ingresso::STATUS[$ingresso->status] }}</span>
                 <a href="{{ route('comprador.ingresso', $ingresso->uuid) }}" class="botao botao--borda botao--pequeno">{{ $ingresso->status === 'valido' ? 'Abrir ingresso' : 'Ver' }}</a>
+                @if ($ingresso->status === 'valido')
+                  <form method="post" action="{{ route('comprador.ingresso.enviar', $ingresso->uuid) }}" style="margin:0">@csrf
+                    <button class="botao botao--contorno botao--pequeno">Enviar para meu e-mail</button></form>
+                  @php $regra = \App\Http\Controllers\Publico\MeusIngressosController::regraCancelamento($ingresso, $pedido); @endphp
+                  @if ($regra['pode'])
+                    <button type="button" class="botao botao--perigo botao--pequeno" data-alternar="canc-{{ $ingresso->uuid }}" aria-expanded="false">Cancelar ingresso</button>
+                  @endif
+                @endif
               </span>
             </div>
+            @if ($ingresso->status === 'valido' && ($regra['pode'] ?? false))
+              <div id="canc-{{ $ingresso->uuid }}" class="pub-cancelar" hidden>
+                <b>Cancelar o ingresso {{ $ingresso->numeroExibicao() }}</b>
+                <p>Compra em {{ data_local($regra['compra'], 'd/m/Y \à\s H:i') }} ({{ $regra['dias'] === 0 ? 'hoje' : $regra['dias'].' dia(s) atrás' }}).
+                  @if ((float) $ingresso->valor_pago <= 0)
+                    Ingresso gratuito: a vaga volta a ficar disponível.
+                  @elseif ($regra['dentro'])
+                    Dentro de {{ \App\Http\Controllers\Publico\MeusIngressosController::DIAS_ARREPENDIMENTO }} dias da compra: devolvemos <b>tudo, {{ moeda($regra['valor']) }}</b> (ingresso e taxa).
+                  @else
+                    Mais de {{ \App\Http\Controllers\Publico\MeusIngressosController::DIAS_ARREPENDIMENTO }} dias da compra: devolvemos <b>{{ moeda($regra['valor']) }}</b>, o valor do ingresso{{ $regra['taxa_retida'] > 0 ? '; a taxa de serviço de '.moeda($regra['taxa_retida']).' não é devolvida' : '' }}.
+                  @endif</p>
+                <p><small>O ingresso é cancelado na hora e deixa de valer para a entrada. @if ((float) $ingresso->valor_pago > 0)A devolução sai pelo mesmo meio de pagamento (no cartão, aparece na fatura conforme o banco). @endif Enviamos a confirmação por e-mail.</small></p>
+                <form method="post" action="{{ route('comprador.ingresso.cancelar', $ingresso->uuid) }}" data-confirmar="Confirmar o cancelamento do ingresso {{ $ingresso->numeroExibicao() }}? Esta ação não pode ser desfeita.">@csrf
+                  <button class="botao botao--perigo botao--pequeno">Confirmar cancelamento</button></form>
+              </div>
+            @endif
           @endforeach
         </div>
         <div class="pub-pedido__rodape">

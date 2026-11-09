@@ -225,3 +225,8 @@ button.botao { cursor: pointer; font-family: var(--fonte-texto); }
 .pub-pedido__capa img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pub-pedido__capa span { color: #FFD60A; font: 700 1.8rem 'Space Grotesk', sans-serif; }
 @media (max-width: 600px) { .pub-pedido__capa { flex-basis: 100%; height: 140px; } }
+
+.pub-cancelar { margin: 0 22px 14px; padding: 14px 16px; background: #FEF3F2; border-left: 4px solid #D92D20; border-radius: 8px; }
+.pub-cancelar p { margin: 6px 0; }
+.pub-pedido__ingressos > .pub-cancelar { display: block; border-bottom: 0; }
+.pub-pedido__ingressos > .pub-cancelar[hidden] { display: none; }

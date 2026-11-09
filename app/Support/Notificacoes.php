@@ -111,6 +111,22 @@ class Notificacoes
             ['organizador_id' => $org->id, 'comprador_id' => $comprador->id, 'pedido_id' => $pedido->id]);
     }
 
+    /** fique@ — o próprio comprador cancelou um ingresso em Meus ingressos (regra dos 7 dias). */
+    public static function ingressoCanceladoPeloComprador(Pedido $pedido, Comprador $comprador, Evento $evento, Organizador $org, $ingresso, array $regra): void
+    {
+        $devolucao = $regra['valor'] > 0
+            ? '<p>Valor devolvido: <b>'.self::e(moeda($regra['valor'])).'</b>'.($regra['taxa_retida'] > 0 ? ' (o valor do ingresso; a taxa de serviço de '.self::e(moeda($regra['taxa_retida'])).' não é devolvida após 7 dias da compra)' : ' (valor integral, dentro de 7 dias da compra)')
+              .'. A devolução sai pelo mesmo meio de pagamento; no cartão, aparece na fatura conforme o banco (em geral, até 2 faturas).</p>'
+            : '';
+        $html = Email::layout('Ingresso cancelado',
+            '<p>Olá, '.self::e($comprador->primeiroNome()).'.</p><p>Conforme o seu pedido, o ingresso <b>'.self::e($ingresso->numeroExibicao()).'</b> ('
+            .self::e($ingresso->participante?->nome ?? '').') de <b>'.self::e($evento->titulo).'</b>, pedido <b>'.self::e($pedido->codigo).'</b>, foi cancelado e deixou de valer para a entrada.</p>'.$devolucao,
+            null, null, self::rodapeOrganizador($org));
+        Email::operacao('cancelamento_comprador', $comprador->email, self::assuntoEvento($evento->titulo, 'Ingresso cancelado'), $html,
+            "Ingresso {$ingresso->numeroExibicao()} de {$evento->titulo} cancelado.".($regra['valor'] > 0 ? ' Valor devolvido: '.moeda($regra['valor']).'.' : ''),
+            ['organizador_id' => $org->id, 'comprador_id' => $comprador->id, 'pedido_id' => $pedido->id]);
+    }
+
     /** fique@ — boas-vindas ao produtor que acabou de criar a conta. */
     public static function boasVindasProdutor(Usuario $usuario, Organizador $org): void
     {

@@ -20,13 +20,18 @@ class CancelamentoIngressos
     ];
 
     /** @param Collection<int,Ingresso> $ingressos (do mesmo pedido) */
-    public static function cancelar(Pedido $pedido, Collection $ingressos, string $motivo, ?string $observacao, bool $devolvido): array
+    /**
+     * @param array<int, float>|null $valores  valor a devolver por ingresso (id => valor); sem ele, devolve o valor pago
+     * @param string $solicitadoPor  'organizador' ou 'comprador' (cancelamento pelo próprio comprador em Meus ingressos)
+     */
+    public static function cancelar(Pedido $pedido, Collection $ingressos, string $motivo, ?string $observacao, bool $devolvido, ?array $valores = null, string $solicitadoPor = 'organizador'): array
     {
         $alvos = $ingressos->where('status', 'valido')->values();
         if ($alvos->isEmpty()) {
             return ['cancelados' => 0, 'valor' => 0.0];
         }
-        $valor = round((float) $alvos->sum('valor_pago'), 2);
+        $devolverDe = fn ($i) => round((float) ($valores[$i->id] ?? $i->valor_pago), 2);
+        $valor = round((float) $alvos->sum($devolverDe), 2);
         // Pago pelo checkout do Mercado Pago: devolve pela API antes de cancelar (se falhar, nada é cancelado).
         if ($valor > 0) {
             try {
@@ -39,12 +44,12 @@ class CancelamentoIngressos
             }
         }
 
-        DB::transaction(function () use ($pedido, $alvos, $motivo, $observacao, $devolvido, $valor) {
+        DB::transaction(function () use ($pedido, $alvos, $motivo, $observacao, $devolvido, $valor, $devolverDe, $solicitadoPor) {
             foreach ($alvos->groupBy('lote_id')->sortKeys() as $loteId => $grupo) {
                 DB::update("UPDATE lote SET vendido = vendido - ?, status = IF(status = 'esgotado', 'ativo', status) WHERE id = ? AND vendido >= ?",
                     [$grupo->count(), $loteId, $grupo->count()]);
             }
-            $novoStatus = $valor > 0 ? 'reembolsado' : 'cancelado';
+            $novoStatus = $valor > 0 ? 'reembolsado' : 'cancelado'; // ingresso pago e devolvido (inteiro ou sem a taxa) → reembolsado
             Ingresso::withoutGlobalScope('organizador')->whereIn('id', $alvos->pluck('id'))->update(['status' => $novoStatus, 'cancelado_em' => now('UTC')]);
 
             $restantes = Ingresso::withoutGlobalScope('organizador')->where('pedido_id', $pedido->id)->whereIn('status', ['valido', 'utilizado'])->count();
@@ -59,14 +64,14 @@ class CancelamentoIngressos
             if ($valor > 0) {
                 $reembolsoId = DB::table('reembolso')->insertGetId([
                     'organizador_id' => $pedido->organizador_id, 'pedido_id' => $pedido->id, 'valor' => $valor, 'motivo' => $motivo,
-                    'observacao' => $observacao ? mb_substr($observacao, 0, 500) : null, 'solicitado_por' => 'organizador',
-                    'usuario_id' => auth()->id(), 'status' => $devolvido ? 'concluido' : 'aprovado', 'concluido_em' => $devolvido ? now('UTC') : null,
+                    'observacao' => $observacao ? mb_substr($observacao, 0, 500) : null, 'solicitado_por' => $solicitadoPor,
+                    'usuario_id' => $solicitadoPor === 'organizador' ? auth()->id() : null, 'status' => $devolvido ? 'concluido' : 'aprovado', 'concluido_em' => $devolvido ? now('UTC') : null,
                 ]);
                 foreach ($alvos as $i) {
-                    DB::table('reembolso_ingresso')->insert(['reembolso_id' => $reembolsoId, 'ingresso_id' => $i->id, 'valor' => $i->valor_pago]);
+                    DB::table('reembolso_ingresso')->insert(['reembolso_id' => $reembolsoId, 'ingresso_id' => $i->id, 'valor' => $devolverDe($i)]);
                 }
             }
-            Auditoria::registrar('ingresso.cancelar_pela_organizacao', $pedido, $antes, [
+            Auditoria::registrar($solicitadoPor === 'comprador' ? 'ingresso.cancelar_pelo_comprador' : 'ingresso.cancelar_pela_organizacao', $pedido, $antes, [
                 'ingressos' => $alvos->map->numeroExibicao()->all(), 'valor_devolver' => $valor, 'motivo' => $motivo,
                 'observacao' => $observacao, 'devolvido' => $devolvido,
             ]);
