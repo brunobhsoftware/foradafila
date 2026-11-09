@@ -10,7 +10,8 @@
         <p>{{ $editando ? 'As mudanças valem na hora para a página do evento.' : 'O evento nasce como rascunho. Você publica depois de criar os ingressos.' }}</p>
     </div>
     @if ($editando)
-        <div class="cabecalho__acoes"><a href="{{ route('eventos.show', $evento) }}#ingressos" class="botao botao--escuro"><x-icone nome="ingresso" /> Editar ingressos</a></div>
+        <div class="cabecalho__acoes"><a href="{{ route('eventos.show', $evento) }}#ingressos" class="botao botao--escuro"><x-icone nome="ingresso" /> Editar ingressos</a>
+            @include('painel.eventos._visibilidade')</div>
     @endif
 </div>
 

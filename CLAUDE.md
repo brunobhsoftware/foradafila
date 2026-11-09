@@ -97,7 +97,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   taxa da plataforma (só dos ingressos válidos/utilizados), devolvido (`reembolso` aprovado/concluído) e **valor líquido**
   (vendido − taxa − devoluções); link público com Copiar, Compartilhar (`data-compartilhar`: `navigator.share` ou copia) e WhatsApp.
   Sem a coluna Capacidade.
-- **Ocultar evento publicado** (decisão do Bruno, 09/11/2026): botão "Ocultar (voltar para rascunho)" na página do evento (publicado ou pausado →
+- **Ocultar evento publicado** (decisão do Bruno, 09/11/2026): interruptor **"Evento visível" / "Evento oculto"** (`painel/eventos/_visibilidade`) ao lado de "Editar ingressos" no editar e na página do evento (publicado ou pausado →
   `rascunho`, permissão `evento.publicar`, `Evento::TRANSICOES`): some do site (404, vitrine e página da organização) e para de vender; ingressos já
   emitidos continuam valendo; "Publicar evento" mostra de novo (o gatilho refaz as conferências de publicação).
 - Telas prontas (produtor): cadastro, login, convite da equipe, troca de organização, painel, **Meus eventos**
