@@ -12,7 +12,7 @@ use Throwable;
  */
 class SmtpEmpresa
 {
-    public const MAXIMO = 5;
+    public const MAXIMO = 10;
 
     /** Mailer montado na hora com os dados da conta (a senha só é descriptografada aqui). */
     public static function mailer(object $conta)
