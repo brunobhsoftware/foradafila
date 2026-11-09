@@ -230,6 +230,24 @@ const webhook = async (P, id) => {
     && sql("SELECT status FROM pedido WHERE uuid='" + uuidCartao + "'") === 'pago' && sql("SELECT CONCAT_WS('|', metodo, parcelas) FROM pagamento ORDER BY id DESC LIMIT 1") === 'cartao|3'
     && sql("SELECT cpf FROM comprador WHERE email='carla@cartao.test'") === '15350946056', 'cartão aprovado na hora: ingressos emitidos, 3 parcelas e CPF do titular no cadastro (1º nome do titular = do comprador)');
 
+  // ---- o comprador cancela o próprio ingresso: até 7 dias devolve tudo; depois, sem a taxa ----
+  await D.goto(BASE + '/minha-conta');
+  await D.click('button:has-text("Cancelar ingresso")');
+  ok((await D.locator('.pub-cancelar:visible').innerText()).includes('devolvemos tudo, R$ 105,00'), 'até 7 dias: mostra devolução integral (ingresso + taxa)');
+  D.once('dialog', (d) => d.accept());
+  const refAntes = reembolsos.length;
+  await nav(D, D.click('.pub-cancelar:visible button:has-text("Confirmar cancelamento")'));
+  ok((await D.content()).includes('Valor devolvido: R$ 105,00 (integral)') && reembolsos.length === refAntes + 1 && sql("SELECT valor FROM reembolso WHERE solicitado_por='comprador' ORDER BY id DESC LIMIT 1") === '105.00'
+    && sql("SELECT COUNT(*) FROM mensagem_envio WHERE destinatario='carla@cartao.test' AND tipo='cancelamento_comprador'") === '1', 'cancelado pelo comprador: R$ 105 devolvidos pelo Mercado Pago e e-mail de confirmação');
+  sql("UPDATE pedido p JOIN comprador c ON c.id=p.comprador_id SET p.pago_em = DATE_SUB(UTC_TIMESTAMP(), INTERVAL 8 DAY) WHERE c.email='ana@compra.test'");
+  await C.goto(BASE + '/minha-conta');
+  ok((await C.locator('.pub-abas').count()) === 1 && (await C.content()).includes('Olá, Ana Compradora'), 'cabeçalho com o nome completo e o e-mail embaixo');
+  await C.click('button:has-text("Cancelar ingresso")');
+  ok((await C.locator('.pub-cancelar:visible').innerText()).includes('devolvemos R$ 100,00, o valor do ingresso; a taxa de serviço de R$ 5,00 não é devolvida'), 'após 7 dias: devolve só o ingresso');
+  C.once('dialog', (d) => d.accept());
+  await nav(C, C.click('.pub-cancelar:visible button:has-text("Confirmar cancelamento")'));
+  ok((await C.content()).includes('Valor devolvido: R$ 100,00 (sem a taxa de serviço)') && reembolsos[reembolsos.length - 1].corpo.transactions[0].amount === '100.00', 'após 7 dias: R$ 100 devolvidos, taxa retida');
+
   sql("UPDATE taxa_regra SET percentual=0, valor_fixo=0, valor_minimo=0 WHERE operacao='ingresso_pago'");
   ok(erros.length === 0, 'sem erros de JavaScript ' + erros.join(' | '));
   await b.close(); falso.close();

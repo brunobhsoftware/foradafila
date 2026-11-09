@@ -164,6 +164,13 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   **Alterar meu e-mail** (`/minha-conta/email`, 09/11/2026): com o e-mail atual validado na sessão, código ao e-mail **novo** (`email-comprador`,
   sessão `email_novo`); só troca com o código; avisa o antigo e o novo. Meus dados com a legenda "Meus dados cadastrais". Meus ingressos: **imagem do
   evento** em cada pedido (`.pub-pedido__capa`, link para a página) e **"Enviar para meu e-mail"** (`comprador.reenviar`: confirmação com o PDF).
+  **Cancelamento pelo comprador** (decisão do Bruno, 09/11/2026; `MeusIngressosController::regraCancelamento` / `cancelarIngresso`): em cada
+  ingresso, "Enviar para meu e-mail" (`comprador.ingresso.enviar`) e "Cancelar ingresso" (abre `.pub-cancelar` com a regra): **até 7 dias da compra**
+  (`pago_em`, `DIAS_ARREPENDIMENTO`) devolve tudo; **depois**, só o ingresso (a taxa repassada, `pedido_item.taxa_unitaria`, fica retida); só antes do
+  início do evento. Usa `CancelamentoIngressos::cancelar(..., $valores, 'comprador')` (devolução pelo MP, `reembolso.solicitado_por = comprador`,
+  auditoria `ingresso.cancelar_pelo_comprador`) e e-mail `Notificacoes::ingressoCanceladoPeloComprador`. **Corrigido:** o 2º cancelamento do mesmo
+  pedido não devolvia pelo MP (só buscava pagamento `aprovado`; agora também `estorno_parcial`, e depois de uma parcial manda sempre o valor).
+  Cabeçalho: "Olá, nome completo" e o e-mail embaixo.
 - **Checkout pago** (`App\Support\Checkout`, 08/11/2026): a mesma tela de inscrição vira "Comprar ingresso" com o resumo (preço + taxa
   repassada) e "Ir para o pagamento". `InscricaoController::reservarPago` reserva o estoque (`lote.reservado`, UPDATE condicional) por
   `RESERVA_MIN` (30) min, cria o pedido `aguardando_pagamento` (participantes em `dados_participantes`; `pedido_item.taxa_unitaria` =

@@ -3,7 +3,8 @@
   <div class="container">
     <span class="traco"></span>
     <h1>{{ ['comprador.dados' => 'Meus dados', 'comprador.senha' => 'Alterar senha', 'comprador.email' => 'Alterar meu e-mail'][request()->route()->getName()] ?? 'Meus ingressos' }}<span class="ponto">.</span></h1>
-    <p>Olá, {{ $comprador->primeiroNome() }} ({{ $comprador->email }}).</p>
+    <p style="margin-bottom:0">Olá, {{ $comprador->nome }}</p>
+    <p style="margin-top:2px;font-size:.98rem;opacity:.85">{{ $comprador->email }}</p>
   </div>
 </section>
 {{-- Abas numa faixa clara, separadas do fundo escuro do cabeçalho --}}

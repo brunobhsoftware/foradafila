@@ -197,7 +197,7 @@ const formularioLegado = require('./_formulario-legado');
   await Z.goto(BASE + '/minha-conta');
   const antesEnvio = Number(sql("SELECT COUNT(*) FROM mensagem_envio WHERE destinatario='ana@publico.test' AND tipo='confirmacao_compra'"));
   await nav(Z, Z.locator('button:has-text("Enviar para meu e-mail")').first().click());
-  ok((await Z.content()).includes('Enviamos os ingressos do pedido') && Number(sql("SELECT COUNT(*) FROM mensagem_envio WHERE destinatario='ana@publico.test' AND tipo='confirmacao_compra'")) === antesEnvio + 1, 'Enviar para meu e-mail reenvia os ingressos');
+  ok(/Enviamos (os ingressos do pedido|o ingresso)/.test(await Z.content()) && Number(sql("SELECT COUNT(*) FROM mensagem_envio WHERE destinatario='ana@publico.test' AND tipo='confirmacao_compra'")) === antesEnvio + 1, 'Enviar para meu e-mail reenvia os ingressos');
   await Z.goto(BASE + '/minha-conta/dados');
   ok((await Z.content()).includes('Meus dados cadastrais'), 'legenda "Meus dados cadastrais"');
   await nav(Z, Z.click('a.botao:has-text("Alterar meu e-mail")'));
