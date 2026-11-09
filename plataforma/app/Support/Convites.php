@@ -17,8 +17,8 @@ class Convites
     /** No máximo por conta em cada rodada do cron (1 por minuto), para a rodada não passar do tempo da hospedagem. */
     public const POR_RODADA = 40;
 
-    /** Limite da plataforma: cada organização envia no máximo 500 convites por dia, divididos igualmente entre as suas contas ativas. */
-    public const LIMITE_DIA = 500;
+    /** Limite padrão da plataforma (a Administração ajusta por empresa, `App\Support\Marketing`). */
+    public const LIMITE_DIA = Marketing::LIMITE_PADRAO;
 
     public static function linkDescadastro(int $orgId, string $email): string
     {
@@ -77,15 +77,19 @@ class Convites
     {
         $contas = DB::table('smtp_conta')->where('organizador_id', $orgId)->where('ativo', 1)->orderBy('id')->get();
         $hoje = DB::table('campanha_envio')->where('organizador_id', $orgId)->where('enviado_em', '>=', self::inicioDoDia())->count();
+        // recurso liberado e limite diário vêm da Administração (por empresa); desligado = não envia nada
+        $ativo = Marketing::ativo($orgId);
+        $limite = Marketing::limiteDia($orgId);
 
-        return ['contas' => $contas, 'cota' => $contas->count() ? intdiv(self::LIMITE_DIA, $contas->count()) : 0,
-            'hoje' => $hoje, 'restante' => max(0, self::LIMITE_DIA - $hoje)];
+        return ['ativo' => $ativo, 'limite' => $limite, 'contas' => $contas,
+            'cota' => $ativo && $contas->count() ? intdiv($limite, $contas->count()) : 0,
+            'hoje' => $hoje, 'restante' => $ativo ? max(0, $limite - $hoje) : 0];
     }
 
     private static function rodadaDaEmpresa(int $orgId): int
     {
         $cap = self::capacidade($orgId);
-        if (! $cap['contas']->count() || $cap['restante'] <= 0) {
+        if (! $cap['ativo'] || ! $cap['contas']->count() || $cap['restante'] <= 0) {
             return 0;
         }
         $org = Organizador::find($orgId);

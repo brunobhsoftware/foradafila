@@ -55,6 +55,15 @@ const cadastrar = async (P, nome, email, doc, razao, fantasia) => {
   await P.selectOption('#situacao [name=situacao]', 'ativo');
   await nav(P, P.click('button:has-text("Salvar situação")'));
 
+  // ---- e-mail marketing por empresa: liga/desliga e limite diário ----
+  ok((await P.locator('#marketing .selo').innerText()).includes('Desligado'), 'e-mail marketing nasce desligado');
+  const fm = P.locator('#marketing form');
+  await fm.locator('[name=marketing_ativo][type=checkbox]').check(); await fm.locator('[name=marketing_limite]').fill('300');
+  await nav(P, fm.locator('button:has-text("Salvar e-mail marketing")').click());
+  ok(sql(`SELECT valor FROM parametro_sistema WHERE chave='marketing_org_${idA}_ativo'`) === '1'
+    && sql(`SELECT valor FROM parametro_sistema WHERE chave='marketing_org_${idA}_limite'`) === '300'
+    && (await P.locator('#marketing .selo').innerText()).includes('Liberado'), 'Administração libera o e-mail marketing com limite de 300/dia');
+
   // ---- motor de taxas: regra padrão e faixas ----
   await P.goto(BASE + '/admin/taxas');
   const editar = P.locator('tr:has-text("Lançamento") button:has-text("Editar")'); await editar.click();

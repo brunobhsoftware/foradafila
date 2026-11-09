@@ -7,6 +7,7 @@ use App\Models\Evento;
 use App\Models\Organizador;
 use App\Support\Auditoria;
 use App\Support\Convites;
+use App\Support\Marketing;
 use App\Support\Esquema;
 use App\Support\SmtpEmpresa;
 use App\Support\Tenant;
@@ -30,6 +31,8 @@ class ConvitesController extends Controller
             'listas' => DB::table('lista_email as l')->where('l.organizador_id', $tenant->id())
                 ->select('l.*', DB::raw('(SELECT COUNT(*) FROM lista_email_contato c WHERE c.lista_id = l.id) as total'))->orderBy('l.nome')->get(),
             'contas' => DB::table('smtp_conta')->where('organizador_id', $tenant->id())->where('ativo', 1)->orderBy('id')->get(),
+            'marketing' => Marketing::ativo($tenant->id()),
+            'limiteDia' => Marketing::limiteDia($tenant->id()),
         ]);
     }
 
@@ -56,6 +59,7 @@ class ConvitesController extends Controller
     public function criar(Request $request, Tenant $tenant)
     {
         $this->pode();
+        abort_unless(Marketing::ativo($tenant->id()), 403, 'O e-mail marketing não está liberado para a sua empresa.');
         [$evento, $conta, $d, $lista] = $this->dados($request, $tenant, true);
         $org = $tenant->id();
         $agendar = ($d['quando'] ?? 'agora') === 'agendar' ? \Illuminate\Support\Carbon::parse(utc_de_local($d['agendar_para']), 'UTC') : null;
@@ -86,14 +90,15 @@ class ConvitesController extends Controller
         });
         $c = DB::table('campanha')->find($id);
         Auditoria::registrar('campanha.criar', $evento, null, ['campanha' => $c->uuid, 'lista' => $lista->nome, 'total' => $c->total_destinatarios, 'assunto' => $d['assunto']]);
-        $dias = (int) ceil($c->total_destinatarios / Convites::LIMITE_DIA);
+        $limiteDia = Marketing::limiteDia($tenant->id());
+        $dias = (int) ceil($c->total_destinatarios / $limiteDia);
 
         if ($c->total_destinatarios && $agendar) {
             return redirect()->route('convites.agendamentos')->with('ok', 'Convite agendado para '.data_local($agendar, 'd/m/Y \\à\\s H:i')." ({$c->total_destinatarios} e-mail(s)).");
         }
 
         return redirect()->route('convites.show', $c->uuid)->with('ok', $c->total_destinatarios
-            ? "Convite na fila para {$c->total_destinatarios} e-mail(s). A empresa envia até ".Convites::LIMITE_DIA.' por dia'.($dias > 1 ? " (cerca de $dias dias, somando os outros convites na fila)." : '.')
+            ? "Convite na fila para {$c->total_destinatarios} e-mail(s). A empresa envia até {$limiteDia} por dia".($dias > 1 ? " (cerca de $dias dias, somando os outros convites na fila)." : '.')
             : 'Ninguém para enviar: a lista está vazia ou todos se descadastraram.');
     }
 
@@ -126,6 +131,7 @@ class ConvitesController extends Controller
             'pendentes' => DB::table('campanha_envio')->where('campanha_id', $c->id)->where('status', 'pendente')->count(),
             'pulados' => DB::table('campanha_envio')->where('campanha_id', $c->id)->where('status', 'pulado')->count(),
             'ultimosErros' => DB::table('campanha_envio')->where('campanha_id', $c->id)->where('status', 'erro')->orderByDesc('id')->limit(10)->get(),
+            'limiteDia' => Marketing::limiteDia($tenant->id()),
         ]);
     }
 

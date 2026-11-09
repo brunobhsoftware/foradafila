@@ -307,7 +307,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   conta de teste ou real; avisa se os dois são da mesma conta). O retorno `/admin/mercadopago/teste/retorno` é aberto (sem login só mostra os IDs). Empresas e taxas/isenções: em breve. Administrador sem empresa entra direto em `/admin`.
   **Empresas** (`/admin/empresas`, V008): lista com busca (nome/CNPJ), filtros (situação, período), ações "Assumir conta",
   "Taxas e isenções" e "Status"; detalhe (`/admin/empresas/{uuid}`) com números, usuários, integrações, situação (ativo/em teste/
-  suspenso/encerrado + motivo), taxas específicas, acessos da Administração e auditoria. **Assumir conta** (`App\Support\Impersonacao`):
+  suspenso/encerrado + motivo), taxas específicas, acessos da Administração, **E-mail marketing** (ligar/desligar + limite diário) e auditoria. **Assumir conta** (`App\Support\Impersonacao`):
   sessão `impersonacao` (admin, empresa, log); o middleware `organizador` monta um vínculo virtual com o perfil Produtor; faixa
   laranja no painel com "Sair do modo assumir conta" (`POST /admin/sair-da-conta`); toda auditoria nesse período leva
   `admin_impersonando_id` e `impersonacao_id`, e `impersonacao_log.acoes` conta as ações. **Taxas** (`/admin/taxas`,
@@ -401,12 +401,16 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   agendados/enviando/pausados com previsão de término e o quadro "Como funciona o envio" + última rodada do cron, cache `convites_ultima_rodada`),
   Listas de e-mail e **Contas de e-mail** (= Opções de marketing). Convite tem "Começar agora" ou **"Agendar"** (`agendada_para`, status `agendada`;
   a rodada do cron vira `enviando` quando chega a hora; tem de ser antes do fim do evento).
-  **Limite diário por organização** (decisão do Bruno, 09/11/2026): `Convites::LIMITE_DIA` = **500 e-mails por dia por empresa**, divididos
-  igualmente entre as contas ativas (`capacidade()`: 10 contas → 50 por conta/dia; vira à meia-noite de Brasília), além do limite por hora de cada
+  **E-mail marketing por empresa** (decisão do Bruno, 09/11/2026; `App\Support\Marketing`, `parametro_sistema` `marketing_org_<id>_ativo`/`_limite`):
+  a **Administração → Empresas → detalhe (`#marketing`)** liga/desliga o envio de convites e define o **limite diário** (padrão `LIMITE_PADRAO` = 500,
+  máx. 5000; `admin.empresas.marketing`, auditoria `plataforma.marketing_empresa`). **Desligado por padrão** — só envia quem contratou (não pesar os
+  servidores); com o recurso desligado, Convite por e-mail e Agendamentos mostram "E-mail marketing não liberado" e `criar` dá 403.
+  **Limite diário por organização**: `Convites::capacidade()` usa `Marketing::limiteDia`/`ativo`; o limite é **por empresa**, dividido
+  igualmente entre as contas ativas (ex.: 500 ÷ 10 contas = 50 por conta/dia; vira à meia-noite de Brasília), além do limite por hora de cada
   conta. Convite com **"Todas as contas"** (`campanha.smtp_conta_id` NULL, padrão) usa todas; com uma conta, só a cota dela. A rodada é por empresa
   (`rodadaDaEmpresa`): cada conta pega pendentes na ordem dos convites; o que não sai hoje continua amanhã até acabar. **Repetição só dentro do mesmo
   convite** (UNIQUE campanha+e-mail): um novo convite do mesmo evento (outro assunto) manda de novo para todos. Agendamentos mostra "Hoje: X de 500",
-  contas × cota e a previsão em dias (fila acumulada ÷ 500). Teste `fluxo-marketing.js` (37).
+  contas × cota e a previsão em dias (fila acumulada ÷ limite). Teste `fluxo-marketing.js` (39).
 - **Política de cancelamento:** ao criar/editar evento o produtor marca a declaração
   `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
   (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores

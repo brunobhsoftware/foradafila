@@ -114,7 +114,11 @@ net.createServer((s) => {
   ok((await P.request.get(BASE + '/e/' + cod)).status() === 404, 'evento oculto some do site');
   await nav(P, P.click('button:has-text("Evento oculto")'));
   ok(sql("SELECT status FROM evento WHERE titulo='Festa do Convite'") === 'publicado' && (await P.request.get(BASE + '/e/' + cod)).status() === 200, 'publicar de novo');
+  // e-mail marketing nasce desligado: a empresa não envia até a Administração liberar
   await nav(P, P.click('.menu-lateral a:has-text("Convite por e-mail")'));
+  ok((await P.content()).includes('E-mail marketing não liberado') && !(await P.isVisible('button:has-text("Enviar para a lista")')), 'convite bloqueado enquanto o marketing não é liberado');
+  sql("INSERT INTO parametro_sistema (chave, valor) VALUES ('marketing_org_" + sql("SELECT id FROM organizador LIMIT 1") + "_ativo','1') ON DUPLICATE KEY UPDATE valor='1'");
+  await P.reload();
   const previa = await P.frameLocator('[data-convite-previa]').locator('body').innerText();
   ok(previa.includes('Festa do Convite') && previa.includes('Garantir meu ingresso') && previa.includes('Não quero mais receber'), 'pré-visualização montada do evento');
   await P.fill('[name=assunto]', 'Venha para a Festa!');
