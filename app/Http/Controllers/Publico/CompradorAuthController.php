@@ -43,6 +43,7 @@ class CompradorAuthController extends Controller
 
         RateLimiter::clear($chave);
         Auth::guard('comprador')->login($comprador);
+        session(['comprador_verificado' => $comprador->id]); // entrou com e-mail e senha: pode editar Meus dados
         $request->session()->regenerate();
 
         return redirect()->intended(route('comprador.ingressos'));

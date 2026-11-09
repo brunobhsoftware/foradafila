@@ -112,12 +112,16 @@ class Checkout
     public static function pagarCartao(Pedido $pedido, Evento $evento, Comprador $comprador, ContaPagamento $conta, array $f): string
     {
         $cpf = preg_replace('/\D/', '', (string) data_get($f, 'payer.identification.number', '')) ?: $comprador->cpf;
+        // Nome do titular do cartão (antes de usar o token): o CPF só vai para o cadastro se o 1º nome bater com o do comprador.
+        $titular = (string) data_get(MercadoPago::tokenCartao(self::token($conta), (string) $f['token']), 'cardholder.name', '');
         self::criarOrder($pedido, $evento, $comprador, $conta, $cpf, 'cartao', [
             'id' => (string) $f['payment_method_id'], 'type' => (string) ($f['payment_type_id'] ?? 'credit_card'), 'token' => (string) $f['token'],
             'installments' => max(1, (int) ($f['installments'] ?? 1)), 'issuer_id' => $f['issuer_id'] ?? null,
             'email' => data_get($f, 'payer.email'),
         ]);
-        if ($cpf && strlen($cpf) === 11 && ! $comprador->cpf) {
+        // Só em produção: em teste o CPF é o da conta/cartão de teste do Mercado Pago (12345678909), não o do comprador.
+        if ($cpf && strlen($cpf) === 11 && ! $comprador->cpf && ! self::modoTeste($pedido->organizador_id) && $cpf !== '12345678909'
+            && \App\Support\Documento::cpfValido($cpf) && self::mesmoPrimeiroNome($titular, $comprador->nome)) {
             $comprador->forceFill(['cpf' => $cpf])->save();
             CadastroPessoa::registrar($cpf, $comprador->nome, $comprador->email, $comprador->telefone, 'compra');
         }
@@ -135,6 +139,14 @@ class Checkout
         }
 
         return 'pendente';
+    }
+
+    /** "BRUNO S SILVA" x "Bruno Silva" → true (sem acento, maiúsculas/minúsculas). */
+    public static function mesmoPrimeiroNome(string $a, string $b): bool
+    {
+        $p = fn ($s) => mb_strtolower(\Illuminate\Support\Str::ascii(strtok(trim($s), " \t") ?: ''));
+
+        return $p($a) !== '' && $p($a) === $p($b);
     }
 
     public static function mensagemRecusa(string $detalhe): string

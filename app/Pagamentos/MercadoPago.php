@@ -246,6 +246,18 @@ class MercadoPago
         }
     }
 
+    /** Dados do token do cartão (nome do titular), para conferir antes de gravar o CPF no cadastro. */
+    public static function tokenCartao(string $accessToken, string $token): array
+    {
+        try {
+            $r = Http::withToken($accessToken)->acceptJson()->timeout(10)->get(config('pagamentos.mercadopago.api_url').'/v1/card_tokens/'.rawurlencode($token));
+
+            return $r->successful() ? (array) $r->json() : [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
     public static function pagamento(string $accessToken, string $id): array
     {
         $r = Http::withToken($accessToken)->acceptJson()->timeout(15)->get(config('pagamentos.mercadopago.api_url').'/v1/payments/'.rawurlencode($id));
