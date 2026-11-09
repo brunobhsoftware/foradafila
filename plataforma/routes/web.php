@@ -119,6 +119,8 @@ Route::get('/pedido/{pedido}/pagamento', [\App\Http\Controllers\Publico\Pagament
     ->whereUuid('pedido')->middleware('throttle:30,1,pedido-retorno');
 Route::post('/webhooks/mercadopago/{conta}', [WebhookController::class, 'mercadoPagoEmpresa'])->name('webhook.mercadopago.empresa')->whereUuid('conta')
     ->middleware('throttle:120,1,webhook-mp-empresa');
+Route::get('/descadastro/{org}', [\App\Http\Controllers\Publico\DescadastroController::class, 'mostrar'])->name('descadastro')->whereNumber('org');
+Route::post('/descadastro/{org}', [\App\Http\Controllers\Publico\DescadastroController::class, 'confirmar'])->whereNumber('org')->middleware('throttle:30,1,descadastro');
 Route::post('/webhooks/mercadopago', [WebhookController::class, 'mercadoPago'])->name('webhook.mercadopago')
     ->middleware('throttle:120,1,webhook-mp');
 
@@ -282,6 +284,13 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::get('/listas-email/{lista}/exportar', [\App\Http\Controllers\Painel\ListasEmailController::class, 'exportar'])->name('listas-email.exportar');
     Route::post('/listas-email/{lista}/excluir', [\App\Http\Controllers\Painel\ListasEmailController::class, 'excluir'])->name('listas-email.excluir');
     Route::post('/listas-email/{lista}/contatos/{contato}/remover', [\App\Http\Controllers\Painel\ListasEmailController::class, 'removerContato'])->name('listas-email.contato.remover')->whereNumber('contato');
+
+    Route::get('/convites', [\App\Http\Controllers\Painel\ConvitesController::class, 'index'])->name('convites.index');
+    Route::get('/convites/previa', [\App\Http\Controllers\Painel\ConvitesController::class, 'previa'])->name('convites.previa');
+    Route::post('/convites', [\App\Http\Controllers\Painel\ConvitesController::class, 'criar'])->name('convites.criar')->middleware('throttle:10,60,convites-criar');
+    Route::post('/convites/teste', [\App\Http\Controllers\Painel\ConvitesController::class, 'teste'])->name('convites.teste')->middleware('throttle:10,10,convites-teste');
+    Route::get('/convites/{uuid}', [\App\Http\Controllers\Painel\ConvitesController::class, 'show'])->name('convites.show');
+    Route::post('/convites/{uuid}/{acao}', [\App\Http\Controllers\Painel\ConvitesController::class, 'situacao'])->name('convites.situacao')->whereIn('acao', ['pausar', 'retomar', 'cancelar']);
 
     Route::get('/organizacao/marketing', [\App\Http\Controllers\Painel\MarketingController::class, 'index'])->name('marketing.index');
     Route::post('/organizacao/marketing/smtp', [\App\Http\Controllers\Painel\MarketingController::class, 'salvar'])->name('marketing.smtp.criar');

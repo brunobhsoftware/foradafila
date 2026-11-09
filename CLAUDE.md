@@ -28,6 +28,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V015__formularios_inscricao.sql` | Formulários de inscrição: `formulario.padrao` e `evento.formulario_id`. Idempotente. Aplicado em produção em 08/11/2026 ("V015 ok") |
 | `banco/V016__cpf_teste_e_nascimento.sql` | Limpa o CPF de teste do MP (12345678909) de `comprador`/`pessoa` e cria `pessoa.data_nascimento`. Idempotente. Aplicado em produção em 09/11/2026 ("V016 ok") |
 | `banco/V017__marketing_smtp_listas.sql` | Opções de marketing: `smtp_conta` (até 5 SMTP da empresa, senha criptografada), `lista_email`/`lista_email_contato` e `email_descadastro`. Idempotente. Aplicado em produção em 09/11/2026 ("V017 ok"; sem ele, menu e telas ficam ocultos: `Esquema::temV017()`) |
+| `banco/V018__convite_email.sql` | Convite por e-mail: `campanha` ganha uuid/lista_id/smtp_conta_id/enviados/erros/iniciada_em/concluida_em; tabela `campanha_envio` (fila por e-mail); `lista_email_contato.consentimento_em/_por`. Idempotente. **Aguardando importação em produção** (`Esquema::temV018()`) |
 | `docs/apps-checkin.md` | **Apps de check-in**: instalar sem loja (PWA) e publicar no Google Play e na App Store (projeto `apps/checkin/`, Capacitor 6) |
 | `apps/checkin/` | Projeto Capacitor dos apps Android/iOS, **com os projetos nativos gerados** (`android/`, `ios/`: ícones, tela de abertura, nome "FF Check-in", permissão de câmera); abre `https://foradafila.com.br/app`. Compilado pelo GitHub em `.github/workflows/apps-checkin.yml` (APK de teste, AAB assinado com os segredos `ANDROID_*`, build iOS de simulador) |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
@@ -369,7 +370,16 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   ("Nome; e-mail"), importar CSV (`;` ou `,`, cabeçalho email/nome/telefone ou coluna com @, UTF-8 ou Windows-1252 do Excel, até 10 MB),
   trazer compradores/participantes de eventos, busca, remover, exportar CSV, renomear/excluir; repetidos e inválidos contados.
   `email_descadastro` (por empresa) marca "Descadastrado" e será pulado nos envios. Teste `fluxo-marketing.js` (16).
-  **Ainda não:** o envio do "Convite por e-mail" (campanha com assunto, imagem e descrição do evento) — em discussão com o Bruno.
+  **Declaração obrigatória** ao colar/importar/trazer de eventos (`ListasEmailController::DECLARACAO`, decisão do Bruno 09/11/2026), gravada
+  no contato (`consentimento_em/_por`) e na auditoria (com IP).
+  **Divulgação → Convite por e-mail** (V018, `/painel/convites`, `ConvitesController`, `App\Support\Convites`): evento publicado futuro + lista +
+  conta SMTP + **assunto** (o resto vem do evento: imagem, saudação, data, local, resumo/descrição, botão "Garantir meu ingresso"); pré-visualização
+  em iframe, "Enviar um teste para mim"; "Enviar para a lista" grava a foto da lista em `campanha_envio` (sem descadastrados e sem quem já recebeu
+  convite do mesmo evento) e a campanha fica `enviando`. **Cron** (`php artisan schedule:run` a cada minuto no hPanel → `convites:enviar`,
+  `withoutOverlapping`): até 40 por conta por rodada, respeitando `smtp_conta.limite_hora` na última hora; marca antes de mandar (não duplica).
+  Cabeçalhos `List-Unsubscribe` + One-Click; rodapé "Não quero mais receber" → `/descadastro/{org}?email=` (assinatura só do caminho,
+  `DescadastroController`, sem CSRF) grava `email_descadastro`. Acompanhamento com barra, enviados/faltam/erros, Pausar (status `rascunho`),
+  Retomar e Cancelar. Teste `fluxo-marketing.js` (28, com SMTP falso na porta 2526).
 - **Política de cancelamento:** ao criar/editar evento o produtor marca a declaração
   `EventoController::DECLARACAO_CANCELAMENTO` (obrigatória), registrada em `auditoria`
   (`evento.declaracao_cancelamento`, com IP e texto). A página pública sempre mostra que devolver todos os valores

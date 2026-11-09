@@ -17,6 +17,7 @@
         'Divulgação' => [
             ['rota' => 'cupons.index', 'ativo' => 'cupons.*', 'icone' => 'cupom', 'texto' => 'Cupons', 'pode' => ['cupom.gerenciar']],
             ['rota' => 'convidados.index', 'ativo' => 'convidados.*', 'icone' => 'convidados', 'texto' => 'Convidados', 'pode' => ['convidado.gerenciar']],
+            ['rota' => 'convites.index', 'ativo' => 'convites.*', 'icone' => 'mensagem', 'texto' => 'Convite por e-mail', 'pode' => ['campanha.gerenciar'], 'esquema' => 'v018'],
             ['rota' => 'listas-email.index', 'ativo' => 'listas-email.*', 'icone' => 'mensagem', 'texto' => 'Listas de e-mail', 'pode' => ['campanha.gerenciar'], 'esquema' => 'v017'],
             ['rota' => 'mensagens.index', 'ativo' => 'mensagens.*', 'icone' => 'mensagem', 'texto' => 'Mensagens', 'pode' => ['mensagem.gerenciar']],
         ],
@@ -39,7 +40,7 @@
         </a>
         <nav>
             @foreach ($menu as $grupo => $itens)
-                @php $visiveis = array_filter($itens, fn ($i) => $tenant->pode(...$i['pode']) && (empty($i['esquema']) || \App\Support\Esquema::temV017())); @endphp
+                @php $visiveis = array_filter($itens, fn ($i) => $tenant->pode(...$i['pode']) && (empty($i['esquema']) || ($i['esquema'] === 'v018' ? \App\Support\Esquema::temV018() : \App\Support\Esquema::temV017()))); @endphp
                 @continue(empty($visiveis))
                 @if ($grupo)<div class="menu-lateral__grupo">{{ $grupo }}</div>@endif
                 @foreach ($visiveis as $item)
