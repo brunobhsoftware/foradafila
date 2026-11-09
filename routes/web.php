@@ -49,8 +49,13 @@ Route::prefix('minha-conta')->name('comprador.')->group(function () {
         Route::get('/criar', [CompradorAuthController::class, 'criar'])->name('criar');
         Route::post('/criar', [CompradorAuthController::class, 'registrar'])->middleware('throttle:10,1,cadastro-comprador');
     });
+    Route::post('/codigo/enviar', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'porEmail'])->name('codigo.enviar')->middleware('throttle:5,10,codigo-comprador-enviar');
+    Route::get('/codigo', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'codigo'])->name('codigo');
+    Route::post('/codigo', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'confirmar'])->middleware('throttle:10,10,codigo-comprador');
     Route::middleware('auth:comprador')->group(function () {
         Route::get('/', [MeusIngressosController::class, 'index'])->name('ingressos');
+        Route::get('/dados', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'dados'])->name('dados');
+        Route::put('/dados', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'salvarDados']);
         Route::get('/ingressos/{uuid}', [MeusIngressosController::class, 'show'])->name('ingresso');
         Route::post('/pedidos/{uuid}/cancelar', [MeusIngressosController::class, 'cancelar'])->name('cancelar');
         Route::post('/sair', [CompradorAuthController::class, 'sair'])->name('sair');
@@ -87,6 +92,8 @@ Route::get('/pedido/{pedido}/ingressos.pdf', [\App\Http\Controllers\Publico\Paga
     ->whereUuid('pedido')->middleware('throttle:20,1,pedido-pdf');
 Route::get('/ingresso/{ingresso}', [\App\Http\Controllers\Publico\PagamentoController::class, 'ingressoUnico'])->name('ingresso.publico')
     ->whereUuid('ingresso')->middleware('throttle:60,1,ingresso-publico');
+Route::post('/pedido/{pedido}/acessar', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'doPedido'])->name('pedido.acessar')
+    ->whereUuid('pedido')->middleware('throttle:5,10,pedido-acessar');
 Route::get('/pedido/{pedido}/pix', [\App\Http\Controllers\Publico\PagamentoController::class, 'pix'])->name('pedido.pix')
     ->whereUuid('pedido')->middleware('throttle:30,1,pedido-pix');
 Route::get('/pedido/{pedido}/cartao', [\App\Http\Controllers\Publico\PagamentoController::class, 'cartao'])->name('pedido.cartao')

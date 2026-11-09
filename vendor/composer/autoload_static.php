@@ -514,6 +514,7 @@ class ComposerStaticInit19cf629833914b10fb54311306124002
         'App\\Http\\Controllers\\Painel\\PedidosController' => __DIR__ . '/../..' . '/app/Http/Controllers/Painel/PedidosController.php',
         'App\\Http\\Controllers\\Painel\\PerfilController' => __DIR__ . '/../..' . '/app/Http/Controllers/Painel/PerfilController.php',
         'App\\Http\\Controllers\\Painel\\PreferenciasController' => __DIR__ . '/../..' . '/app/Http/Controllers/Painel/PreferenciasController.php',
+        'App\\Http\\Controllers\\Publico\\AcessoCompradorController' => __DIR__ . '/../..' . '/app/Http/Controllers/Publico/AcessoCompradorController.php',
         'App\\Http\\Controllers\\Publico\\CadastroCompradorController' => __DIR__ . '/../..' . '/app/Http/Controllers/Publico/CadastroCompradorController.php',
         'App\\Http\\Controllers\\Publico\\CompradorAuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/Publico/CompradorAuthController.php',
         'App\\Http\\Controllers\\Publico\\EventoPublicoController' => __DIR__ . '/../..' . '/app/Http/Controllers/Publico/EventoPublicoController.php',

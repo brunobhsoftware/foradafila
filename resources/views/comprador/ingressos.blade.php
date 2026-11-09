@@ -2,14 +2,7 @@
 @section('titulo', 'Meus ingressos')
 
 @section('conteudo')
-<section class="pub-cabecalho">
-  <div class="container">
-    <span class="traco"></span>
-    <h1>Meus ingressos<span class="ponto">.</span></h1>
-    <p>Olá, {{ $comprador->primeiroNome() }}. Aqui ficam todos os ingressos da sua conta ({{ $comprador->email }}).</p>
-    <form method="post" action="{{ route('comprador.sair') }}" style="margin-top:14px">@csrf<button class="botao botao--contorno botao--pequeno">Sair</button></form>
-  </div>
-</section>
+@include('comprador._abas')
 
 <section class="pub-secao">
   <div class="container">
@@ -21,7 +14,10 @@
       </div>
     @endif
 
-    @foreach ($pedidos as $pedido)
+    @php $proximos = $pedidos->filter(fn ($p) => $p->evento && $p->evento->data_fim?->isFuture()); $anteriores = $pedidos->diff($proximos); @endphp
+    @foreach ($proximos->concat($anteriores) as $pedido)
+      @if ($loop->first && $proximos->isNotEmpty())<h2 style="font-size:1.2rem;margin:0 0 12px">Próximos eventos</h2>@endif
+      @if ($anteriores->isNotEmpty() && $pedido->is($anteriores->first()))<h2 style="font-size:1.2rem;margin:24px 0 12px">Eventos que você já foi</h2>@endif
       @php
         $evento = $pedido->evento; $org = $pedido->organizadorPublico;
         $podeCancelar = \App\Http\Controllers\Publico\MeusIngressosController::podeCancelarGratuito($pedido);
