@@ -60,10 +60,13 @@ class Email
             ]);
         }
 
-        dispatch(fn () => self::enviar($id, $conta, $para, $assunto, $html, $texto))->afterResponse();
+        // binário não passa pelo JSON do dispatch: o anexo vai em base64 e é decodificado no envio
+        $anexos = array_map(fn ($a) => ['nome' => $a['nome'], 'mime' => $a['mime'], 'b64' => base64_encode($a['conteudo'])], $refs['anexos'] ?? []);
+        dispatch(fn () => self::enviar($id, $conta, $para, $assunto, $html, $texto, $anexos))->afterResponse();
     }
 
-    private static function enviar(int $id, string $conta, string $para, string $assunto, string $html, string $texto): void
+    /** @param array<int, array{nome: string, b64: string, mime: string}> $anexos */
+    private static function enviar(int $id, string $conta, string $para, string $assunto, string $html, string $texto, array $anexos = []): void
     {
         // Sem senha configurada (desenvolvimento), o e-mail vai para o log em vez do SMTP.
         $mailer = config("mail.mailers.$conta.password") ? $conta : 'log';
@@ -71,8 +74,11 @@ class Email
 
         DB::table('mensagem_envio')->where('id', $id)->update(['status' => 'enviando', 'tentativas' => DB::raw('tentativas + 1')]);
         try {
-            $enviada = Mail::mailer($mailer)->html($html, function ($m) use ($para, $assunto, $remetente, $texto, $conta) {
+            $enviada = Mail::mailer($mailer)->html($html, function ($m) use ($para, $assunto, $remetente, $texto, $conta, $anexos) {
                 $m->to($para)->from($remetente, 'Fora da Fila')->subject($assunto)->text($texto);
+                foreach ($anexos as $a) {
+                    $m->attachData(base64_decode($a['b64']), $a['nome'], ['mime' => $a['mime']]);
+                }
                 if ($conta === 'noreply') {
                     $m->getHeaders()->addTextHeader('Auto-Submitted', 'auto-generated');
                 }

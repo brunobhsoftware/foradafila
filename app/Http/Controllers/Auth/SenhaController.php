@@ -42,6 +42,14 @@ class SenhaController extends Controller
         return back()->with('ok', 'Se houver uma conta com este e-mail, enviamos um link para criar uma nova senha. Confira também a caixa de spam.');
     }
 
+    /** Link para criar/trocar a senha (vale $horas); vai no e-mail dos ingressos de quem comprou sem senha. */
+    public static function link($conta, string $area, int $horas = 72): string
+    {
+        return url(URL::temporarySignedRoute('senha.nova', now()->addHours($horas), [
+            'area' => $area, 'uuid' => $conta->uuid, 'h' => self::impressao(self::base($conta)),
+        ], absolute: false));
+    }
+
     /** Envia o link de nova senha (também usado pela Administração). */
     public static function enviarLink($conta, string $area): void
     {
