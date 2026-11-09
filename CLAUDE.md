@@ -372,6 +372,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   **Divulgação → Listas de e-mail** (`/painel/listas-email`, `ListasEmailController`, `campanha.gerenciar`): criar lista, colar e-mails
   ("Nome; e-mail"), importar CSV (`;` ou `,`, cabeçalho email/nome/telefone ou coluna com @, UTF-8 ou Windows-1252 do Excel, até 10 MB),
   trazer compradores/participantes de eventos, busca, remover, exportar CSV, renomear/excluir; repetidos e inválidos contados.
+  **Nome padronizado** ao gravar (decisão do Bruno, 09/11/2026; `ListasEmailController::padronizarNome`): "MARIA DA SILVA" → "Maria da Silva"
+  (de/da/do/das/dos/e minúsculos no meio).
   `email_descadastro` (por empresa) marca "Descadastrado" e será pulado nos envios. Teste `fluxo-marketing.js` (16).
   **Declaração obrigatória** ao colar/importar/trazer de eventos (`ListasEmailController::DECLARACAO`, decisão do Bruno 09/11/2026), gravada
   no contato (`consentimento_em/_por`) e na auditoria (com IP).

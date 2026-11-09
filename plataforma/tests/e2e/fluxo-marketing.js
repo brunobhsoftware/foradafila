@@ -66,7 +66,7 @@ net.createServer((s) => {
   await P.fill('[name=nome]', 'Clientes antigos');
   await nav(P, P.click('button:has-text("Criar lista")'));
   ok((await P.content()).includes('Lista “Clientes antigos” criada'), 'lista criada');
-  await P.fill('[name=texto]', 'Ana Souza; ana@x.test\nbeto@x.test\nnao-e-email\nANA@x.test');
+  await P.fill('[name=texto]', 'ANA souza; ana@x.test\nbeto@x.test\nnao-e-email\nANA@x.test');
   await P.evaluate(() => document.querySelectorAll('[name=declaracao]').forEach((i) => i.removeAttribute('required')));
   await nav(P, P.click('button:has-text("Adicionar")'));
   ok((await P.content()).includes('Marque a declaração') || sql("SELECT COUNT(*) FROM lista_email_contato") === '0', 'sem a declaração não adiciona');
@@ -76,7 +76,7 @@ net.createServer((s) => {
   ok((await P.content()).includes('2 e-mail(s) colados') && (await P.content()).includes('1 linha(s) sem e-mail válido'), 'colar: 2 novos, repetido e inválido ignorados');
   ok(sql("SELECT CONCAT(nome,'|',consentimento_em IS NOT NULL) FROM lista_email_contato WHERE email='ana@x.test'") === 'Ana Souza|1', 'colar guarda o nome e o consentimento');
   const csv = path.join(os.tmpdir(), 'lista-teste.csv');
-  fs.writeFileSync(csv, Buffer.concat([Buffer.from('Nome;E-mail;Celular\r\n'), Buffer.from('Jos\xe9 da Silva;jose@x.test;(31) 99999-0000\r\n', 'latin1'), Buffer.from('Beto;beto@x.test;\r\n;;\r\nSem email;semarroba;\r\n')]));
+  fs.writeFileSync(csv, Buffer.concat([Buffer.from('Nome;E-mail;Celular\r\n'), Buffer.from('JOS\xc9 DA SILVA;jose@x.test;(31) 99999-0000\r\n', 'latin1'), Buffer.from('Beto;beto@x.test;\r\n;;\r\nSem email;semarroba;\r\n')]));
   await P.setInputFiles('[name=arquivo]', csv);
   await P.locator('form:has([name=arquivo]) [name=declaracao]').check();
   await nav(P, P.click('button:has-text("Importar")'));
