@@ -435,3 +435,15 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 
 /* Itens do menu só para o celular (ex.: atalho para o app de check-in) */
 @media (min-width: 901px) { .menu-lateral .so-celular { display: none; } }
+
+/* Menu lateral no celular: cabe na tela real (sem a barra do navegador), rola dentro do menu e mostra todos os itens
+   (Equipe, Níveis de acesso, Organização ficavam escondidos embaixo; decisão do Bruno, 09/11/2026) */
+@media (max-width: 900px) {
+  .menu-lateral { height: 100vh; height: 100dvh; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+  .menu-lateral__marca { padding: 12px 18px 8px; }
+  .menu-lateral nav { gap: 0; }
+  .menu-lateral nav a { padding: 7px 12px; font-size: .92rem; }
+  .menu-lateral__grupo { margin: 8px 8px 2px; }
+  .menu-aberto { overflow: hidden; } /* a página atrás não rola junto */
+}
