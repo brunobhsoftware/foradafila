@@ -334,7 +334,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   `BarcodeDetector` quando existe, senão **jsQR** `public/js/vendor/jsQR.js`, Apache-2.0 — funciona no iPhone; tela inteira verde/laranja/vermelha com o nome,
   vibra e apita; digitar o número) e **participantes** (busca, filtros Todos/Faltam/Entraram, botão Check-in). Registra pelo mesmo
   `CheckinController::registrar`. PWA: `public/app.webmanifest`, `public/app-sw.js` (cache só de CSS/JS/ícones), ícones `public/app-icons/`.
-  Painel → Check-in mostra o QR/link do app. **Regra do dia do evento** (`App\Support\JanelaCheckin`): check-in só de `abertura_portoes` (nunca antes da
+  Painel → Check-in mostra o QR/link do app; no celular o menu lateral tem **App** logo abaixo de Meus eventos (`.so-celular`, some acima de 900 px). **Regra do dia do evento** (`App\Support\JanelaCheckin`): check-in só de `abertura_portoes` (nunca antes da
   meia-noite do dia do início; o cadastro recusa abertura em outro dia) até `data_fim`; fora disso `fora_do_horario` com "O check-in abre em ..." / "O evento
   terminou em ...". Testes `fluxo-app.js` (18, iPhone 13) e `fluxo-checkin.js` (18, o evento passa a estar acontecendo agora).
 - **Divulgação → Cupons** (`/painel/cupons`, `CuponsController`, model `Cupom`): código (maiúsculas, único por organização),
