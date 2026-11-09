@@ -58,11 +58,19 @@ class ConvitesController extends Controller
         $this->pode();
         [$evento, $conta, $d, $lista] = $this->dados($request, $tenant, true);
         $org = $tenant->id();
-        $id = DB::transaction(function () use ($evento, $conta, $d, $lista, $org) {
+        $agendar = ($d['quando'] ?? 'agora') === 'agendar' ? \Illuminate\Support\Carbon::parse(utc_de_local($d['agendar_para']), 'UTC') : null;
+        if ($agendar && $agendar->lte(now())) {
+            return back()->withInput()->withErrors(['agendar_para' => 'Escolha uma data e hora no futuro.']);
+        }
+        if ($agendar && $agendar->gte($evento->data_fim)) {
+            return back()->withInput()->withErrors(['agendar_para' => 'O agendamento tem de ser antes do fim do evento.']);
+        }
+        $id = DB::transaction(function () use ($evento, $conta, $d, $lista, $org, $agendar) {
             $id = DB::table('campanha')->insertGetId([
                 'uuid' => (string) Str::uuid(), 'organizador_id' => $org, 'evento_id' => $evento->id, 'lista_id' => $lista->id,
                 'smtp_conta_id' => $conta->id, 'nome' => mb_substr('Convite — '.$evento->titulo, 0, 100), 'canal' => 'email',
-                'assunto' => $d['assunto'], 'corpo_texto' => '(montado do evento)', 'status' => 'enviando', 'iniciada_em' => now(),
+                'assunto' => $d['assunto'], 'corpo_texto' => '(montado do evento)', 'status' => $agendar ? 'agendada' : 'enviando',
+                'agendada_para' => $agendar, 'iniciada_em' => $agendar ? null : now(),
                 'criado_por' => auth()->id(),
             ]);
             // foto da lista neste momento, sem descadastrados e sem quem já recebeu convite deste evento
@@ -82,9 +90,27 @@ class ConvitesController extends Controller
         Auditoria::registrar('campanha.criar', $evento, null, ['campanha' => $c->uuid, 'lista' => $lista->nome, 'total' => $c->total_destinatarios, 'assunto' => $d['assunto']]);
         $horas = $c->total_destinatarios ? (int) ceil($c->total_destinatarios / max(1, $conta->limite_hora)) : 0;
 
+        if ($c->total_destinatarios && $agendar) {
+            return redirect()->route('convites.agendamentos')->with('ok', 'Convite agendado para '.data_local($agendar, 'd/m/Y \\à\\s H:i')." ({$c->total_destinatarios} e-mail(s)).");
+        }
+
         return redirect()->route('convites.show', $c->uuid)->with('ok', $c->total_destinatarios
             ? "Convite na fila para {$c->total_destinatarios} e-mail(s). Saem até {$conta->limite_hora} por hora".($horas > 1 ? " (cerca de $horas horas)." : '.')
             : 'Ninguém para enviar: a lista está vazia, todos se descadastraram ou já receberam convite deste evento.');
+    }
+
+    /** Fila: agendados, enviando e pausados, com a previsão de término e a explicação de como o envio funciona. */
+    public function agendamentos(Tenant $tenant)
+    {
+        $this->pode();
+        $fila = DB::table('campanha as c')->where('c.organizador_id', $tenant->id())->whereNotNull('c.uuid')
+            ->whereIn('c.status', ['agendada', 'enviando', 'rascunho'])
+            ->leftJoin('evento as e', 'e.id', '=', 'c.evento_id')->leftJoin('smtp_conta as s', 's.id', '=', 'c.smtp_conta_id')
+            ->select('c.*', 'e.titulo as evento_titulo', 's.nome as conta_nome', 's.limite_hora',
+                DB::raw("(SELECT COUNT(*) FROM campanha_envio x WHERE x.campanha_id = c.id AND x.status = 'pendente') as pendentes"))
+            ->orderByRaw("FIELD(c.status, 'enviando', 'agendada', 'rascunho')")->orderBy('c.agendada_para')->get();
+
+        return view('painel.convites.agendamentos', ['fila' => $fila, 'ultimaRodada' => cache('convites_ultima_rodada')]);
     }
 
     public function show(Tenant $tenant, string $uuid)
@@ -111,7 +137,7 @@ class ConvitesController extends Controller
         $c = $this->campanha($tenant, $uuid);
         $para = ['pausar' => ['enviando', 'rascunho'], 'retomar' => ['rascunho', 'enviando'], 'cancelar' => [null, 'cancelada']][$acao] ?? abort(404);
         $q = DB::table('campanha')->where('id', $c->id);
-        $q = $para[0] ? $q->where('status', $para[0]) : $q->whereIn('status', ['enviando', 'rascunho']);
+        $q = $para[0] ? $q->where('status', $para[0]) : $q->whereIn('status', ['enviando', 'rascunho', 'agendada']);
         $q->update(['status' => $para[1]]);
         if ($acao === 'cancelar') {
             DB::table('campanha_envio')->where('campanha_id', $c->id)->where('status', 'pendente')->update(['status' => 'pulado']);
@@ -125,6 +151,7 @@ class ConvitesController extends Controller
     {
         $d = $request->validate([
             'evento' => ['required', 'string'], 'smtp' => ['required', 'string'], 'assunto' => ['required', 'string', 'max:150'],
+            'quando' => ['nullable', 'in:agora,agendar'], 'agendar_para' => ['nullable', 'required_if:quando,agendar', 'date'],
             'lista' => [$comLista ? 'required' : 'nullable', 'string'],
         ], ['smtp.required' => 'Cadastre uma conta de e-mail em Organização → Opções de marketing.'], ['smtp' => 'conta de envio']);
         $evento = Evento::visiveis()->where('uuid', $d['evento'])->with('local')->firstOrFail();

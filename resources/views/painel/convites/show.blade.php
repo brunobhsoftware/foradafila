@@ -17,13 +17,14 @@
         <div><small class="suave">Faltam</small><br><b style="font-size:1.4rem">{{ $pendentes }}</b></div>
         <div><small class="suave">Erros / pulados</small><br><b style="font-size:1.4rem">{{ $c->erros }} / {{ $pulados }}</b></div>
     </div>
+    @if ($c->status === 'agendada')<p style="margin:14px 0 0"><b>Começa em {{ data_local($c->agendada_para, 'd/m/Y \à\s H:i') }}.</b></p>@endif
     @if ($c->status === 'enviando' && $pendentes)
         <p class="suave" style="margin:14px 0 0">Os e-mails saem aos poucos, até {{ $conta?->limite_hora }} por hora (a cada minuto um pouco). Pode fechar esta tela.</p>
     @endif
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
         @if ($c->status === 'enviando' && $pendentes)<form method="post" action="{{ route('convites.situacao', [$c->uuid, 'pausar']) }}">@csrf<button class="botao botao--contorno">Pausar</button></form>@endif
         @if ($c->status === 'rascunho')<form method="post" action="{{ route('convites.situacao', [$c->uuid, 'retomar']) }}">@csrf<button class="botao botao--primario">Retomar</button></form>@endif
-        @if (in_array($c->status, ['enviando', 'rascunho']) && $pendentes)<form method="post" action="{{ route('convites.situacao', [$c->uuid, 'cancelar']) }}" onsubmit="return confirm('Cancelar o envio dos que faltam?')">@csrf<button class="botao botao--perigo">Cancelar envio</button></form>@endif
+        @if (in_array($c->status, ['enviando', 'rascunho', 'agendada']) && $pendentes)<form method="post" action="{{ route('convites.situacao', [$c->uuid, 'cancelar']) }}" onsubmit="return confirm('Cancelar o envio dos que faltam?')">@csrf<button class="botao botao--perigo">Cancelar envio</button></form>@endif
     </div>
 </section>
 

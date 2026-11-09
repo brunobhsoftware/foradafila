@@ -51,6 +51,9 @@ class Convites
         if (! Esquema::temV018()) {
             return 0;
         }
+        cache(['convites_ultima_rodada' => now()], now()->addDay());
+        // agendadas cuja hora chegou passam a enviar
+        DB::table('campanha')->where('status', 'agendada')->where('agendada_para', '<=', now())->update(['status' => 'enviando', 'iniciada_em' => now()]);
         $total = 0;
         $campanhas = DB::table('campanha')->where('status', 'enviando')->whereNotNull('smtp_conta_id')->orderBy('id')->get();
         foreach ($campanhas as $c) {

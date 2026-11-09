@@ -22,6 +22,15 @@
         <div class="campo col-6"><label>Enviar pela conta</label><select name="smtp">
             @foreach ($contas as $c)<option value="{{ $c->uuid }}" @selected(old('smtp') === $c->uuid)>{{ $c->nome }} — {{ $c->remetente_email }} (até {{ $c->limite_hora }}/hora)</option>@endforeach</select></div>
         <x-campo nome="assunto" rotulo="Assunto" obrigatorio classe="col-6" placeholder="Ex.: Você está convidado para a nossa festa!" maxlength="150" />
+        <div class="campo col-12"><label>Quando enviar</label>
+            <div class="grade grade-2" style="gap:10px">
+                <label class="opcao-cartao"><input type="radio" name="quando" value="agora" @checked(old('quando', 'agora') === 'agora') data-quando>
+                    <span><b>Começar agora</b><small>Os e-mails começam a sair no próximo minuto.</small></span></label>
+                <label class="opcao-cartao"><input type="radio" name="quando" value="agendar" @checked(old('quando') === 'agendar') data-quando>
+                    <span><b>Agendar</b><small>Escolha o dia e a hora para começar.</small></span></label>
+            </div>
+        </div>
+        <x-campo nome="agendar_para" rotulo="Começar em" tipo="datetime-local" classe="col-6" data-agendar />
         <div class="campo col-12" style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="botao botao--primario" onclick="return confirm('Colocar o convite na fila de envio para toda a lista?')">Enviar para a lista</button>
             <button class="botao botao--contorno" formaction="{{ route('convites.teste') }}" formnovalidate>Enviar um teste para mim</button>
@@ -31,6 +40,9 @@
     <iframe data-convite-previa src="{{ route('convites.previa', ['evento' => old('evento', $eventos->first()->uuid)]) }}" title="Pré-visualização do convite" style="width:100%;height:560px;border:1px solid #e4e7ec;border-radius:10px;background:#fff"></iframe>
 </section>
 <script>
+  const agendarCampo = document.querySelector('[data-agendar]').closest('.campo');
+  const verQuando = () => { agendarCampo.hidden = document.querySelector('[data-quando]:checked')?.value !== 'agendar'; };
+  document.querySelectorAll('[data-quando]').forEach((r) => r.addEventListener('change', verQuando)); verQuando();
   document.querySelector('[data-convite-evento]').addEventListener('change', (e) => {
     document.querySelector('[data-convite-previa]').src = @json(route('convites.previa')) + '?evento=' + encodeURIComponent(e.target.value);
   });
