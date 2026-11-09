@@ -108,6 +108,10 @@ class OrganizacaoController extends Controller
         if ($v004) {
             $dados['mostrar_eventos_passados'] = $request->boolean('mostrar_eventos_passados');
         }
+        if ($request->has('copia_ingressos') && $request->boolean('copia_ingressos') !== \App\Support\CopiaIngressos::ativa($org->id)) {
+            \App\Support\CopiaIngressos::definir($org->id, $request->boolean('copia_ingressos'));
+            Auditoria::registrar('organizador.copia_ingressos', $org, null, ['ativa' => $request->boolean('copia_ingressos')]);
+        }
 
         $antes = $org->getAttributes();
         DB::transaction(function () use ($org, $dados, $request) {

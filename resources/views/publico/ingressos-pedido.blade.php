@@ -15,16 +15,16 @@
         <b>{{ \App\Http\Controllers\Publico\InscricaoController::mascararEmail($comprador?->email) }}</b>, em PDF.</p>
       @endif
       @if ($validos->isNotEmpty() && empty($unico))
-        <p style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 0">
-          <a href="{{ route('pedido.pdf', $pedido->uuid) }}" class="botao botao--amarelo">Baixar ingressos em PDF</a>
-          <button type="button" class="botao botao--contorno" onclick="window.print()">Imprimir</button>
+        <div class="pub-acoes-ingresso">
+          <a href="{{ route('pedido.pdf', $pedido->uuid) }}" class="pub-acao pub-acao--destaque"><span aria-hidden="true">⬇</span><b>Baixar PDF</b><small>Todos os ingressos</small></a>
+          <button type="button" class="pub-acao" onclick="window.print()"><span aria-hidden="true">🖨</span><b>Imprimir</b><small>Ou mostre no celular</small></button>
           @if (auth('comprador')->id() === $pedido->comprador_id)
-            <a href="{{ route('comprador.ingressos') }}" class="botao botao--escuro">Acessar meus ingressos</a>
+            <a href="{{ route('comprador.ingressos') }}" class="pub-acao pub-acao--escura"><span aria-hidden="true">🎟</span><b>Acessar meus ingressos</b><small>Sua área</small></a>
           @else
-            <form method="post" action="{{ route('pedido.acessar', $pedido->uuid) }}" style="display:inline">@csrf
-              <button class="botao botao--escuro" title="Enviamos um código para o seu e-mail">Acessar meus ingressos</button></form>
+            <form method="post" action="{{ route('pedido.acessar', $pedido->uuid) }}">@csrf
+              <button class="pub-acao pub-acao--escura"><span aria-hidden="true">🎟</span><b>Acessar meus ingressos</b><small>Código no seu e-mail</small></button></form>
           @endif
-        </p>
+        </div>
       @endif
     </div>
 

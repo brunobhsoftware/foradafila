@@ -79,6 +79,7 @@ return array(
     'App\\Support\\CancelamentoIngressos' => $baseDir . '/app/Support/CancelamentoIngressos.php',
     'App\\Support\\Checkout' => $baseDir . '/app/Support/Checkout.php',
     'App\\Support\\CodigoVerificacao' => $baseDir . '/app/Support/CodigoVerificacao.php',
+    'App\\Support\\CopiaIngressos' => $baseDir . '/app/Support/CopiaIngressos.php',
     'App\\Support\\Documento' => $baseDir . '/app/Support/Documento.php',
     'App\\Support\\Email' => $baseDir . '/app/Support/Email.php',
     'App\\Support\\EmissaoCortesia' => $baseDir . '/app/Support/EmissaoCortesia.php',

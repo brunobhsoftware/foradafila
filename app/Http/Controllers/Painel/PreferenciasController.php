@@ -51,6 +51,10 @@ class PreferenciasController extends Controller
                 Auditoria::registrar('organizador.mostrar_eventos_passados', $org, $antesOrg);
             }
         }
+        if ($tenant->pode('organizador.editar') && $request->has('copia_ingressos') && $request->boolean('copia_ingressos') !== \App\Support\CopiaIngressos::ativa($tenant->id())) {
+            \App\Support\CopiaIngressos::definir($tenant->id(), $request->boolean('copia_ingressos'));
+            Auditoria::registrar('organizador.copia_ingressos', Organizador::findOrFail($tenant->id()), null, ['ativa' => $request->boolean('copia_ingressos')]);
+        }
 
         return back()->with('ok', 'Preferências salvas.');
     }

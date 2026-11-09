@@ -559,6 +559,7 @@ class ComposerStaticInit19cf629833914b10fb54311306124002
         'App\\Support\\CancelamentoIngressos' => __DIR__ . '/../..' . '/app/Support/CancelamentoIngressos.php',
         'App\\Support\\Checkout' => __DIR__ . '/../..' . '/app/Support/Checkout.php',
         'App\\Support\\CodigoVerificacao' => __DIR__ . '/../..' . '/app/Support/CodigoVerificacao.php',
+        'App\\Support\\CopiaIngressos' => __DIR__ . '/../..' . '/app/Support/CopiaIngressos.php',
         'App\\Support\\Documento' => __DIR__ . '/../..' . '/app/Support/Documento.php',
         'App\\Support\\Email' => __DIR__ . '/../..' . '/app/Support/Email.php',
         'App\\Support\\EmissaoCortesia' => __DIR__ . '/../..' . '/app/Support/EmissaoCortesia.php',
