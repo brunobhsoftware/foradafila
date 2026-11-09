@@ -26,6 +26,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V013__checkout_pago.sql` | Checkout pago: `pedido.dados_participantes` (JSON até o pagamento ser aprovado) e `ck_pedido_valores` passa a somar `valor_taxa_servico`. Idempotente. Aplicado em produção em 08/11/2026 ("V013 ok") |
 | `banco/V014__lote_exibir.sql` | `lote.exibir` — **flag calculada** (1 = na página agora, 0 = oculto), atualizada pela regra de venda; não editável. Idempotente. Aplicado em produção em 08/11/2026 ("V014 ok") |
 | `banco/V015__formularios_inscricao.sql` | Formulários de inscrição: `formulario.padrao` e `evento.formulario_id`. Idempotente. Aplicado em produção em 08/11/2026 ("V015 ok") |
+| `banco/V016__cpf_teste_e_nascimento.sql` | Limpa o CPF de teste do MP (12345678909) de `comprador`/`pessoa` e cria `pessoa.data_nascimento`. Idempotente. **Aplicar em produção** (Administração → Atualizações do banco) |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
 | `banco/V004__organizador_dados_bancarios_logo_preferencias.sql` | Representante legal, dados bancários, chave da API (reservada), "mostrar eventos passados" e preferências de notificação. Idempotente |
 
@@ -137,7 +138,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   (até 12) e devolve o token; `POST /pedido/{uuid}/cartao` → `Checkout::pagarCartao` cria a order `processing_mode: automatic` com
   `transactions.payments[{payment_method: {id, type, token, installments}}]` e decide na hora: aprovado → `sincronizar`/`aprovar`;
   recusado → mensagem (`mensagemRecusa`) e o pedido segue reservado para outro cartão. O CPF do titular vai para o comprador e o cadastro
-  único. O pré-cadastro do cartão (`publico/inscricao-dados`) ficou desativado. **Sem a Public Key cadastrada o cartão mostra
+  único **só em produção, se o CPF for válido e o 1º nome do titular** (`MercadoPago::tokenCartao` → `cardholder.name`, `Checkout::mesmoPrimeiroNome`)
+  **for igual ao do comprador** (09/11/2026: o CPF de teste 123.456.789-09 do titular APRO foi gravado no cadastro do Bruno). O pré-cadastro do cartão (`publico/inscricao-dados`) ficou desativado. **Sem a Public Key cadastrada o cartão mostra
   "indisponível, escolha Pix".**
 - **Ingressos na hora, sem login, e PDF por e-mail** (decisão do Bruno, 09/11/2026): toda compra (gratuita, Pix, cartão) termina em
   `/pedido/{uuid}/ingressos` ("Seus ingressos": QR de cada ingresso, "Baixar ingressos em PDF" `/pedido/{uuid}/ingressos.pdf`, imprimir).
@@ -152,7 +154,10 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   `/minha-conta/entrar` (`codigo.enviar`, resposta igual exista ou não a conta) mandam um código de 6 dígitos (`CodigoVerificacao`,
   finalidade `acesso-comprador`) → `/minha-conta/codigo`: com o código entra (lembrar sessão, marca `email_verificado_em`) e, sem senha,
   "Aproveite e cadastre a sua senha" (opcional). Área do comprador com abas (`comprador/_abas`): **Meus ingressos** (Próximos eventos /
-  Eventos que você já foi) e **Meus dados** (`/minha-conta/dados`: nome, celular, CPF se ainda não tem, criar/trocar senha; e-mail só leitura).
+  Eventos que você já foi) e **Meus dados** (`/minha-conta/dados`: nome, celular, **data de nascimento**, CPF validado se ainda não tem — campo em branco,
+  nunca inventado —, criar/trocar senha; e-mail só leitura). **Editar só com o e-mail validado nesta sessão** (`AcessoCompradorController::verificado`,
+  sessão `comprador_verificado`: entrou com e-mail+senha, com o código ou salvou "Meu cadastro" com código); quem entrou só pela compra vê os dados
+  travados e "Enviar código para o meu e-mail" (`comprador.dados.codigo`, volta a Meus dados).
 - **Checkout pago** (`App\Support\Checkout`, 08/11/2026): a mesma tela de inscrição vira "Comprar ingresso" com o resumo (preço + taxa
   repassada) e "Ir para o pagamento". `InscricaoController::reservarPago` reserva o estoque (`lote.reservado`, UPDATE condicional) por
   `RESERVA_MIN` (30) min, cria o pedido `aguardando_pagamento` (participantes em `dados_participantes`; `pedido_item.taxa_unitaria` =

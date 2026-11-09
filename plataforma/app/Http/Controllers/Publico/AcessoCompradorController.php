@@ -91,33 +91,59 @@ class AcessoCompradorController extends Controller
         session()->forget(['acesso_comprador', 'acesso_email']);
         Auth::guard('comprador')->login($comprador, true);
         $request->session()->regenerate();
+        session(['comprador_verificado' => $comprador->id]); // validou o e-mail com o código
+        if ($volta = session()->pull('acesso_volta')) {
+            return redirect()->route($volta)->with('ok', 'E-mail confirmado. Agora você pode editar os seus dados.');
+        }
 
         return redirect()->route('comprador.ingressos')->with('ok', ! empty($dados['senha']) ? 'Pronto! Senha criada; da próxima vez você também pode entrar com e-mail e senha.' : 'Pronto! Você entrou na sua conta.');
     }
 
-    /** Meus dados (comprador logado). */
+    /** Meus dados (comprador logado). Editar só depois de entrar com senha ou com o código do e-mail nesta sessão. */
+    public static function verificado(): bool
+    {
+        return Auth::guard('comprador')->check() && session('comprador_verificado') === Auth::guard('comprador')->id();
+    }
+
     public function dados(Request $request)
     {
-        return view('comprador.dados', ['comprador' => $request->user('comprador')]);
+        return view('comprador.dados', ['comprador' => $request->user('comprador'), 'verificado' => self::verificado(),
+            'emailMascarado' => InscricaoController::mascararEmail($request->user('comprador')->email)]);
+    }
+
+    /** "Confirmar meu e-mail" em Meus dados: manda o código e volta para Meus dados. */
+    public function codigoDados(Request $request)
+    {
+        session(['acesso_volta' => 'comprador.dados']);
+
+        return $this->enviarPara($request->user('comprador'));
     }
 
     public function salvarDados(Request $request)
     {
         $c = $request->user('comprador');
+        abort_unless(self::verificado(), 403, 'Confirme o seu e-mail com o código antes de editar os dados.');
         $request->merge(['cpf' => Documento::digitos((string) $request->input('cpf'))]);
         $d = $request->validate([
             'nome' => ['required', 'string', 'max:150'],
             'telefone' => ['nullable', 'string', 'max:20'],
+            'data_nascimento' => ['nullable', 'date', 'before:today', 'after:1900-01-01'],
             'cpf' => [$c->cpf ? 'prohibited' : 'nullable', new DocumentoValido('PF')],
             'senha' => ['nullable', 'confirmed', Password::min(8)->letters()->numbers()],
-        ], ['cpf.prohibited' => 'O CPF já está cadastrado.'], ['senha' => 'senha', 'cpf' => 'CPF']);
+        ], ['cpf.prohibited' => 'O CPF já está cadastrado.', 'data_nascimento.before' => 'A data de nascimento tem de ser anterior a hoje.'],
+            ['senha' => 'senha', 'cpf' => 'CPF', 'data_nascimento' => 'data de nascimento']);
         $c->forceFill(array_filter([
             'nome' => trim($d['nome']), 'telefone' => preg_replace('/\D/', '', (string) ($d['telefone'] ?? '')) ?: null,
+            'data_nascimento' => $d['data_nascimento'] ?? null,
             'cpf' => ! $c->cpf && ! empty($d['cpf']) ? $d['cpf'] : null,
             'senha_hash' => ! empty($d['senha']) ? Hash::make($d['senha']) : null,
-        ], fn ($v, $k) => $v !== null || $k === 'telefone', ARRAY_FILTER_USE_BOTH))->save();
+        ], fn ($v, $k) => $v !== null || in_array($k, ['telefone', 'data_nascimento'], true), ARRAY_FILTER_USE_BOTH))->save();
         if ($c->cpf) {
             CadastroPessoa::registrar($c->cpf, $c->nome, $c->email, $c->telefone, 'cadastro');
+            try { // V016: data de nascimento também no cadastro único
+                \Illuminate\Support\Facades\DB::table('pessoa')->where('cpf', $c->cpf)->update(['data_nascimento' => $c->data_nascimento]);
+            } catch (\Throwable $e) {
+            }
         }
 
         return redirect()->route('comprador.dados')->with('ok', 'Dados salvos.');

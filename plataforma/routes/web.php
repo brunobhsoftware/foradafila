@@ -56,6 +56,7 @@ Route::prefix('minha-conta')->name('comprador.')->group(function () {
         Route::get('/', [MeusIngressosController::class, 'index'])->name('ingressos');
         Route::get('/dados', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'dados'])->name('dados');
         Route::put('/dados', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'salvarDados']);
+        Route::post('/dados/codigo', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'codigoDados'])->name('dados.codigo')->middleware('throttle:5,10,codigo-comprador-dados');
         Route::get('/ingressos/{uuid}', [MeusIngressosController::class, 'show'])->name('ingresso');
         Route::post('/pedidos/{uuid}/cancelar', [MeusIngressosController::class, 'cancelar'])->name('cancelar');
         Route::post('/sair', [CompradorAuthController::class, 'sair'])->name('sair');

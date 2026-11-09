@@ -34,6 +34,7 @@ const falso = http.createServer((req, res) => {
         return json(201, { id, status: 'action_required', transactions: { payments: [{ id: 'PAY' + id, payment_method: { id: 'pix', type: 'bank_transfer', qr_code: '00020126580014br.gov.bcb.pix-' + id, ticket_url: 'http://127.0.0.1:8099/pix/' + id } }] } });
       return json(201, { id, status: 'action_required', checkout_url: 'http://127.0.0.1:8099/pagar/' + id });
     }
+    if (req.url.startsWith('/v1/card_tokens/')) return json(200, { id: 'tok', cardholder: { name: req.url.includes('tok-ok') ? 'CARLA C SOUZA' : 'APRO' } });
     const rf = req.url.match(/^\/v1\/orders\/(ORD\d+)\/refund/);
     if (rf && req.method === 'POST') { reembolsos.push({ id: rf[1], corpo: corpo ? JSON.parse(corpo) : null, token: req.headers.authorization }); return json(201, { id: rf[1], status: 'refunded' }); }
     const m = req.url.match(/^\/v1\/orders\/(ORD\d+)/);
@@ -227,7 +228,7 @@ const webhook = async (P, id) => {
   rc = await pagar('tok-ok');
   ok(rc.status() === 200 && (await rc.json()).redirect.includes('/pagamento') && ultimoCorpo.transactions.payments[0].payment_method.token === 'tok-ok' && ultimoCorpo.transactions.payments[0].payment_method.installments === 3
     && sql("SELECT status FROM pedido WHERE uuid='" + uuidCartao + "'") === 'pago' && sql("SELECT CONCAT_WS('|', metodo, parcelas) FROM pagamento ORDER BY id DESC LIMIT 1") === 'cartao|3'
-    && sql("SELECT cpf FROM comprador WHERE email='carla@cartao.test'") === '15350946056', 'cartão aprovado na hora: ingressos emitidos, 3 parcelas e CPF do titular no cadastro');
+    && sql("SELECT cpf FROM comprador WHERE email='carla@cartao.test'") === '15350946056', 'cartão aprovado na hora: ingressos emitidos, 3 parcelas e CPF do titular no cadastro (1º nome do titular = do comprador)');
 
   sql("UPDATE taxa_regra SET percentual=0, valor_fixo=0, valor_minimo=0 WHERE operacao='ingresso_pago'");
   ok(erros.length === 0, 'sem erros de JavaScript ' + erros.join(' | '));

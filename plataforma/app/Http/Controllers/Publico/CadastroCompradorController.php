@@ -77,6 +77,7 @@ class CadastroCompradorController extends Controller
         // Confirmou o e-mail com o código: pode entrar na conta e seguir a compra já identificado.
         Auth::guard('comprador')->login($comprador);
         $request->session()->regenerate();
+        session(['comprador_verificado' => $comprador->id]);
         $volta = self::volta(session()->pull('cadastro_volta'));
         session()->forget('cadastro_cpf');
 

@@ -112,6 +112,11 @@ const formularioLegado = require('./_formulario-legado');
   const logPdf = require('fs').readFileSync(__dirname + '/../../storage/logs/laravel.log', 'utf8');
   ok(logPdf.lastIndexOf('ingressos-') > logPdf.lastIndexOf('Content-Type: application/pdf') - 400 && logPdf.includes('application/pdf'), 'e-mail sai com o PDF anexo');
   await V.goto(BASE + '/minha-conta');
+  await V.goto(BASE + '/minha-conta/dados');
+  ok((await V.content()).includes('Para editar os seus dados, confirme o seu e-mail') && await V.locator('[name=nome]').isDisabled()
+    && !(await V.locator('button:has-text("Salvar")').count()), 'entrou só pela compra: Meus dados travado até confirmar o e-mail');
+  ok(await V.inputValue('[name=cpf]').catch(() => '') === '' || (await V.locator('[name=cpf]').count()) === 0, 'CPF em branco (não inventa)');
+  await V.goto(BASE + '/minha-conta');
   ok(meus.includes('Ana Compradora') && meus.includes('Pedro Amigo') && (meus.match(/FF-\d{4}-\d{6}/g) || []).length >= 2, 'dois ingressos numerados');
   await V.screenshot({ path: OUT + 'c2-meus-ingressos.png', fullPage: true });
   const menuC = await V.locator('#menu').innerText();
@@ -185,9 +190,9 @@ const formularioLegado = require('./_formulario-legado');
   await nav(Z, Z.click('button:has-text("Entrar")'));
   ok(Z.url().endsWith('/minha-conta') && (await Z.content()).includes('Você entrou na sua conta'), 'com o código entra direto em Meus ingressos');
   await nav(Z, Z.click('a:has-text("Meus dados")'));
-  await Z.fill('[name=telefone]', '31955554444');
+  await Z.fill('[name=telefone]', '31955554444'); await Z.fill('[name=data_nascimento]', '1985-04-20');
   await nav(Z, Z.click('button:has-text("Salvar")'));
-  ok((await Z.content()).includes('Dados salvos') && sql("SELECT telefone FROM comprador WHERE email='ana@publico.test'") === '31955554444', 'Meus dados: altera o celular');
+  ok((await Z.content()).includes('Dados salvos') && sql("SELECT CONCAT(telefone,'|',data_nascimento) FROM comprador WHERE email='ana@publico.test'") === '31955554444|1985-04-20', 'Meus dados (após o código): altera celular e data de nascimento');
 
 
   // "Editar meus dados": só com o código enviado ao e-mail do cadastro
