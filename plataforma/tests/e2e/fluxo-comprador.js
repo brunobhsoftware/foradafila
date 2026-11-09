@@ -193,6 +193,22 @@ const formularioLegado = require('./_formulario-legado');
   await Z.fill('[name=telefone]', '31955554444'); await Z.fill('[name=data_nascimento]', '1985-04-20');
   await nav(Z, Z.click('button:has-text("Salvar")'));
   ok((await Z.content()).includes('Seu cadastro foi atualizado') && sql("SELECT CONCAT(telefone,'|',data_nascimento) FROM comprador WHERE email='ana@publico.test'") === '31955554444|1985-04-20', 'Meus dados (após o código): altera celular e data de nascimento');
+  // Meus ingressos: "Enviar para meu e-mail"; Meus dados: alterar o e-mail com código no e-mail novo
+  await Z.goto(BASE + '/minha-conta');
+  const antesEnvio = Number(sql("SELECT COUNT(*) FROM mensagem_envio WHERE destinatario='ana@publico.test' AND tipo='confirmacao_compra'"));
+  await nav(Z, Z.locator('button:has-text("Enviar para meu e-mail")').first().click());
+  ok((await Z.content()).includes('Enviamos os ingressos do pedido') && Number(sql("SELECT COUNT(*) FROM mensagem_envio WHERE destinatario='ana@publico.test' AND tipo='confirmacao_compra'")) === antesEnvio + 1, 'Enviar para meu e-mail reenvia os ingressos');
+  await Z.goto(BASE + '/minha-conta/dados');
+  ok((await Z.content()).includes('Meus dados cadastrais'), 'legenda "Meus dados cadastrais"');
+  await nav(Z, Z.click('a.botao:has-text("Alterar meu e-mail")'));
+  await Z.fill('[name=email]', 'ana.nova@publico.test');
+  await nav(Z, Z.click('button:has-text("Enviar código para o novo e-mail")'));
+  const codEmail = [...require('fs').readFileSync(__dirname + '/../../storage/logs/laravel.log', 'utf8').matchAll(/confirmar o seu novo e-mail no Fora da Fila: (\d{6})/g)].pop()[1];
+  await Z.fill('[name=codigo]', codEmail);
+  await nav(Z, Z.click('button:has-text("Confirmar novo e-mail")'));
+  ok((await Z.content()).includes('Seu e-mail foi alterado') && sql("SELECT COUNT(*) FROM comprador WHERE email='ana.nova@publico.test'") === '1', 'troca o e-mail só depois do código enviado ao novo e-mail');
+  sql("UPDATE comprador SET email='ana@publico.test' WHERE email='ana.nova@publico.test'");
+
 
 
   // "Editar meus dados": só com o código enviado ao e-mail do cadastro

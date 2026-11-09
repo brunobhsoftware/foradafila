@@ -2,7 +2,7 @@
 <section class="pub-cabecalho" style="padding-bottom:40px">
   <div class="container">
     <span class="traco"></span>
-    <h1>{{ ['comprador.dados' => 'Meus dados', 'comprador.senha' => 'Alterar senha'][request()->route()->getName()] ?? 'Meus ingressos' }}<span class="ponto">.</span></h1>
+    <h1>{{ ['comprador.dados' => 'Meus dados', 'comprador.senha' => 'Alterar senha', 'comprador.email' => 'Alterar meu e-mail'][request()->route()->getName()] ?? 'Meus ingressos' }}<span class="ponto">.</span></h1>
     <p>Olá, {{ $comprador->primeiroNome() }} ({{ $comprador->email }}).</p>
   </div>
 </section>
