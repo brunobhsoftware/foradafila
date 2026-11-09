@@ -272,6 +272,23 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::post('/convidados/{evento}/listas/{lista}/emitir', [\App\Http\Controllers\Painel\ConvidadosController::class, 'emitir'])->name('convidados.emitir')->whereNumber('lista')->middleware('throttle:30,10,convidados-emitir');
     Route::post('/convidados/{evento}/listas/{lista}/convidados/{convidado}/remover', [\App\Http\Controllers\Painel\ConvidadosController::class, 'remover'])->name('convidados.remover')->whereNumber(['lista', 'convidado']);
 
+    Route::get('/listas-email', [\App\Http\Controllers\Painel\ListasEmailController::class, 'index'])->name('listas-email.index');
+    Route::post('/listas-email', [\App\Http\Controllers\Painel\ListasEmailController::class, 'criar'])->name('listas-email.criar');
+    Route::get('/listas-email/{lista}', [\App\Http\Controllers\Painel\ListasEmailController::class, 'show'])->name('listas-email.show');
+    Route::post('/listas-email/{lista}', [\App\Http\Controllers\Painel\ListasEmailController::class, 'renomear'])->name('listas-email.renomear');
+    Route::post('/listas-email/{lista}/colar', [\App\Http\Controllers\Painel\ListasEmailController::class, 'colar'])->name('listas-email.colar');
+    Route::post('/listas-email/{lista}/importar', [\App\Http\Controllers\Painel\ListasEmailController::class, 'importar'])->name('listas-email.importar')->middleware('throttle:20,10,listas-importar');
+    Route::post('/listas-email/{lista}/eventos', [\App\Http\Controllers\Painel\ListasEmailController::class, 'deEventos'])->name('listas-email.eventos');
+    Route::get('/listas-email/{lista}/exportar', [\App\Http\Controllers\Painel\ListasEmailController::class, 'exportar'])->name('listas-email.exportar');
+    Route::post('/listas-email/{lista}/excluir', [\App\Http\Controllers\Painel\ListasEmailController::class, 'excluir'])->name('listas-email.excluir');
+    Route::post('/listas-email/{lista}/contatos/{contato}/remover', [\App\Http\Controllers\Painel\ListasEmailController::class, 'removerContato'])->name('listas-email.contato.remover')->whereNumber('contato');
+
+    Route::get('/organizacao/marketing', [\App\Http\Controllers\Painel\MarketingController::class, 'index'])->name('marketing.index');
+    Route::post('/organizacao/marketing/smtp', [\App\Http\Controllers\Painel\MarketingController::class, 'salvar'])->name('marketing.smtp.criar');
+    Route::post('/organizacao/marketing/smtp/{uuid}', [\App\Http\Controllers\Painel\MarketingController::class, 'salvar'])->name('marketing.smtp.salvar');
+    Route::post('/organizacao/marketing/smtp/{uuid}/testar', [\App\Http\Controllers\Painel\MarketingController::class, 'testar'])->name('marketing.smtp.testar')->middleware('throttle:10,10,smtp-teste');
+    Route::post('/organizacao/marketing/smtp/{uuid}/remover', [\App\Http\Controllers\Painel\MarketingController::class, 'remover'])->name('marketing.smtp.remover');
+
     Route::get('/mensagens', [\App\Http\Controllers\Painel\MensagensController::class, 'index'])->name('mensagens.index');
     Route::post('/mensagens/modelo', [\App\Http\Controllers\Painel\MensagensController::class, 'salvarModelo'])->name('mensagens.modelo');
     Route::post('/mensagens/modelo/restaurar', [\App\Http\Controllers\Painel\MensagensController::class, 'restaurarModelo'])->name('mensagens.restaurar');
