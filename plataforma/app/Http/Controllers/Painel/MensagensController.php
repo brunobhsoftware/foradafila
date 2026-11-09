@@ -114,7 +114,7 @@ class MensagensController extends Controller
         $html = Email::layout($d['assunto'], '<p>'.nl2br(e($d['texto'])).'</p><p style="font-size:13px;color:#667085">Você recebe esta mensagem porque tem ingresso para '.e($evento->titulo).'.</p>',
             null, null, '<b>'.e($org->razao_social).'</b> · '.e($org->documentoFormatado()).($org->email_contato ? ' · '.e($org->email_contato) : ''));
         foreach ($emails as $email) {
-            Email::operacao('comunicado', $email, $d['assunto'], $html, $d['texto'], ['organizador_id' => $org->id, 'prioridade' => 5]);
+            Email::operacao('comunicado', $email, \App\Support\Notificacoes::assuntoEvento($evento->titulo, $d['assunto']), $html, $d['texto'], ['organizador_id' => $org->id, 'prioridade' => 5]);
         }
         Auditoria::registrar('mensagem.comunicado', $evento, null, ['destino' => $d['destino'], 'quantidade' => $emails->count(), 'assunto' => $d['assunto']]);
 

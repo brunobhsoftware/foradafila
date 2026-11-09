@@ -26,6 +26,19 @@ class Notificacoes
     }
 
     /** fique@ — confirmação do pedido com a lista de ingressos (modelo "confirmacao_compra"). */
+    /**
+     * Assunto de e-mail de evento: sempre "Nome do evento — resto" (decisão do Bruno, 09/11/2026). Tira o nome do evento de
+     * onde estiver no texto (inclusive em modelos editados pelo produtor) e o coloca no começo.
+     */
+    public static function assuntoEvento(string $titulo, string $assunto): string
+    {
+        $titulo = trim($titulo);
+        $resto = trim(preg_replace('/\s{2,}/u', ' ', str_ireplace($titulo, '', $assunto)) ?? '');
+        $resto = trim(preg_replace('/^[\s—–\-:|·]+|[\s—–\-:|·]+$/u', '', $resto) ?? '');
+
+        return mb_substr($resto === '' ? $titulo : $titulo.' — '.$resto, 0, 150);
+    }
+
     public static function ingressosConfirmados(Pedido $pedido, Comprador $comprador, Evento $evento, Organizador $org, Collection $ingressos): void
     {
         // Link que abre os ingressos sem login (assinado, 90 dias) e PDF anexo (decisão do Bruno, 09/11/2026).
@@ -63,7 +76,7 @@ class Notificacoes
         } catch (\Throwable $e) {
             report($e); // sem o PDF o e-mail sai mesmo assim, com o link
         }
-        Email::operacao('confirmacao_compra', $comprador->email, $modelo['assunto'], $html, $texto, [
+        Email::operacao('confirmacao_compra', $comprador->email, self::assuntoEvento($evento->titulo, $modelo['assunto']), $html, $texto, [
             'organizador_id' => $org->id, 'modelo_id' => $modelo['modelo_id'], 'comprador_id' => $comprador->id, 'pedido_id' => $pedido->id,
             'anexos' => $anexos, 'ocultar' => array_filter([$linkSenha ? self::e($linkSenha) : null]),
         ]);
@@ -77,7 +90,7 @@ class Notificacoes
             .'</b> foi cancelada a seu pedido. Os ingressos deste pedido deixaram de valer.</p><p>Se não foi você, fale com o organizador pelo e-mail abaixo.</p>'
             .'<p style="font-size:13px;color:#667085">Este é um aviso automático. Não responda a este e-mail.</p>',
             null, null, self::rodapeOrganizador($org));
-        Email::aviso('cancelamento_inscricao', $comprador->email, "Inscrição cancelada — {$evento->titulo}", $html,
+        Email::aviso('cancelamento_inscricao', $comprador->email, self::assuntoEvento($evento->titulo, 'Inscrição cancelada'), $html,
             "A inscrição do pedido {$pedido->codigo} em {$evento->titulo} foi cancelada. Os ingressos deixaram de valer.",
             ['organizador_id' => $org->id, 'comprador_id' => $comprador->id, 'pedido_id' => $pedido->id, 'prioridade' => 2]);
     }
@@ -93,7 +106,7 @@ class Notificacoes
             '<p>Olá, '.self::e($comprador->primeiroNome()).'.</p><p>A organização de <b>'.self::e($evento->titulo).'</b> cancelou os ingressos abaixo do pedido <b>'
             .self::e($pedido->codigo).'</b>. Eles deixaram de valer para a entrada.</p><ul style="padding-left:18px">'.$lista.'</ul>'.$devolucao,
             null, null, self::rodapeOrganizador($org));
-        Email::operacao('cancelamento_organizacao', $comprador->email, "Ingressos cancelados — {$evento->titulo}", $html,
+        Email::operacao('cancelamento_organizacao', $comprador->email, self::assuntoEvento($evento->titulo, 'Ingressos cancelados'), $html,
             "A organização de {$evento->titulo} cancelou ingressos do pedido {$pedido->codigo}.".($valor > 0 ? ' Valor a devolver: '.moeda($valor).'.' : ''),
             ['organizador_id' => $org->id, 'comprador_id' => $comprador->id, 'pedido_id' => $pedido->id]);
     }
@@ -163,7 +176,7 @@ class Notificacoes
                 .'<p>Comprador: '.self::e($comprador->nome).'.</p>'
                 .'<p style="font-size:13px;color:#667085">Você recebe este aviso porque ativou a notificação de compras nas suas preferências. Este é um aviso automático: não responda.</p>',
                 'Ver o evento no painel', $link);
-            Email::aviso('aviso_compra_equipe', $vinculo->usuario->email, "Nova {$tipo}: {$pedido->codigo} — {$evento->titulo}", $html,
+            Email::aviso('aviso_compra_equipe', $vinculo->usuario->email, self::assuntoEvento($evento->titulo, "Nova {$tipo}: {$pedido->codigo}"), $html,
                 "Pedido {$pedido->codigo} confirmado: {$quantidade} ingresso(s) para {$evento->titulo}. Ver: $link",
                 ['organizador_id' => $org->id, 'pedido_id' => $pedido->id, 'prioridade' => 3]);
         }

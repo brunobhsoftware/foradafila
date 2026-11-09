@@ -393,6 +393,9 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   aspas simples porque começam com `$`). Nunca no Git, no código, no CLAUDE.md ou em respostas.
 - Todo envio passa pela tabela `mensagem_envio` (corpo renderizado, status `enviado`/`erro`, motivo do erro) e
   sai depois da resposta HTTP. Links com token (convite, senha) não ficam gravados no corpo.
+- **Assunto de e-mail de evento começa sempre pelo nome do evento** (decisão do Bruno, 09/11/2026): `Notificacoes::assuntoEvento($titulo, $assunto)`
+  → "Nome do evento — resto" (tira o nome de onde estiver, inclusive de modelos editados pelo produtor); usado na confirmação, cancelamentos,
+  aviso à equipe e comunicados.
 - Textos em `App\Support\Notificacoes`; layout em `resources/views/emails/layout.blade.php`; modelos editáveis
   do banco (`modelo_mensagem`) via `App\Support\ModeloMensagem` (evento → organizador → padrão).
 - Enviados hoje: boas-vindas ao produtor, convite da equipe, ingressos confirmados, recuperação de senha

@@ -68,7 +68,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   await V.fill('[name="participantes[1][nome]"]', 'Pedro Amigo'); await V.fill('[name="participantes[1][cpf]"]', '153.509.460-56');
   await V.check('[name=aceite_termos]');
   await nav(V, V.click('button:has-text("Confirmar inscrição")'));
-  ok(sql("SELECT assunto FROM mensagem_envio WHERE tipo='confirmacao_compra' ORDER BY id DESC LIMIT 1") === 'Confirmado: Festa das Mensagens'
+  ok(sql("SELECT assunto FROM mensagem_envio WHERE tipo='confirmacao_compra' ORDER BY id DESC LIMIT 1") === 'Festa das Mensagens — Confirmado'
     && sql("SELECT corpo_renderizado LIKE '%Evento especial para Ana Compradora%' FROM mensagem_envio WHERE tipo='confirmacao_compra' ORDER BY id DESC LIMIT 1") === '1', 'e-mail de confirmação usa o texto do evento');
 
   // restaurar: remove o do evento, volta a valer o da organização
@@ -84,7 +84,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   await P.fill('#comunicado [name=assunto]', 'Mudança de horário'); await P.fill('#comunicado [name=texto]', 'Os portões abrem às 19h.');
   await nav(P, P.click('button:has-text("Enviar comunicado")'));
   ok((await P.content()).includes('Comunicado enviado para 2 e-mail(s)'), 'comunicado para os participantes (2 e-mails)');
-  ok(sql("SELECT COUNT(*) FROM mensagem_envio WHERE tipo='comunicado' AND assunto='Mudança de horário'") === '2', 'comunicados registrados em mensagem_envio');
+  ok(sql("SELECT COUNT(*) FROM mensagem_envio WHERE tipo='comunicado' AND assunto='Festa das Mensagens — Mudança de horário'") === '2', 'comunicados registrados com o nome do evento primeiro no assunto');
   await P.selectOption('#comunicado select[name=destino]', 'compradores');
   await P.fill('#comunicado [name=assunto]', 'Aviso'); await P.fill('#comunicado [name=texto]', 'Teste.');
   await nav(P, P.click('button:has-text("Enviar comunicado")'));
