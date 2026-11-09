@@ -83,6 +83,20 @@ class InscricaoController extends Controller
             'aceites.*' => ['accepted'],
             'cupom' => ['nullable', 'string', 'max:30'],
         ];
+        // Pré-cadastro do cartão: CPF inválido volta para a mesma tela (não para a de antes, que perderia a compra).
+        if ($request->boolean('etapa_dados')) {
+            $v = \Illuminate\Support\Facades\Validator::make($request->all(), [
+                'nome' => ['required', 'string', 'max:150'], 'email' => ['required', 'email:filter', 'max:150'],
+                'cpf' => ['required', new DocumentoValido('PF')], 'telefone' => ['nullable', 'string', 'max:20'],
+            ], ['cpf.required' => 'Para pagar com cartão, informe o CPF do titular.'], ['nome' => 'nome completo', 'email' => 'e-mail', 'cpf' => 'CPF']);
+            if ($v->fails()) {
+                return response()->view('publico.inscricao-dados', [
+                    'evento' => $evento, 'selecao' => $selecao, 'errors' => (new \Illuminate\Support\ViewErrorBag)->put('default', $v->errors()),
+                    'ocultos' => self::achatar($request->except(['_token', 'nome', 'email', 'cpf', 'telefone', 'sem_cpf', 'etapa_dados'])),
+                    'pre' => $request->only(['nome', 'email', 'cpf', 'telefone']),
+                ], 422);
+            }
+        }
         // Um aceite só ("Li e concordo com os Termos de compra e a Política de privacidade") vale para os dois termos.
         if ($request->boolean('aceite_termos')) {
             $request->merge(['aceites' => array_fill_keys(self::TERMOS, '1')]);
@@ -95,7 +109,7 @@ class InscricaoController extends Controller
             $conhecido = self::dadosDoCpf($request->input('cpf'));
             // "Não desejo informar o CPF": segue sem ele, menos no cartão de crédito (o Mercado Pago pede o CPF do titular).
             $pago = $selecao->contains(fn ($s) => (float) $s['lote']->preco > 0);
-            $cpfOpcional = $request->boolean('sem_cpf') && ! ($pago && $request->input('forma_pagamento') === 'cartao');
+            $cpfOpcional = $request->boolean('sem_cpf');
             $regras += [
                 'sem_cpf' => ['nullable', 'boolean'],
                 'cpf' => [$cpfOpcional ? 'nullable' : 'required', new DocumentoValido('PF')],
@@ -130,6 +144,15 @@ class InscricaoController extends Controller
         $termos = Termo::vigente()->whereIn('tipo', self::TERMOS)->get();
         if ($termos->count() < count(self::TERMOS) || $termos->contains(fn ($t) => ! isset($dados['aceites'][$t->tipo]))) {
             throw ValidationException::withMessages(['aceite_termos' => 'É preciso concordar com os Termos de compra e a Política de privacidade.']);
+        }
+
+        // Cartão sem CPF: abre o pré-cadastro (nome, e-mail, CPF e celular) antes do pagamento, com o resto da compra já preenchido.
+        if (! $comprador && ($dados['forma_pagamento'] ?? null) === 'cartao' && empty($dados['cpf'])) {
+            return response()->view('publico.inscricao-dados', [
+                'evento' => $evento, 'selecao' => $selecao,
+                'ocultos' => self::achatar($request->except(['_token', 'nome', 'email', 'cpf', 'telefone', 'sem_cpf', 'etapa_dados'])),
+                'pre' => ['nome' => $request->input('nome'), 'email' => $request->input('email'), 'telefone' => $request->input('telefone')],
+            ]);
         }
 
         // Pedido já criado com esta chave (clique duplo, voltar e reenviar): leva ao mesmo pedido.
@@ -338,7 +361,7 @@ class InscricaoController extends Controller
             report($e);
             \App\Support\Checkout::liberar($pedido->fresh(), 'cancelado');
 
-            return redirect()->$evento->linkPublico()
+            return redirect()->to($evento->linkPublico())
                 ->withErrors(['q' => 'Não foi possível abrir o pagamento agora. Tente de novo em alguns minutos.']);
         }
 
@@ -390,6 +413,22 @@ class InscricaoController extends Controller
         }
 
         return Comprador::create(['nome' => $nome, 'email' => $email, 'cpf' => $cpf ?: null, 'telefone' => $tel ?: ($conhecido['telefone'] ?? null), 'senha_hash' => null]);
+    }
+
+    /** ['a' => ['b' => 1]] → ['a[b]' => 1], para reenviar a compra em campos ocultos. */
+    private static function achatar(array $dados, string $prefixo = ''): array
+    {
+        $saida = [];
+        foreach ($dados as $k => $v) {
+            $nome = $prefixo === '' ? (string) $k : $prefixo.'['.$k.']';
+            if (is_array($v)) {
+                $saida += self::achatar($v, $nome);
+            } elseif ($v !== null) {
+                $saida[$nome] = (string) $v;
+            }
+        }
+
+        return $saida;
     }
 
     public static function mascararEmail(?string $e): ?string

@@ -68,13 +68,11 @@
     const marca = form.querySelector('[data-usar-comprador]'), outra = form.querySelector('[data-outra-pessoa]');
     const p0 = (k) => form.querySelector(`[name="participantes[0][${k}]"]`);
     let conhecido = null, ultimo = '';
-    const cartao = () => !!form.querySelector('[data-forma][value=cartao]:checked');
     const ajustarCpf = () => {
-      const exige = semCpf.value !== '1' || cartao();
+      const exige = semCpf.value !== '1';
       cpf.required = exige;
       box.querySelector('[data-cpf-obrig]').hidden = !exige;
-      box.querySelector('[data-cpf-dica]').textContent = semCpf.value === '1' && cartao()
-        ? '— para pagar com cartão, informe o CPF do titular.' : '— comece pelo seu CPF para buscar os dados cadastrais.';
+
     };
     // 1º ingresso = quem está comprando (até clicar em "Estou comprando para outra pessoa")
     const preencher = () => {
@@ -109,7 +107,7 @@
     cpf.addEventListener('input', buscar); cpf.addEventListener('blur', buscar);
     box.querySelector('[data-botao-sem-cpf]').addEventListener('click', () => {
       semCpf.value = '1'; conhecido = null; ultimo = '';
-      if (!cartao()) cpf.value = '';
+      cpf.value = '';
       ajustarCpf(); mostrar('novo'); nome.focus();
     });
     [nome, email, tel].forEach((el) => el.addEventListener('input', preencher));
@@ -123,7 +121,6 @@
       outra.textContent = 'Preencha os dados de quem vai usar o ingresso';
       outra.disabled = true;
     });
-    form.querySelectorAll('[data-forma]').forEach((r) => r.addEventListener('change', () => { ajustarCpf(); if (cartao() && semCpf.value === '1') cpf.focus(); }));
     ajustarCpf();
     if (nome.value || email.value || semCpf.value === '1') mostrar('novo');
     buscar();
