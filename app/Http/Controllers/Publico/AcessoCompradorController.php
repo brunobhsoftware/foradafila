@@ -126,17 +126,15 @@ class AcessoCompradorController extends Controller
         $request->merge(['cpf' => Documento::digitos((string) $request->input('cpf'))]);
         $d = $request->validate([
             'nome' => ['required', 'string', 'max:150'],
-            'telefone' => ['nullable', 'string', 'max:20'],
-            'data_nascimento' => ['nullable', 'date', 'before:today', 'after:1900-01-01'],
-            'cpf' => [$c->cpf ? 'prohibited' : 'nullable', new DocumentoValido('PF')],
-            'senha' => [$c->senha_hash ? 'prohibited' : 'nullable', 'confirmed', Password::min(8)->letters()->numbers()],
-        ], ['senha.prohibited' => 'Use “Alterar senha” para trocar a senha.', 'cpf.prohibited' => 'O CPF já está cadastrado.', 'data_nascimento.before' => 'A data de nascimento tem de ser anterior a hoje.'],
+            'telefone' => ['required', 'string', 'min:10', 'max:20'],
+            'data_nascimento' => ['required', 'date', 'before:today', 'after:1900-01-01'],
+            'cpf' => [$c->cpf ? 'prohibited' : 'required', new DocumentoValido('PF')],
+        ], ['telefone.min' => 'Informe o celular com DDD.', 'cpf.prohibited' => 'O CPF já está cadastrado.', 'data_nascimento.before' => 'A data de nascimento tem de ser anterior a hoje.'],
             ['senha' => 'senha', 'cpf' => 'CPF', 'data_nascimento' => 'data de nascimento']);
         $c->forceFill(array_filter([
             'nome' => trim($d['nome']), 'telefone' => preg_replace('/\D/', '', (string) ($d['telefone'] ?? '')) ?: null,
             'data_nascimento' => $d['data_nascimento'] ?? null,
             'cpf' => ! $c->cpf && ! empty($d['cpf']) ? $d['cpf'] : null,
-            'senha_hash' => ! empty($d['senha']) ? Hash::make($d['senha']) : null,
         ], fn ($v, $k) => $v !== null || in_array($k, ['telefone', 'data_nascimento'], true), ARRAY_FILTER_USE_BOTH))->save();
         if ($c->cpf) {
             CadastroPessoa::registrar($c->cpf, $c->nome, $c->email, $c->telefone, 'cadastro');
@@ -216,11 +214,8 @@ class AcessoCompradorController extends Controller
     public function senha(Request $request)
     {
         $c = $request->user('comprador');
-        if (! $c->senha_hash) {
-            return redirect()->route('comprador.dados');
-        }
 
-        return view('comprador.senha', ['verificado' => self::verificado(), 'emailMascarado' => InscricaoController::mascararEmail($c->email)]);
+        return view('comprador.senha', ['criar' => ! $c->senha_hash] + ['verificado' => self::verificado(), 'emailMascarado' => InscricaoController::mascararEmail($c->email)]);
     }
 
     public function salvarSenha(Request $request)
@@ -233,6 +228,6 @@ class AcessoCompradorController extends Controller
         $c->forceFill(['senha_hash' => Hash::make($d['senha'])])->save();
         Notificacoes::contaAlterada($c->nome, $c->email, 'A senha da sua conta no Fora da Fila foi alterada.');
 
-        return redirect()->route('comprador.dados')->with('ok', 'Sua senha foi alterada.');
+        return redirect()->route('comprador.dados')->with('ok', 'Sua senha foi salva.');
     }
 }
