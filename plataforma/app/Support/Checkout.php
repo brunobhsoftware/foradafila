@@ -155,19 +155,40 @@ class Checkout
         if (! $forma) {
             unset($dados['config']['payment_method']);
         }
+        $pix = null;
+        if ($forma === 'pix') {
+            // Pix direto (sem a tela do Mercado Pago, decisão do Bruno 09/11/2026): a order já cria o pagamento Pix e devolve
+            // o "copia e cola"; o QR Code é desenhado na nossa página (/pedido/{uuid}/pix), que confere sozinha o pagamento.
+            $dados['processing_mode'] = 'automatic';
+            unset($dados['config']['payment_method'], $dados['config']['online']);
+            $dados['transactions'] = ['payments' => [[
+                'amount' => $dados['total_amount'],
+                'payment_method' => ['id' => 'pix', 'type' => 'bank_transfer'],
+                'expiration_time' => 'PT'.self::RESERVA_MIN.'M',
+            ]]];
+        }
         $order = MercadoPago::criarOrder(self::token($conta), $dados);
-        $link = (string) ($order['checkout_url'] ?? data_get($order, 'config.online.checkout_url') ?? '');
+        if ($forma === 'pix') {
+            $pm = (array) data_get($order, 'transactions.payments.0.payment_method', []);
+            $pix = ['qr' => (string) ($pm['qr_code'] ?? ''), 'ticket' => (string) ($pm['ticket_url'] ?? '')];
+            if ($pix['qr'] === '') {
+                throw new RuntimeException('O Mercado Pago não devolveu o código do Pix.');
+            }
+            $link = route('pedido.pix', $pedido->uuid);
+        } else {
+            $link = (string) ($order['checkout_url'] ?? data_get($order, 'config.online.checkout_url') ?? '');
+        }
         if ($link === '') {
             throw new RuntimeException('O Mercado Pago não devolveu o link de pagamento.');
         }
         DB::table('pagamento')->insert([
             'organizador_id' => $pedido->organizador_id, 'pedido_id' => $pedido->id, 'conta_pagamento_id' => $conta->id,
             'gateway_pedido_id' => (string) $order['id'], 'referencia_externa' => $pedido->codigo,
-            'chave_idempotencia' => (string) \Illuminate\Support\Str::uuid(), 'metodo' => 'pix', 'status' => 'criado',
+            'chave_idempotencia' => (string) \Illuminate\Support\Str::uuid(), 'metodo' => $forma === 'cartao' ? 'cartao' : 'pix', 'status' => 'criado',
             'status_gateway' => mb_substr((string) ($order['status'] ?? ''), 0, 60), 'valor' => $pedido->valor_total,
             'comissao_retida' => self::comissao($pedido), 'valor_liquido_org' => round((float) $pedido->valor_total - self::comissao($pedido), 2),
             'link_pagamento' => mb_substr($link, 0, 500), 'expira_em' => $pedido->expira_em,
-            'resposta_gateway' => json_encode(['ambiente' => self::modoTeste($pedido->organizador_id) ? 'teste' : 'producao', 'order' => $order['id']]),
+            'resposta_gateway' => json_encode(['ambiente' => self::modoTeste($pedido->organizador_id) ? 'teste' : 'producao', 'order' => $order['id']] + ($pix ? ['pix' => $pix] : [])),
         ]);
 
         return $link;

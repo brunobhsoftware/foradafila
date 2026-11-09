@@ -24,6 +24,8 @@ const falso = http.createServer((req, res) => {
       // como o MP real: external_code do item tem no máximo 30 caracteres
       if ((corpoOrder.items || []).some((i) => String(i.external_code || '').length > 30)) return json(400, { errors: [{ code: 'property_value', message: 'Invalid value for property', details: ["'$.items[0].external_code' - length must be <= 30"] }] });
       const id = 'ORD' + (++n); ultimoCorpo = corpoOrder; orders[id] = { status: 'action_required', status_detail: 'waiting_payment' };
+      if (corpoOrder.processing_mode === 'automatic') // Pix direto: devolve o copia e cola, sem checkout_url
+        return json(201, { id, status: 'action_required', transactions: { payments: [{ id: 'PAY' + id, payment_method: { id: 'pix', type: 'bank_transfer', qr_code: '00020126580014br.gov.bcb.pix-' + id, ticket_url: 'http://127.0.0.1:8099/pix/' + id } }] } });
       return json(201, { id, status: 'action_required', checkout_url: 'http://127.0.0.1:8099/pagar/' + id });
     }
     const rf = req.url.match(/^\/v1\/orders\/(ORD\d+)\/refund/);
@@ -85,12 +87,15 @@ const webhook = async (P, id) => {
   await C.fill('[name="participantes[1][nome]"]', 'Pedro Amigo');
   await C.check('[name=aceite_termos]');
   await nav(C, C.click('button:has-text("Ir para o pagamento")'));
-  ok(C.url() === 'http://127.0.0.1:8099/pagar/ORD1', 'vai para o checkout do Mercado Pago');
+  await C.waitForSelector('#qr-pix svg');
+  ok(/\/pedido\/[0-9a-f-]{36}\/pix$/.test(C.url()) && (await C.content()).includes('Pague com Pix') && (await C.inputValue('#pix-codigo')).includes('br.gov.bcb.pix-ORD1'),
+    'Pix: QR Code e copia e cola na nossa página, sem ir ao Mercado Pago');
   ok(sql("SELECT CONCAT_WS('|', status, valor_bruto, valor_taxa_servico, valor_total) FROM pedido") === 'aguardando_pagamento|200.00|10.00|210.00', 'pedido aguardando pagamento (R$ 200 + R$ 10 de taxa)');
   ok(sql("SELECT CONCAT_WS('|', reservado, vendido) FROM lote") === '2|0', 'estoque reservado (2), nada vendido');
   ok(sql("SELECT CONCAT_WS('|', status, gateway_pedido_id, valor, comissao_retida, valor_liquido_org) FROM pagamento") === 'criado|ORD1|210.00|10.00|200.00', 'pagamento criado com a comissão de R$ 10 e R$ 200 do produtor');
   ok(ultimoCorpo.total_amount === '210.00' && ultimoCorpo.items[0].unit_price === '105.00' && ultimoCorpo.items[0].quantity === 2 && ultimoCorpo.external_reference.length > 4
-    && ultimoCorpo.payer.identification.number === '18609139034' && ultimoCorpo.config.payment_method.default_id === 'pix' && ultimoCorpo.config.statement_descriptor === 'FORADAFILA' && ultimoCorpo.config.online.transaction_security.liability_shift === 'required', 'order completa (itens, CPF de quem paga, Pix escolhido, descrição na fatura, 3DS)');
+    && ultimoCorpo.payer.identification.number === '18609139034' && ultimoCorpo.processing_mode === 'automatic' && ultimoCorpo.transactions.payments[0].payment_method.id === 'pix' && ultimoCorpo.transactions.payments[0].expiration_time === 'PT30M'
+    && ultimoCorpo.config.statement_descriptor === 'FORADAFILA' && !ultimoCorpo.config.online, 'order Pix direta (itens, CPF de quem paga, pagamento Pix de 30 min, descrição na fatura)');
   ok(sql('SELECT COUNT(*) FROM ingresso') === '0', 'nenhum ingresso antes do pagamento');
 
   // volta do Mercado Pago ainda pendente
@@ -104,6 +109,8 @@ const webhook = async (P, id) => {
   orders.ORD1 = { status: 'processed', status_detail: 'accredited' };
   const r = await webhook(P, 'ORD1');
   ok(r.status() === 200 && sql("SELECT status FROM pedido") === 'pago', 'webhook aprova o pedido');
+  await C.goto(BASE + '/pedido/' + uuid + '/pix');
+  ok(!C.url().endsWith('/pix'), 'página do Pix de pedido pago leva ao resultado');
   ok(sql("SELECT CONCAT_WS('|', reservado, vendido) FROM lote") === '0|2', 'reserva vira venda');
   ok(sql("SELECT GROUP_CONCAT(CONCAT(p.nome,'=',i.valor_pago) ORDER BY i.numero) FROM ingresso i JOIN participante p ON p.ingresso_id=i.id") === 'Ana Compradora=105.00,Pedro Amigo=105.00', 'ingressos emitidos com os participantes e o valor pago');
   ok(sql("SELECT CONCAT_WS('|', status, metodo) FROM pagamento") === 'aprovado|pix' && sql("SELECT status FROM webhook_evento ORDER BY id DESC LIMIT 1") === 'processado', 'pagamento aprovado e webhook processado');

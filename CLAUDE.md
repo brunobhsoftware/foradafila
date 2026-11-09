@@ -125,6 +125,11 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   o botão leva a "Meu cadastro" (CPF, nome, e-mail, celular e senha opcional). **Só edita depois do código de 6 dígitos** enviado ao e-mail
   do cadastro (`CodigoVerificacao`, finalidade `cadastro-comprador`; throttles `compra-cadastro*`); ao salvar entra na conta e volta à compra
   (`volta`, só caminho interno). CPF só no cadastro único com e-mail → cria o comprador.
+- **Pix direto na nossa página** (decisão do Bruno, 09/11/2026: o Checkout Pro pedia login/CPF/senha no Mercado Pago): com `forma_pagamento=pix`
+  a order vai com `processing_mode: automatic` e `transactions.payments[{payment_method: {id: pix, type: bank_transfer}, expiration_time: PT30M}]`
+  (sem `config.online`); o "copia e cola" (`qr_code`) fica em `pagamento.resposta_gateway.pix` e `link_pagamento` aponta para
+  `/pedido/{uuid}/pix` (`PagamentoController::pix`: QR desenhado com `qrcode-generator.js`, botão copiar, consulta `/pedido/{uuid}/situacao`
+  a cada 5 s e vai ao resultado quando aprova). Cartão continua no Checkout Pro (`metodo = cartao`).
 - **Checkout pago** (`App\Support\Checkout`, 08/11/2026): a mesma tela de inscrição vira "Comprar ingresso" com o resumo (preço + taxa
   repassada) e "Ir para o pagamento". `InscricaoController::reservarPago` reserva o estoque (`lote.reservado`, UPDATE condicional) por
   `RESERVA_MIN` (30) min, cria o pedido `aguardando_pagamento` (participantes em `dados_participantes`; `pedido_item.taxa_unitaria` =
