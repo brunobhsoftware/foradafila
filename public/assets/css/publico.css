@@ -240,3 +240,12 @@ button.botao { cursor: pointer; font-family: var(--fonte-texto); }
   .pub-evento__info > .pub-aviso { order: 1; }
   .pub-evento > .pub-compra { order: 2; }
 }
+
+/* Itens do menu do site só no celular (painel, app, meus dados, sair) */
+.so-celular-pub { display: none !important; }
+@media (max-width: 860px) {
+  .menu > a.so-celular-pub { display: block !important; }
+  .menu > .menu__sair.so-celular-pub { display: block !important; }
+  .menu__sair button { width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--borda); padding: 14px 4px; font: inherit; font-weight: 500; color: var(--vermelho, #B42318); cursor: pointer; }
+  .topo { position: relative; z-index: 20; }
+}

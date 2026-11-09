@@ -31,10 +31,13 @@
       <span class="menu__divisor" aria-hidden="true"></span>
 
       @if ($comprador)
-        <a href="{{ route('comprador.ingressos') }}" @class(['ativo' => request()->routeIs('comprador.*')])>Meus ingressos</a>
+        <a href="{{ route('comprador.ingressos') }}" @class(['ativo' => request()->routeIs('comprador.ingressos')])>Meus ingressos</a>
+        <a href="{{ route('comprador.dados') }}" class="so-celular-pub">Meus dados</a>
       @endif
       @if ($produtor)
+        <a href="{{ route('painel') }}" class="so-celular-pub">Painel do produtor</a>
         <a href="{{ route('eventos.index') }}">Meus eventos</a>
+        <a href="{{ route('app.index') }}" class="so-celular-pub">App de check-in</a>
         <a href="{{ route('eventos.create') }}" class="botao botao--amarelo botao--pequeno">+ Novo evento</a>
       @else
         @unless ($comprador)
@@ -42,6 +45,9 @@
         @endunless
         <a href="{{ route('entrar') }}">Área do produtor</a>
         <a href="{{ route('cadastro') }}" class="botao botao--amarelo botao--pequeno">Criar evento</a>
+      @endif
+      @if ($produtor || $comprador)
+        <form method="post" action="{{ route($produtor ? 'sair' : 'comprador.sair') }}" class="so-celular-pub menu__sair">@csrf<button type="submit">Sair</button></form>
       @endif
     </nav>
   </div>
