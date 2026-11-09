@@ -85,6 +85,8 @@ Route::get('/pedido/{pedido}/ingressos', [\App\Http\Controllers\Publico\Pagament
     ->whereUuid('pedido')->middleware('throttle:60,1,pedido-ingressos');
 Route::get('/pedido/{pedido}/ingressos.pdf', [\App\Http\Controllers\Publico\PagamentoController::class, 'pdf'])->name('pedido.pdf')
     ->whereUuid('pedido')->middleware('throttle:20,1,pedido-pdf');
+Route::get('/ingresso/{ingresso}', [\App\Http\Controllers\Publico\PagamentoController::class, 'ingressoUnico'])->name('ingresso.publico')
+    ->whereUuid('ingresso')->middleware('throttle:60,1,ingresso-publico');
 Route::get('/pedido/{pedido}/pix', [\App\Http\Controllers\Publico\PagamentoController::class, 'pix'])->name('pedido.pix')
     ->whereUuid('pedido')->middleware('throttle:30,1,pedido-pix');
 Route::get('/pedido/{pedido}/cartao', [\App\Http\Controllers\Publico\PagamentoController::class, 'cartao'])->name('pedido.cartao')
@@ -216,6 +218,7 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::get('/participantes', [\App\Http\Controllers\Painel\ParticipantesController::class, 'index'])->name('participantes.index');
     Route::get('/participantes/exportar', [\App\Http\Controllers\Painel\ParticipantesController::class, 'exportar'])->name('participantes.exportar');
     Route::post('/ingressos/{ingresso}/reenviar', [\App\Http\Controllers\Painel\ParticipantesController::class, 'reenviar'])->name('ingressos.reenviar')->middleware('throttle:30,10,reenviar-ingresso');
+    Route::get('/ingressos/{ingresso}/pdf', [\App\Http\Controllers\Painel\ParticipantesController::class, 'pdf'])->name('ingressos.pdf');
     Route::post('/ingressos/{ingresso}/cancelar', [\App\Http\Controllers\Painel\ParticipantesController::class, 'cancelar'])->name('ingressos.cancelar');
     Route::get('/pedidos', [\App\Http\Controllers\Painel\PedidosController::class, 'index'])->name('pedidos.index');
     Route::get('/pedidos/{pedido}', [\App\Http\Controllers\Painel\PedidosController::class, 'show'])->name('pedidos.show');

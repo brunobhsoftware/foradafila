@@ -274,8 +274,10 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   cai direto na conta do produtor. O Financeiro do produtor mostra a etapa 1 só como "Liberação pela plataforma".
 - **Vendas → Participantes** (`/painel/participantes`, `ParticipantesController`): por evento (seletor; padrão = próximo), busca
   (nome, e-mail, nº do ingresso, código do pedido), filtros (situação, lote), resumo (válidos, check-in, emitidos, cancelados),
-  botão "Ações" abre uma linha com **reenviar ingresso** (para o participante ou o comprador, via `Notificacoes::ingressosConfirmados`)
-  e **cancelar** (mostra o valor pago a devolver; motivo, observação, "já devolvi", avisar por e-mail). Exportar CSV (`;`, BOM;
+  botão "Ações" abre uma linha com **reenviar ingresso** (para o participante ou o comprador, via `Notificacoes::ingressosConfirmados`),
+  **Imprimir ingresso (PDF)** (`ingressos.pdf`, `IngressoPdf` só desse ingresso), **Copiar link do ingresso** (`/ingresso/{uuid}` assinado, 90 dias,
+  abre só esse ingresso sem login, `PagamentoController::linkIngresso`) e o botão **Cancelar este ingresso**, que só então mostra o formulário de
+  cancelamento (decisão do Bruno, 09/11/2026) — (mostra o valor pago a devolver; motivo, observação, "já devolvi", avisar por e-mail). Exportar CSV (`;`, BOM;
   CPF mascarado sem `participante.ver_dados_completos`). **Vendas → Pedidos** (`/painel/pedidos`, `PedidosController`): lista com
   filtros e totais, detalhe com ingressos e devoluções, reenviar confirmação, cancelar o pedido. Cancelamento compartilhado em
   `App\Support\CancelamentoIngressos` (devolve estoque; ingresso pago → `reembolsado` + linha em `reembolso`/`reembolso_ingresso`

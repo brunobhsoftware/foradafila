@@ -83,7 +83,17 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   await botaoPedro.locator('button:has-text("Ações")').click();
   const linhaPedro = P.locator('tr.linha-acoes:visible');
   ok(await linhaPedro.locator('button:has-text("Para o participante")').isDisabled(), 'sem e-mail do participante, botão desativado');
-  ok((await linhaPedro.innerText()).includes('Valor pago a devolver ao comprador: R$ 80,00'), 'cancelamento mostra o valor a devolver');
+  ok(!(await linhaPedro.locator('select[name=motivo]').isVisible()) && await linhaPedro.locator('a:has-text("Imprimir ingresso")').isVisible()
+    && await linhaPedro.locator('button:has-text("Copiar link do ingresso")').isVisible(), 'Ações: reenviar, imprimir e copiar link; o cancelamento fica escondido');
+  const pdfIng = await P.request.get(await linhaPedro.locator('a:has-text("Imprimir ingresso")').getAttribute('href'));
+  ok(pdfIng.status() === 200 && (await pdfIng.body()).slice(0, 5).toString() === '%PDF-', 'imprimir ingresso gera o PDF');
+  const linkIng = await linhaPedro.locator('input[id^=link-ing-]').inputValue();
+  const anon = await (await P.context().browser().newContext()).newPage();
+  await anon.goto(linkIng);
+  ok((await anon.content()).includes('Seu ingresso') && (await anon.content()).includes('Pedro Amigo') && !(await anon.content()).includes('Ana Compradora'), 'link do ingresso abre só esse ingresso, sem login');
+  ok((await anon.goto(linkIng.replace(/signature=[^&]+/, 'signature=x'))).status() === 403, 'link alterado não abre');
+  await linhaPedro.locator('button:has-text("Cancelar este ingresso")').click();
+  ok((await linhaPedro.innerText()).includes('Valor pago a devolver ao comprador: R$ 80,00'), 'cancelamento só aparece no botão e mostra o valor a devolver');
   await linhaPedro.locator('select[name=motivo]').selectOption('arrependimento');
   await linhaPedro.locator('input[name=observacao]').fill('Pediu pelo WhatsApp');
   P.once('dialog', (d) => d.accept());

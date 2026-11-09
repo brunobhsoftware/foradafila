@@ -90,6 +90,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   // ---- cancelamento sai da contagem ----
   await P.goto(BASE + '/painel/participantes');
   await P.locator('tr:not(.linha-acoes):has-text("Pedro Amigo") button:has-text("Ações")').click();
+  await P.locator('tr.linha-acoes:visible button:has-text("Cancelar este ingresso")').click();
   await nav(P, P.locator('tr.linha-acoes:visible button:has-text("Cancelar ingresso")').click());
   await P.goto(BASE + '/painel/cupons');
   ok((await P.locator('tr:has-text("JOAO")').first().locator('td').nth(3).innerText()).trim() === '2', 'ingresso cancelado sai da contagem');

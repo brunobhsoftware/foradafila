@@ -59,6 +59,19 @@ class ParticipantesController extends Controller
     }
 
     /** Reenvia o e-mail do ingresso para o participante ou para o comprador. */
+    /** Imprimir ingresso: o mesmo PDF do e-mail, só deste ingresso. */
+    public function pdf(Ingresso $ingresso)
+    {
+        Gate::authorize('participante.ver');
+        $this->autorizarEvento($ingresso);
+        abort_if(! in_array($ingresso->status, ['valido', 'utilizado'], true), 422, 'Ingresso cancelado não tem PDF.');
+        $ingresso->load(['participante', 'tipo', 'lote', 'pedido', 'evento.local', 'evento.organizador']);
+
+        return response(\App\Support\IngressoPdf::gerar($ingresso->pedido, $ingresso->evento, collect([$ingresso])), 200, [
+            'Content-Type' => 'application/pdf', 'Content-Disposition' => 'inline; filename="ingresso-'.$ingresso->numeroExibicao().'.pdf"',
+        ]);
+    }
+
     public function reenviar(Request $request, Ingresso $ingresso)
     {
         Gate::authorize('participante.ver');

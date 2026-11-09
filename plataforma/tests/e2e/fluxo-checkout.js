@@ -173,6 +173,7 @@ const webhook = async (P, id) => {
   const ev = sql("SELECT uuid FROM evento");
   await P.goto(BASE + '/painel/participantes?evento=' + ev);
   await P.locator('tr:not(.linha-acoes):has-text("Pedro Amigo") button:has-text("Ações")').click();
+  await P.locator('tr.linha-acoes:visible button:has-text("Cancelar este ingresso")').click();
   await nav(P, P.locator('tr.linha-acoes:visible button:has-text("Cancelar ingresso")').click());
   ok(reembolsos.length === 1 && reembolsos[0].id === 'ORD1' && reembolsos[0].corpo.transactions[0].amount === '105.00' && reembolsos[0].corpo.transactions[0].id === 'PAYORD1',
     'cancelar 1 ingresso devolve R$ 105 pelo Mercado Pago (devolução parcial da order)');

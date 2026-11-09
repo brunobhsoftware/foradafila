@@ -7,10 +7,14 @@
 <section class="pub-secao">
   <div class="container">
     <div class="nao-imprimir" style="max-width:760px;margin:0 auto 20px">
-      <h1 style="font-size:1.7rem;margin:0 0 6px">Seus ingressos</h1>
+      <h1 style="font-size:1.7rem;margin:0 0 6px">{{ ! empty($unico) ? 'Seu ingresso' : 'Seus ingressos' }}</h1>
+      @if (! empty($unico))
+      <p style="margin:0">{{ $evento->titulo }}. Apresente o QR Code na entrada (no celular ou impresso).</p>
+      @else
       <p style="margin:0">Pedido <b>{{ $pedido->codigo }}</b> · {{ $evento->titulo }}. Os ingressos também foram enviados para
         <b>{{ \App\Http\Controllers\Publico\InscricaoController::mascararEmail($comprador?->email) }}</b>, em PDF.</p>
-      @if ($validos->isNotEmpty())
+      @endif
+      @if ($validos->isNotEmpty() && empty($unico))
         <p style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 0">
           <a href="{{ route('pedido.pdf', $pedido->uuid) }}" class="botao botao--amarelo">Baixar ingressos em PDF</a>
           <button type="button" class="botao botao--contorno" onclick="window.print()">Imprimir</button>
