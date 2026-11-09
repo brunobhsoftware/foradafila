@@ -109,7 +109,7 @@
       <h2 style="font-size:1.15rem;margin-top:24px">3. Forma de pagamento</h2>
       <div class="grade grade-2" style="margin-bottom:6px">
         <label class="opcao-cartao"><input type="radio" name="forma_pagamento" value="pix" @checked(old('forma_pagamento', 'pix') === 'pix') data-forma>
-          <span><b>Pix</b><small>Gera o Pix na hora; o ingresso sai assim que o pagamento cai.</small></span></label>
+          <span><b>Pix</b><small>O QR Code aparece aqui mesmo, sem cadastro no Mercado Pago; o ingresso sai assim que o Pix cai.</small></span></label>
         <label class="opcao-cartao"><input type="radio" name="forma_pagamento" value="cartao" @checked(old('forma_pagamento') === 'cartao') data-forma>
           <span><b>Cartão de crédito</b><small>Sem o CPF informado acima, pedimos na próxima tela (exigência do cartão).</small></span></label>
       </div>
@@ -130,7 +130,7 @@
       @endif
       @if ($pago)
         <button class="botao botao--amarelo botao--largo">Ir para o pagamento — {{ moeda($valorTotal) }}</button>
-        <p style="margin:10px 0 0;text-align:center"><small>Você será levado ao Mercado Pago para pagar. Os ingressos ficam reservados por {{ \App\Support\Checkout::RESERVA_MIN }} minutos e são emitidos assim que o pagamento é aprovado. Cupom de desconto é aplicado no total.</small></p>
+        <p style="margin:10px 0 0;text-align:center"><small>No Pix, o QR Code aparece na próxima tela; no cartão, você paga no Mercado Pago. Os ingressos ficam reservados por {{ \App\Support\Checkout::RESERVA_MIN }} minutos e são emitidos assim que o pagamento é aprovado. Cupom de desconto é aplicado no total.</small></p>
       @else
         <button class="botao botao--amarelo botao--largo">Confirmar inscrição gratuita</button>
       @endif

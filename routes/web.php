@@ -81,6 +81,10 @@ Route::middleware('auth')->group(function () {
 });
 
 // ---------- Avisos das operadoras de pagamento (sem login e sem CSRF) ----------
+Route::get('/pedido/{pedido}/pix', [\App\Http\Controllers\Publico\PagamentoController::class, 'pix'])->name('pedido.pix')
+    ->whereUuid('pedido')->middleware('throttle:30,1,pedido-pix');
+Route::get('/pedido/{pedido}/situacao', [\App\Http\Controllers\Publico\PagamentoController::class, 'situacao'])->name('pedido.situacao')
+    ->whereUuid('pedido')->middleware('throttle:40,1,pedido-situacao');
 Route::get('/pedido/{pedido}/pagamento', [\App\Http\Controllers\Publico\PagamentoController::class, 'retorno'])->name('pedido.retorno')
     ->whereUuid('pedido')->middleware('throttle:30,1,pedido-retorno');
 Route::post('/webhooks/mercadopago/{conta}', [WebhookController::class, 'mercadoPagoEmpresa'])->name('webhook.mercadopago.empresa')->whereUuid('conta')
