@@ -38,7 +38,8 @@
           <div class="col-12" data-cpf-achado hidden>
             <p style="margin:0;padding:12px 14px;background:#F2F4F7;border-left:4px solid var(--laranja);border-radius:8px">
               Olá, <b data-achado-nome></b>! Os ingressos vão para <b data-achado-email></b><span data-achado-tel></span>.<br>
-              <small>Não é você? Confira o CPF digitado.</small></p>
+              <a href="#" class="botao botao--contorno botao--pequeno" style="margin-top:8px" data-editar-cadastro data-url="{{ route('compra.cadastro') }}">Editar meus dados</a>
+              <small style="margin-left:8px">Não é você? Confira o CPF digitado.</small></p>
           </div>
           <div class="col-12" data-cpf-novo hidden><div class="form-grade">
             <x-campo nome="nome" rotulo="Seu nome completo" obrigatorio autocomplete="name" classe="col-12" />
