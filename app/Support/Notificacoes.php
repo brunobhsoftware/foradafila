@@ -202,7 +202,7 @@ class Notificacoes
     public static function codigoVerificacao(string $nome, string $email, string $codigo, string $acao): void
     {
         $html = Email::layout('Seu código de verificação',
-            '<p>Olá, '.self::e(strtok($nome, ' ') ?: $nome).'.</p><p>Use o código abaixo para '.self::e($acao).' no Fora da Fila:</p>'
+            '<p>'.(trim($nome) === '' ? 'Olá!' : 'Olá, '.self::e(strtok($nome, ' ') ?: $nome).'.').'</p><p>Use o código abaixo para '.self::e($acao).' no Fora da Fila:</p>'
             .'<p style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#101828;margin:18px 0">'.self::e($codigo).'</p>'
             .'<p>O código vale por '.CodigoVerificacao::VALIDADE_MIN.' minutos e só pode ser usado uma vez. Se você não pediu, ignore este e-mail e considere trocar a sua senha.</p>');
         Email::operacao('codigo_verificacao', $email, 'Seu código de verificação — Fora da Fila', $html,

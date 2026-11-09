@@ -4,7 +4,7 @@
 @section('conteudo')
 <section class="pub-secao">
   <div class="container pub-form-caixa">
-    <h1>Acessar meus ingressos</h1>
+    <h1>{{ $novo ? 'Criar a sua conta' : 'Acessar meus ingressos' }}</h1>
     <p>Digite o código de 6 dígitos que enviamos para <b>{{ $emailMascarado }}</b>.</p>
     <form method="post" action="{{ route('comprador.codigo') }}" class="pub-cartao">
       @csrf
@@ -19,7 +19,7 @@
           <x-campo nome="senha_confirmation" rotulo="Repita a senha" tipo="password" classe="col-6" autocomplete="new-password" />
         @endif
       </div>
-      <button class="botao botao--amarelo botao--largo">Entrar</button>
+      <button class="botao botao--amarelo botao--largo">{{ $novo ? 'Confirmar e-mail' : 'Entrar' }}</button>
     </form>
     <p style="margin-top:14px"><small>Não recebeu? Confira o spam ou <a href="{{ route('comprador.entrar') }}">peça outro código</a> (um a cada minuto).</small></p>
   </div>

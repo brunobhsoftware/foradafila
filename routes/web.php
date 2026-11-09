@@ -46,6 +46,10 @@ Route::prefix('minha-conta')->name('comprador.')->group(function () {
     Route::middleware('guest:comprador')->group(function () {
         Route::get('/entrar', [CompradorAuthController::class, 'entrar'])->name('entrar');
         Route::post('/entrar', [CompradorAuthController::class, 'autenticar'])->middleware('throttle:20,1,login-comprador');
+        Route::post('/identificar', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'identificar'])->name('identificar')->middleware('throttle:10,10,identificar-comprador');
+        Route::get('/entrar/senha', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'senhaLogin'])->name('entrar.senha');
+        Route::get('/completar', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'completar'])->name('completar');
+        Route::post('/completar', [\App\Http\Controllers\Publico\AcessoCompradorController::class, 'salvarCadastro'])->middleware('throttle:10,10,completar-comprador');
         Route::get('/criar', [CompradorAuthController::class, 'criar'])->name('criar');
         Route::post('/criar', [CompradorAuthController::class, 'registrar'])->middleware('throttle:10,1,cadastro-comprador');
     });

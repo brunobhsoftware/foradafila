@@ -37,6 +37,82 @@ class AcessoCompradorController extends Controller
         return $this->enviarPara($comprador);
     }
 
+    /**
+     * Entrada de "Meus ingressos" só com o e-mail (decisão do Bruno, 09/11/2026): tem senha → pede a senha; tem cadastro sem senha →
+     * manda o código; não tem cadastro → manda o código e, confirmado, abre "Complete seu cadastro".
+     */
+    public function identificar(Request $request)
+    {
+        $email = mb_strtolower(trim((string) $request->validate(['email' => ['required', 'email:filter', 'max:150']], ['email.email' => 'Digite um e-mail válido (sem acento ou espaço).'])['email']));
+        $comprador = Comprador::where('email', $email)->whereNull('anonimizado_em')->first();
+        if ($comprador && $comprador->senha_hash) {
+            session(['login_email' => $email]);
+
+            return redirect()->route('comprador.entrar.senha');
+        }
+        if ($comprador) {
+            return $this->enviarPara($comprador);
+        }
+        // Sem cadastro: código para confirmar o e-mail antes de criar a conta.
+        session(['acesso_comprador' => null, 'acesso_email' => $email, 'cadastro_email' => $email]);
+        if ($codigo = CodigoVerificacao::gerar(self::idCadastro($email), 'cadastro-novo')) {
+            Notificacoes::codigoVerificacao('', $email, $codigo, 'criar a sua conta');
+        }
+
+        return redirect()->route('comprador.codigo')->with('ok', 'Enviamos um código de 6 dígitos para '.$email.'. Com ele você cria a sua conta.');
+    }
+
+    /** Chave numérica do código de quem ainda não tem conta (o CodigoVerificacao trabalha com id). */
+    private static function idCadastro(string $email): int
+    {
+        return (int) sprintf('%u', crc32('cadastro:'.$email));
+    }
+
+    public function senhaLogin()
+    {
+        $email = session('login_email');
+        abort_unless($email, 404);
+
+        return view('comprador.entrar-senha', ['email' => $email]);
+    }
+
+    /** Complete seu cadastro (depois do código, para quem não tinha conta). */
+    public function completar()
+    {
+        abort_unless(session('cadastro_confirmado'), 404);
+
+        return view('comprador.completar', ['email' => session('cadastro_confirmado')]);
+    }
+
+    public function salvarCadastro(Request $request)
+    {
+        $email = session('cadastro_confirmado');
+        abort_unless($email, 404);
+        $request->merge(['cpf' => Documento::digitos((string) $request->input('cpf'))]);
+        $d = $request->validate([
+            'nome' => ['required', 'string', 'max:150'],
+            'cpf' => ['required', new DocumentoValido('PF')],
+            'telefone' => ['required', 'string', 'min:10', 'max:20'],
+            'data_nascimento' => ['required', 'date', 'before:today', 'after:1900-01-01'],
+            'senha' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+        ], ['telefone.min' => 'Informe o celular com DDD.'], ['cpf' => 'CPF', 'data_nascimento' => 'data de nascimento']);
+        if (Comprador::where('email', $email)->exists()) {
+            session()->forget('cadastro_confirmado');
+
+            return redirect()->route('comprador.entrar')->withErrors(['email' => 'Este e-mail já tem cadastro. Entre com ele.']);
+        }
+        $c = Comprador::create(['nome' => trim($d['nome']), 'email' => $email, 'cpf' => $d['cpf'], 'telefone' => preg_replace('/\D/', '', $d['telefone']),
+            'data_nascimento' => $d['data_nascimento'], 'senha_hash' => Hash::make($d['senha'])]);
+        $c->forceFill(['email_verificado_em' => now()])->save();
+        CadastroPessoa::registrar($c->cpf, $c->nome, $c->email, $c->telefone, 'cadastro');
+        session()->forget(['cadastro_confirmado', 'cadastro_email']);
+        Auth::guard('comprador')->login($c, true);
+        $request->session()->regenerate();
+        session(['comprador_verificado' => $c->id]);
+
+        return redirect()->route('comprador.ingressos')->with('ok', 'Pronto! Sua conta foi criada.');
+    }
+
     /** "Entrar com código" (tela de entrar): resposta igual exista ou não a conta. */
     public function porEmail(Request $request)
     {
@@ -68,7 +144,7 @@ class AcessoCompradorController extends Controller
         $comprador = session('acesso_comprador') ? Comprador::find(session('acesso_comprador')) : null;
 
         return view('comprador.codigo', ['emailMascarado' => InscricaoController::mascararEmail($email),
-            'semSenha' => ! $comprador || ! $comprador->senha_hash]);
+            'semSenha' => $comprador && ! $comprador->senha_hash, 'novo' => ! $comprador && session('cadastro_email')]);
     }
 
     public function confirmar(Request $request)
@@ -77,6 +153,15 @@ class AcessoCompradorController extends Controller
             'codigo' => ['required', 'string'],
             'senha' => ['nullable', 'confirmed', Password::min(8)->letters()->numbers()],
         ], ['codigo.required' => 'Digite o código enviado por e-mail.'], ['senha' => 'senha']);
+        if (! session('acesso_comprador') && ($novo = session('cadastro_email'))) {
+            if ($erro = CodigoVerificacao::conferir(self::idCadastro($novo), 'cadastro-novo', $dados['codigo'])) {
+                return back()->withErrors(['codigo' => $erro]);
+            }
+            session()->forget(['acesso_email', 'cadastro_email']);
+            session(['cadastro_confirmado' => $novo]);
+
+            return redirect()->route('comprador.completar')->with('ok', 'E-mail confirmado. Agora complete o seu cadastro.');
+        }
         $comprador = session('acesso_comprador') ? Comprador::find(session('acesso_comprador')) : null;
         $erro = $comprador ? CodigoVerificacao::conferir($comprador->id, self::FINALIDADE, $dados['codigo']) : 'Código incorreto. Peça um novo código.';
         if ($erro) {
