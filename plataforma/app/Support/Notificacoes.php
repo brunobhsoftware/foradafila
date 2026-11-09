@@ -54,8 +54,12 @@ class Notificacoes
 
         $anexos = [];
         try {
-            $anexos[] = ['nome' => 'ingressos-'.$pedido->codigo.'.pdf', 'mime' => 'application/pdf',
-                'conteudo' => IngressoPdf::gerar($pedido, $evento, $ingressos->whereIn('status', ['valido', 'utilizado'])->values())];
+            $validos = $ingressos->whereIn('status', ['valido', 'utilizado'])->values();
+            if ($validos->isNotEmpty()) {
+                $anexos[] = ['nome' => 'ingressos-'.$pedido->codigo.'.pdf', 'mime' => 'application/pdf', 'conteudo' => IngressoPdf::gerar($pedido, $evento, $validos)];
+            } else {
+                \Illuminate\Support\Facades\Log::warning('E-mail de ingressos sem ingressos válidos para o PDF', ['pedido' => $pedido->codigo]);
+            }
         } catch (\Throwable $e) {
             report($e); // sem o PDF o e-mail sai mesmo assim, com o link
         }

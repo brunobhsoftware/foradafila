@@ -121,6 +121,10 @@ const webhook = async (P, id) => {
   ok(sql("SELECT GROUP_CONCAT(CONCAT(p.nome,'=',i.valor_pago) ORDER BY i.numero) FROM ingresso i JOIN participante p ON p.ingresso_id=i.id") === 'Ana Compradora=105.00,Pedro Amigo=105.00', 'ingressos emitidos com os participantes e o valor pago');
   ok(sql("SELECT CONCAT_WS('|', status, metodo) FROM pagamento") === 'aprovado|pix' && sql("SELECT status FROM webhook_evento ORDER BY id DESC LIMIT 1") === 'processado', 'pagamento aprovado e webhook processado');
   ok(sql("SELECT COUNT(*) FROM mensagem_envio WHERE destinatario='ana@compra.test' AND tipo='confirmacao_compra'") === '1', 'e-mail com os ingressos');
+  const codPed = sql("SELECT codigo FROM pedido ORDER BY id LIMIT 1");
+  const corpoMail = sql("SELECT corpo_renderizado FROM mensagem_envio WHERE destinatario='ana@compra.test' AND tipo='confirmacao_compra'");
+  const logMail = require('fs').readFileSync(__dirname + '/../../storage/logs/laravel.log', 'utf8');
+  ok(corpoMail.includes('Ana Compradora') && corpoMail.includes('Pedro Amigo') && logMail.includes('ingressos-' + codPed + '.pdf'), 'e-mail aprovado pelo webhook traz os 2 ingressos e o PDF anexo');
   await webhook(P, 'ORD1');
   ok(sql('SELECT COUNT(*) FROM ingresso') === '2', 'webhook repetido não emite de novo');
   await C.goto(BASE + '/pedido/' + uuid + '/pagamento?resultado=sucesso');

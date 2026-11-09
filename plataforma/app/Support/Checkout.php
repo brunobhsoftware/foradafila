@@ -391,8 +391,12 @@ class Checkout
         });
 
         if ($emitiu) {
+            // Webhook/retorno do Pix não têm organizador na sessão: sem isto o escopo por organizador esconde os ingressos
+            // e o e-mail sairia sem a lista e sem o PDF.
+            $evento = Evento::withoutGlobalScopes()->with(['organizador'])->find($pedido->evento_id);
+            app(Tenant::class)->definir($evento->organizador);
+            $evento->load('local');
             $pedido = Pedido::withoutGlobalScopes()->with(['ingressos.participante', 'ingressos.tipo', 'ingressos.lote'])->find($pedido->id);
-            $evento = Evento::withoutGlobalScopes()->with(['local', 'organizador'])->find($pedido->evento_id);
             $comprador = Comprador::find($pedido->comprador_id);
             Notificacoes::ingressosConfirmados($pedido, $comprador, $evento, $evento->organizador, $pedido->ingressos);
             Notificacoes::novaCompraParaEquipe($pedido, $comprador, $evento, $evento->organizador, $pedido->ingressos->count());
