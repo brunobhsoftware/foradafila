@@ -63,6 +63,7 @@ const qr = (codigo) => `FF1.${codigo}.${crypto.createHmac('sha256', APP_KEY).upd
   await nav(M, M.click('button[type=submit]'));
   ok(M.url().endsWith('/app') && (await M.content()).includes('Hoje — check-in liberado') && (await M.content()).includes('Check-in aberto') && (await M.content()).includes('Show do App'), 'depois do login volta ao app: evento de hoje com check-in aberto');
   ok((await M.request.get(BASE + '/app.webmanifest')).status() === 200 && (await M.request.get(BASE + '/app-sw.js')).status() === 200, 'manifesto e service worker publicados (app instalável)');
+  ok((await M.getAttribute('a:has-text("Abrir o painel completo")', 'href')).endsWith('/painel'), 'atalho "Abrir o painel completo" antes dos eventos');
   await nav(M, M.click('a.ck-evento'));
   ok((await M.locator('.ck-abas').innerText()).replace(/\s+/g, ' ').includes('VENDAS CHECK-IN FERRAMENTAS') || (await M.locator('.ck-abas a').count()) === 3, 'abas Vendas / Check-in / Ferramentas');
   ok((await M.locator('[data-num=entraram]').innerText()) === '0' && (await M.locator('[data-num=restam]').innerText()) === '3' && (await M.content()).includes('Check-in aberto'), 'Check-in: 0 realizados, 3 restantes, aberto');

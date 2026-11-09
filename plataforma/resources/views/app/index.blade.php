@@ -8,6 +8,8 @@
 </header>
 <main class="ck-conteudo">
   <p style="margin:2px 4px 0;color:var(--suave)">Olá, {{ auth()->user()->nome }} · {{ app(\App\Support\Tenant::class)->organizador()?->nomeExibicao() }}</p>
+  <a href="{{ route('painel') }}" class="ck-botao ck-botao--claro" style="margin-top:14px;display:flex;align-items:center;justify-content:space-between">
+    <span>Abrir o painel completo</span><span aria-hidden="true">›</span></a>
   @foreach (['Hoje — check-in liberado' => $hoje, 'Próximos eventos' => $proximos, 'Últimos 30 dias' => $passados] as $titulo => $lista)
     @if ($lista->isNotEmpty())
       <div class="ck-secao">{{ $titulo }}</div>
