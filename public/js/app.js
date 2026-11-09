@@ -58,77 +58,80 @@
     atualizar();
   });
 
-  // Cadastro único: ao completar o CPF, preenche nome/e-mail/telefone vazios do mesmo formulário
-  // Compra: CPF primeiro (ou "Não desejo informar o CPF"). Só depois aparecem os ingressos.
-  $$('[data-compra-cpf]').forEach((box) => {
+  // Compra: e-mail e nome primeiro (decisão do Bruno, 09/11/2026); "Continuar" mostra o CPF (preenchido do cadastro) e o resto.
+  $$('[data-compra-email]').forEach((box) => {
     const form = box.closest('form');
-    const cpf = box.querySelector('[name=cpf]'), achado = box.querySelector('[data-cpf-achado]'), novo = box.querySelector('[data-cpf-novo]');
-    const semCpf = box.querySelector('[data-sem-cpf]'), depois = form.querySelector('[data-depois-cpf]');
-    const nome = box.querySelector('[name=nome]'), email = box.querySelector('[name=email]'), tel = box.querySelector('[name=telefone]');
+    const email = box.querySelector('[name=email]'), nome = box.querySelector('[name=nome]');
+    const achado = box.querySelector('[data-email-achado]'), novo = box.querySelector('[data-email-novo]');
+    const depois = form.querySelector('[data-depois-cpf]'), contBox = box.querySelector('[data-continuar-box]');
+    const cpf = form.querySelector('[name=cpf]'), cpfCampo = form.querySelector('[data-cpf-campo]'), cpfCad = form.querySelector('[data-cpf-cadastro]');
     const marca = form.querySelector('[data-usar-comprador]'), outra = form.querySelector('[data-outra-pessoa]');
     const p0 = (k) => form.querySelector(`[name="participantes[0][${k}]"]`);
     let conhecido = null, ultimo = '';
-    const ajustarCpf = () => {
-      const exige = semCpf.value !== '1';
-      cpf.required = exige;
-      box.querySelector('[data-cpf-obrig]').hidden = !exige;
-
-    };
-    // 1º ingresso = quem está comprando (até clicar em "Estou comprando para outra pessoa")
+    const valido = () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
     const preencher = () => {
       if (!marca || marca.value !== '1') return;
-      const dados = conhecido ? { nome: conhecido.nome } : { nome: nome.value, email: email.value, telefone: tel.value };
-      if (cpf.value.replace(/\D/g, '').length === 11) dados.cpf = cpf.value;
+      const dados = { nome: conhecido ? '' : nome.value, email: email.value.trim() };
+      if (cpf && cpf.value.replace(/\D/g, '').length === 11) dados.cpf = cpf.value;
       Object.entries(dados).forEach(([k, v]) => { const el = p0(k); if (el && v) el.value = v; });
-      if (conhecido) ['email', 'telefone'].forEach((k) => { const el = p0(k); if (el && !el.value) { el.required = false; el.placeholder = 'O mesmo do seu cadastro'; } });
+      if (conhecido) ['nome', 'cpf', 'telefone'].forEach((k) => { const el = p0(k); if (el && !el.value) { el.required = false; el.placeholder = 'O mesmo do seu cadastro'; } });
     };
-    const mostrar = (modo) => {
-      achado.hidden = modo !== 'achado'; novo.hidden = modo !== 'novo';
-      [nome, email].forEach((c) => { c.required = modo === 'novo'; });
-      if (modo && depois) depois.hidden = false;
+    const aplicar = () => {
+      achado.hidden = !conhecido; novo.hidden = !!conhecido; nome.required = !conhecido;
+      if (conhecido) achado.querySelector('[data-achado-nome]').textContent = conhecido.nome;
+      const temCpf = !!(conhecido && conhecido.cpf);
+      if (cpfCad) { cpfCad.hidden = !temCpf; if (temCpf) cpfCad.querySelector('[data-cpf-mascarado]').textContent = conhecido.cpf; }
+      if (cpfCampo) { cpfCampo.hidden = temCpf; cpf.required = !temCpf; }
       preencher();
     };
-    const buscar = async () => {
-      const d = cpf.value.replace(/\D/g, '');
-      if (d.length !== 11) return;
-      if (d === ultimo) return; ultimo = d;
-      try {
-        const r = await fetch(box.dataset.url + '/' + d, { headers: { Accept: 'application/json' } });
-        const j = r.ok ? await r.json() : { encontrado: false };
-        conhecido = j.encontrado ? j : null;
-        if (conhecido) {
-          achado.querySelector('[data-achado-nome]').textContent = j.nome;
-          achado.querySelector('[data-achado-email]').textContent = j.email;
-          achado.querySelector('[data-achado-tel]').textContent = j.telefone ? ' e o celular é ' + j.telefone : '';
-          mostrar('achado');
-        } else mostrar('novo');
-      } catch (e) { mostrar('novo'); }
+    let pendente = Promise.resolve();
+    // a mesma busca é reaproveitada: o "Continuar" espera a que o blur do e-mail já começou
+    const buscar = () => {
+      const e = email.value.trim().toLowerCase();
+      if (!valido() || e === ultimo) return pendente;
+      ultimo = e;
+      pendente = fetch(box.dataset.url + '?e=' + encodeURIComponent(e), { headers: { Accept: 'application/json' } })
+        .then((r) => (r.ok ? r.json() : { encontrado: false })).then((j) => { conhecido = j.encontrado ? j : null; })
+        .catch(() => { conhecido = null; }).then(aplicar);
+      return pendente;
     };
-    cpf.addEventListener('input', buscar); cpf.addEventListener('blur', buscar);
-    const editar = box.querySelector('[data-editar-cadastro]');
-    if (editar) editar.addEventListener('click', (ev) => {
-      ev.preventDefault();
-      location.href = editar.dataset.url + '?cpf=' + cpf.value.replace(/\D/g, '') + '&volta=' + encodeURIComponent(location.pathname + location.search);
+    email.addEventListener('blur', buscar); email.addEventListener('change', buscar);
+    box.querySelector('[data-continuar]').addEventListener('click', async () => {
+      if (!valido()) { email.reportValidity(); email.focus(); return; }
+      await buscar();
+      if (!conhecido && !nome.value.trim()) { nome.reportValidity(); nome.focus(); return; }
+      contBox.hidden = true; depois.hidden = false; preencher();
+      const alvo = cpfCampo && !cpfCampo.hidden ? cpf : depois.querySelector('input:not([type=hidden])');
+      if (alvo) alvo.focus();
     });
-    box.querySelector('[data-botao-sem-cpf]').addEventListener('click', () => {
-      semCpf.value = '1'; conhecido = null; ultimo = '';
-      cpf.value = '';
-      ajustarCpf(); mostrar('novo'); nome.focus();
-    });
-    [nome, email, tel].forEach((el) => el.addEventListener('input', preencher));
+    [nome, email].forEach((el) => el.addEventListener('input', preencher));
+    if (cpf) cpf.addEventListener('input', preencher);
     if (outra) outra.addEventListener('click', () => {
       marca.value = '0';
       outra.closest('.pub-participante').querySelectorAll('input:not([type=hidden]), select, textarea').forEach((el) => {
         if (el.type === 'checkbox') el.checked = false; else el.value = '';
-        if (el.dataset.obrigatorioOriginal === undefined) el.dataset.obrigatorioOriginal = '';
+        el.placeholder = '';
       });
-      const pn = p0('nome'); if (pn) pn.focus();
+      const pn = p0('nome'); if (pn) { pn.required = true; pn.focus(); }
       outra.textContent = 'Preencha os dados de quem vai usar o ingresso';
       outra.disabled = true;
     });
-    ajustarCpf();
-    if (nome.value || email.value || semCpf.value === '1') mostrar('novo');
-    buscar();
+    if (email.value) buscar();
+  });
+
+  // Cupom na página do evento: "Aplicar" confere o código e ele segue para a compra.
+  $$('[data-cupom-publico]').forEach((box) => {
+    const campo = box.querySelector('input'), msg = box.querySelector('[data-cupom-msg]');
+    box.querySelector('[data-cupom-aplicar]').addEventListener('click', async () => {
+      const c = campo.value.trim().toUpperCase(); campo.value = c;
+      if (!c) { msg.textContent = 'Digite o código do cupom.'; msg.className = 'erro'; return; }
+      try {
+        const r = await fetch(box.dataset.url.replace('__C__', encodeURIComponent(c)), { headers: { Accept: 'application/json' } });
+        const j = await r.json();
+        msg.textContent = j.mensagem; msg.className = j.ok ? 'cupom-ok' : 'erro';
+        if (!j.ok) campo.value = '';
+      } catch (e) { msg.textContent = 'Não foi possível conferir agora; o cupom será conferido na compra.'; msg.className = ''; }
+    });
   });
 
   $$('[data-busca-cpf]').forEach((cpf) => {

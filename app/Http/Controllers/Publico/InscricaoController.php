@@ -52,7 +52,7 @@ class InscricaoController extends Controller
         return view('publico.inscricao', [
             'evento' => $evento, 'selecao' => $selecao, 'termos' => $termos,
             'comprador' => Auth::guard('comprador')->user(), 'chave' => (string) Str::uuid(),
-            'cupom' => $request->session()->get('cupom_divulgacao'),
+            'cupom' => $request->query('cupom') ? mb_strtoupper(trim((string) $request->query('cupom'))) : $request->session()->get('cupom_divulgacao'),
             'campos' => \App\Support\Formularios::ativo() ? \App\Support\Formularios::campos(\App\Support\Formularios::doEvento($evento)) : null,
         ]);
     }
@@ -101,28 +101,23 @@ class InscricaoController extends Controller
         if ($request->boolean('aceite_termos')) {
             $request->merge(['aceites' => array_fill_keys(self::TERMOS, '1')]);
         }
-        // Comprador sem login: CPF primeiro, sem senha (decisão do Bruno, 08/11/2026). Com CPF já conhecido,
-        // os dados vêm do cadastro; senão pede nome e e-mail (celular opcional).
+        // Comprador sem login: E-MAIL primeiro + nome; o CPF vem na etapa seguinte (decisão do Bruno, 09/11/2026).
+        // E-mail já cadastrado: nome e CPF vêm do cadastro (o CPF só é pedido se o cadastro não tiver).
         $conhecido = null;
         if (! $comprador) {
             $request->merge(['email' => mb_strtolower(trim((string) $request->input('email'))), 'cpf' => Documento::digitos((string) $request->input('cpf'))]);
-            $conhecido = self::dadosDoCpf($request->input('cpf'));
-            // "Não desejo informar o CPF": segue sem ele, menos no cartão de crédito (o Mercado Pago pede o CPF do titular).
-            $pago = $selecao->contains(fn ($s) => (float) $s['lote']->preco > 0);
-            $cpfOpcional = $request->boolean('sem_cpf');
+            $conhecido = self::dadosDoEmail($request->input('email'));
             $regras += [
-                'sem_cpf' => ['nullable', 'boolean'],
-                'cpf' => [$cpfOpcional ? 'nullable' : 'required', new DocumentoValido('PF')],
+                'email' => ['required', 'email:filter', 'max:150'],
                 'nome' => [$conhecido ? 'nullable' : 'required', 'string', 'max:150'],
-                'email' => [$conhecido && $conhecido['email'] ? 'nullable' : 'required', 'email:filter', 'max:150'],
-                'telefone' => ['nullable', 'string', 'max:20'],
+                'cpf' => [$conhecido && $conhecido['cpf'] ? 'nullable' : 'required', new DocumentoValido('PF')],
             ];
         }
         // "Usar meus dados neste ingresso": completa o 1º participante com os dados do comprador.
         if ($request->boolean('participantes.0.usar_comprador')) {
             $base = $comprador ? ['nome' => $comprador->nome, 'email' => $comprador->email, 'telefone' => $comprador->telefone, 'cpf' => $comprador->cpf]
-                : ['nome' => $request->input('nome') ?: ($conhecido['nome'] ?? null), 'email' => $request->input('email') ?: ($conhecido['email'] ?? null),
-                    'telefone' => $request->input('telefone') ?: ($conhecido['telefone'] ?? null), 'cpf' => $request->input('cpf')];
+                : ['nome' => ($conhecido['nome'] ?? null) ?: $request->input('nome'), 'email' => $request->input('email'),
+                    'telefone' => $conhecido['telefone'] ?? null, 'cpf' => ($conhecido['cpf'] ?? null) ?: $request->input('cpf')];
             $p0 = (array) $request->input('participantes.0', []);
             foreach ($base as $k => $v) {
                 if (($p0[$k] ?? '') === '' && $v) {
@@ -133,7 +128,7 @@ class InscricaoController extends Controller
             $request->merge(['participantes' => $parts]);
         }
         $dados = $request->validate($regras, [
-            'cpf.required' => $request->input('forma_pagamento') === 'cartao' ? 'Para pagar com cartão, informe o CPF do titular.' : 'Informe o seu CPF ou clique em “Não desejo informar o CPF”.',
+            'cpf.required' => 'Informe o seu CPF.',
             'forma_pagamento.required' => 'Escolha Pix ou cartão de crédito.',
             'nome.required' => 'Informe o seu nome completo.',
             'email.required' => 'Informe o seu e-mail para receber os ingressos.',
@@ -386,6 +381,46 @@ class InscricaoController extends Controller
         return $p && $p['nome'] ? $p + ['comprador' => null] : null;
     }
 
+    /** "Aplicar" cupom na página do evento: confere o código e devolve o texto do desconto. */
+    public function conferirCupom(Request $request, string $codigo)
+    {
+        $evento = Evento::withoutGlobalScope('organizador')->whereRaw('LEFT(REPLACE(uuid, "-", ""), 10) = ?', [(string) $request->query('evento')])
+            ->whereIn('status', ['publicado'])->firstOrFail();
+        try {
+            $cupom = $this->cupomValido($evento, $codigo);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'mensagem' => 'Cupom não encontrado, esgotado ou fora da validade.']);
+        }
+        if (! $cupom) {
+            return response()->json(['ok' => false, 'mensagem' => 'Digite o código do cupom.']);
+        }
+        $texto = $cupom->ehDivulgacao() ? 'Código '.$cupom->codigo.' registrado.' : 'Cupom '.$cupom->codigo.' aplicado: '.$cupom->descontoTexto().' de desconto'
+            .($cupom->valor_minimo_pedido > 0 ? ' em pedidos a partir de '.moeda($cupom->valor_minimo_pedido) : '').'.';
+
+        return response()->json(['ok' => true, 'codigo' => $cupom->codigo, 'mensagem' => $texto]);
+    }
+
+    /** Dados já conhecidos pelo e-mail (conta de comprador). */
+    public static function dadosDoEmail(?string $email): ?array
+    {
+        $email = mb_strtolower(trim((string) $email));
+        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return null;
+        }
+        $c = Comprador::where('email', $email)->whereNull('anonimizado_em')->first();
+
+        return $c ? ['nome' => $c->nome, 'email' => $c->email, 'telefone' => $c->telefone, 'cpf' => $c->cpf, 'comprador' => $c] : null;
+    }
+
+    /** Busca do e-mail na compra (site público): só o primeiro nome e o CPF mascarado — o resto fica no servidor. */
+    public function email(Request $request)
+    {
+        $d = self::dadosDoEmail((string) $request->query('e'));
+
+        return response()->json($d ? ['encontrado' => true, 'nome' => strtok(trim($d['nome']), ' '),
+            'cpf' => $d['cpf'] ? '***.***.'.substr($d['cpf'], 6, 3).'-'.substr($d['cpf'], 9, 2) : null] : ['encontrado' => false]);
+    }
+
     /** Busca do CPF na compra (site público): só nome e e-mail/celular mascarados — o resto fica no servidor. */
     public function cpf(string $cpf)
     {
@@ -400,9 +435,19 @@ class InscricaoController extends Controller
     {
         $cpf = Documento::digitos((string) ($dados['cpf'] ?? ''));
         $tel = preg_replace('/\D/', '', (string) ($dados['telefone'] ?? '')) ?: null;
-        $conhecido = $cpf ? self::dadosDoCpf($cpf) : null;
-        if ($conhecido && $conhecido['comprador']) {
-            return $conhecido['comprador'];
+        // e-mail primeiro (09/11/2026): a conta é a do e-mail; o CPF só entra se ela não tiver e ninguém mais usar
+        if ($porEmail = self::dadosDoEmail($dados['email'] ?? null)) {
+            $c = $porEmail['comprador'];
+            if (! $c->cpf && $cpf && ! Comprador::where('cpf', $cpf)->exists()) {
+                $c->forceFill(['cpf' => $cpf])->save();
+            }
+            \App\Support\CadastroPessoa::registrar($c->cpf ?: $cpf, $c->nome, $c->email, $c->telefone, 'compra');
+
+            return $c;
+        }
+        $conhecido = null;
+        if ($cpf && Comprador::where('cpf', $cpf)->exists()) {
+            $cpf = ''; // CPF já é de outra conta (outro e-mail): a compra fica no e-mail informado, sem o CPF
         }
         $nome = trim((string) ($dados['nome'] ?? '')) ?: ($conhecido['nome'] ?? '');
         $email = ($dados['email'] ?? '') ?: ($conhecido['email'] ?? '');

@@ -165,6 +165,8 @@ Route::post('/admin/sair-da-conta', [\App\Http\Controllers\Admin\EmpresasControl
 Route::get('/compra/cadastro', [\App\Http\Controllers\Publico\CadastroCompradorController::class, 'mostrar'])->middleware('throttle:20,1,compra-cadastro')->name('compra.cadastro');
 Route::post('/compra/cadastro/codigo', [\App\Http\Controllers\Publico\CadastroCompradorController::class, 'enviarCodigo'])->middleware('throttle:5,10,compra-cadastro-codigo')->name('compra.cadastro.codigo');
 Route::post('/compra/cadastro', [\App\Http\Controllers\Publico\CadastroCompradorController::class, 'salvar'])->middleware('throttle:10,10,compra-cadastro-salvar')->name('compra.cadastro.salvar');
+Route::get('/compra/email', [\App\Http\Controllers\Publico\InscricaoController::class, 'email'])->middleware('throttle:10,1,compra-email')->name('compra.email');
+Route::get('/compra/cupom/{codigo}', [\App\Http\Controllers\Publico\InscricaoController::class, 'conferirCupom'])->middleware('throttle:20,1,compra-cupom')->name('compra.cupom');
 Route::get('/compra/cpf/{cpf}', [\App\Http\Controllers\Publico\InscricaoController::class, 'cpf'])->middleware('throttle:10,1,compra-cpf')->where('cpf', '[0-9]{11}')->name('compra.cpf');
 Route::get('/cadastro-unico/{cpf}', function (string $cpf) {
     $p = \App\Support\CadastroPessoa::buscar($cpf);
