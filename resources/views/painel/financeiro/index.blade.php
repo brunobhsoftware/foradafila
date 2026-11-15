@@ -3,9 +3,10 @@
 
 @php
     $conectada = $conta && $conta->conectada();
+    $contaAtiva = $conta && $conta->status === 'ativa';
     $painelMp = 'https://www.mercadopago.com.br/developers/panel/app';
-    // Etapa atual: 1 = criar a aplicação, 2 = conectar a conta, 3 = conectada (homologação a seguir)
-    $etapa = $conectada ? 3 : ($configurado ? 2 : 1);
+    // Etapa: 1 = liberação, 2 = conectar, 3 = homologar/ativar, 4 = ativa
+    $etapa = $contaAtiva ? 4 : ($conectada ? 3 : ($configurado ? 2 : 1));
 @endphp
 
 @section('conteudo')
@@ -114,7 +115,8 @@
 @endphp
 <details class="cartao" style="padding:18px 24px;margin-top:18px" @if (request('mp') || $verificacao || $conectada || $propriaAtiva || $errors->hasAny(['client_id','client_secret','access_token','public_key','webhook_secret'])) open @endif>
     <summary style="cursor:pointer"><b style="font-size:1.1rem">Mercado Pago da empresa</b>
-        @if ($conectada)<span class="selo selo--verde" style="margin-left:8px">Conectada{{ $conta->email_conta ? ' — '.$conta->email_conta : '' }}</span>
+        @if ($contaAtiva)<span class="selo selo--verde" style="margin-left:8px">Ativa{{ $conta->email_conta ? ' — '.$conta->email_conta : '' }}</span>
+        @elseif ($conectada)<span class="selo" style="margin-left:8px">Conectada{{ $conta->email_conta ? ' — '.$conta->email_conta : '' }}</span>
         @elseif ($propriaAtiva)<span class="selo selo--verde" style="margin-left:8px">Ativa (manual){{ $propria->email_conta ? ' — '.$propria->email_conta : '' }}</span>
         @elseif ($propria && $propria->ultimo_erro)<span class="selo selo--vermelho" style="margin-left:8px">Token recusado</span>
         @else<span class="selo selo--cinza" style="margin-left:8px">Não configurada</span>@endif</summary>
@@ -189,11 +191,22 @@
             </div>
         </details>
 
-        <details class="mp__bloco" @if ($etapa === 3) open @endif>
-            <summary><b>3. Homologar e ativar</b><small>Testes de Pix, cartão, aviso de pagamento e reembolso.</small></summary>
+        <details class="mp__bloco" @if ($etapa >= 3) open @endif>
+            <summary><b>3. Homologar e ativar</b>
+                <small>{{ $contaAtiva ? 'Concluído: a conta está ativa.' : 'Verifique a conexão e ative a conta para vender.' }}</small></summary>
             <div class="mp__conteudo">
-                <p class="suave">Com a conta conectada, fazemos os testes obrigatórios no ambiente de testes do Mercado Pago. Depois deles a conta fica
-                    <b>ativa</b> e os eventos com ingresso pago podem ser publicados. Esta etapa será liberada em breve.</p>
+                @if ($contaAtiva)
+                    <div class="alerta alerta--ok"><p>A conta do Mercado Pago está <b>ativa</b>. Os eventos com ingresso pago já podem ser publicados.</p></div>
+                @elseif ($conectada)
+                    <p class="suave">A conta está conectada. Clique em <b>Ativar conta</b> para verificar a conexão e liberar as vendas.</p>
+                    @can('financeiro.contas')
+                        <form method="post" action="{{ route('financeiro.mp.ativar') }}" style="margin-top:10px">
+                            @csrf <button class="botao botao--primario">Ativar conta</button>
+                        </form>
+                    @endcan
+                @else
+                    <p class="suave">Conecte a conta na etapa 2 primeiro.</p>
+                @endif
             </div>
         </details>
     </div>

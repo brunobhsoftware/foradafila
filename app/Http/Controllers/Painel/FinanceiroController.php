@@ -311,6 +311,33 @@ class FinanceiroController extends Controller
         return redirect()->route('financeiro')->with('ok', 'Conta do Mercado Pago conectada'.($conta->email_conta ? " ({$conta->email_conta})" : '').'.');
     }
 
+    /** Etapa 3: verifica o token OAuth com /users/me e ativa a conta (para poder vender). */
+    public function ativar()
+    {
+        Gate::authorize('financeiro.contas');
+        $conta = $this->contaMercadoPago();
+        abort_unless($conta && $conta->access_token_cript, 404);
+        try {
+            $u = MercadoPago::usuario(decrypt($conta->access_token_cript, false));
+        } catch (\Throwable $e) {
+            return redirect()->route('financeiro')->withErrors(['mercadopago' => 'O Mercado Pago recusou o token: '.$e->getMessage()]);
+        }
+        if (empty($u['id'])) {
+            $conta->forceFill(['status' => 'suspensa', 'ultimo_erro' => 'Token inválido ou expirado.', 'ultimo_erro_em' => now()])->save();
+
+            return redirect()->route('financeiro')->withErrors(['mercadopago' => 'O token foi recusado. Desconecte e conecte de novo.']);
+        }
+        $conta->forceFill([
+            'status' => 'ativa', 'homologada_em' => $conta->homologada_em ?? now(),
+            'conta_externa_id' => (string) $u['id'], 'email_conta' => $u['email'] ?? $conta->email_conta,
+            'apelido_externo' => $u['nickname'] ?? $conta->apelido_externo,
+            'ultimo_erro' => null, 'ultimo_erro_em' => null,
+        ])->save();
+        Auditoria::registrar('conta_pagamento.ativar', $conta);
+
+        return redirect()->route('financeiro')->with('ok', 'Conta do Mercado Pago ativada! Os eventos com ingresso pago já podem ser publicados.');
+    }
+
     public function desconectar()
     {
         Gate::authorize('financeiro.contas');
