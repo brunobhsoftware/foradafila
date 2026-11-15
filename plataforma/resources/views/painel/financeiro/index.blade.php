@@ -74,39 +74,35 @@
 </section>
 @endif
 
+@if ($v012 && $saldo)
+<section class="cartao" style="padding:22px 24px;margin-top:18px">
+    <h2 style="margin-top:0">Extrato do recebimento pela plataforma</h2>
+    <div class="grade grade-4" style="gap:12px">
+        <div class="cartao kpi"><small>Vendas pagas a repassar</small><b>{{ moeda($saldo['vendas']) }}</b></div>
+        <div class="cartao kpi"><small>Taxa da plataforma</small><b>{{ moeda($saldo['comissao']) }}</b></div>
+        <div class="cartao kpi"><small>Liberado para repasse</small><b>{{ moeda($saldo['liberado']) }}</b><small>já pode ser transferido</small></div>
+        <div class="cartao kpi"><small>Aguardando o fim do evento</small><b>{{ moeda($saldo['aguardando']) }}</b><small>+ {{ \App\Support\Recebimento::PRAZO_DIAS_UTEIS }} dias úteis</small></div>
+    </div>
+    <h3 style="margin:18px 0 8px;font-size:1rem">Repasses recebidos</h3>
+    @if ($repasses->isEmpty())<p class="suave" style="margin:0">Nenhum repasse ainda.</p>
+    @else
+    <div class="tabela-rolagem"><table class="tabela">
+        <thead><tr><th>Data</th><th>Destino</th><th class="num">Vendas</th><th class="num">Taxa</th><th class="num">Recebido</th><th>Comprovante</th></tr></thead>
+        <tbody>@foreach ($repasses as $r)
+            <tr><td>{{ data_local($r->pago_em, 'd/m/Y') }}</td><td><small>{{ $r->destino }}</small></td><td class="num">{{ moeda($r->valor_vendas) }}</td>
+                <td class="num">{{ moeda($r->valor_comissao) }}</td><td class="num"><b>{{ moeda($r->valor_repasse) }}</b></td><td><small>{{ $r->comprovante }}</small></td></tr>
+        @endforeach</tbody>
+    </table></div>
+    @endif
+</section>
+@endif
+
 @if ($v012)
 @php
     $modoAtual = $org->recebimento_modo ?: 'plataforma';
     $propriaAtiva = $propria && $propria->status === 'ativa';
     $webhookPropria = $propria ? route('webhook.mercadopago.empresa', $propria->uuid) : null;
 @endphp
-<section class="cartao" style="padding:22px 24px;margin-top:18px">
-    <h2 style="margin-top:0">Ambiente das vendas</h2>
-    <form method="post" action="{{ route('financeiro.ambiente') }}">@csrf @method('PUT')
-        <div class="grade grade-2" style="gap:12px">
-            <label class="opcao-cartao"><input type="radio" name="ambiente_vendas" value="producao" @checked(! $homologacao)>
-                <span><b>Produção</b><small>Vendas reais: o comprador paga de verdade (Pix ou cartão) e o dinheiro entra na conta de recebimento.</small></span></label>
-            <label class="opcao-cartao"><input type="radio" name="ambiente_vendas" value="homologacao" @checked($homologacao)>
-                <span><b>Homologação (teste)</b><small>Para testar o caminho todo: comprar, receber o ingresso, fazer o check-in e cancelar com devolução. Usa as credenciais de teste; pague com a conta compradora de teste. Nada é cobrado. A página do evento mostra o aviso de teste.</small></span></label>
-        </div>
-        @can('financeiro.contas')<div style="margin-top:12px"><button class="botao botao--escuro botao--pequeno">Salvar ambiente</button></div>@endcan
-    </form>
-</section>
-
-<section class="cartao" style="padding:22px 24px;margin-top:18px">
-    <h2 style="margin-top:0">Onde as vendas são recebidas</h2>
-    @error('recebimento_modo')<div class="alerta alerta--erro"><p>{{ $message }}</p></div>@enderror
-    <form method="post" action="{{ route('financeiro.modo') }}" class="pilha">@csrf @method('PUT')
-        <div class="grade grade-2" style="gap:12px">
-        <label class="opcao-cartao"><input type="radio" name="recebimento_modo" value="plataforma" @checked($modoAtual === 'plataforma')>
-            <span><b>Pela plataforma, com repasse</b><small>O comprador paga na conta do Fora da Fila e você recebe por Pix ou transferência em até {{ \App\Support\Recebimento::PRAZO_DIAS_UTEIS }} dias úteis após o evento, já com a taxa descontada. Nada para configurar além dos dados para o repasse.</small></span></label>
-        <label class="opcao-cartao"><input type="radio" name="recebimento_modo" value="propria" @checked($modoAtual === 'propria') @disabled(! $propriaAtiva)>
-            <span><b>Direto na conta do Mercado Pago da empresa</b><small>Cada venda cai na hora na sua conta, pela aplicação que você criou no Mercado Pago (abaixo). A taxa da plataforma é cobrada à parte, em fatura.
-            @unless ($propriaAtiva)<br><b style="font-size:.8rem">Disponível depois de cadastrar e verificar o Access Token de produção.</b>@endunless</small></span></label>
-        </div>
-        @can('financeiro.contas')<div><button class="botao botao--escuro botao--pequeno">Salvar forma de recebimento</button></div>@endcan
-    </form>
-</section>
 
 @if (! $temPropria)
 <section class="cartao" style="padding:18px 24px;margin-top:18px"><b>Mercado Pago da empresa (aplicação própria)</b>
@@ -195,28 +191,33 @@
     @endcan
 </details>
 @endif
-@endif
 
-@if ($v012 && $saldo)
 <section class="cartao" style="padding:22px 24px;margin-top:18px">
-    <h2 style="margin-top:0">Extrato do recebimento pela plataforma</h2>
-    <div class="grade grade-4" style="gap:12px">
-        <div class="cartao kpi"><small>Vendas pagas a repassar</small><b>{{ moeda($saldo['vendas']) }}</b></div>
-        <div class="cartao kpi"><small>Taxa da plataforma</small><b>{{ moeda($saldo['comissao']) }}</b></div>
-        <div class="cartao kpi"><small>Liberado para repasse</small><b>{{ moeda($saldo['liberado']) }}</b><small>já pode ser transferido</small></div>
-        <div class="cartao kpi"><small>Aguardando o fim do evento</small><b>{{ moeda($saldo['aguardando']) }}</b><small>+ {{ \App\Support\Recebimento::PRAZO_DIAS_UTEIS }} dias úteis</small></div>
-    </div>
-    <h3 style="margin:18px 0 8px;font-size:1rem">Repasses recebidos</h3>
-    @if ($repasses->isEmpty())<p class="suave" style="margin:0">Nenhum repasse ainda.</p>
-    @else
-    <div class="tabela-rolagem"><table class="tabela">
-        <thead><tr><th>Data</th><th>Destino</th><th class="num">Vendas</th><th class="num">Taxa</th><th class="num">Recebido</th><th>Comprovante</th></tr></thead>
-        <tbody>@foreach ($repasses as $r)
-            <tr><td>{{ data_local($r->pago_em, 'd/m/Y') }}</td><td><small>{{ $r->destino }}</small></td><td class="num">{{ moeda($r->valor_vendas) }}</td>
-                <td class="num">{{ moeda($r->valor_comissao) }}</td><td class="num"><b>{{ moeda($r->valor_repasse) }}</b></td><td><small>{{ $r->comprovante }}</small></td></tr>
-        @endforeach</tbody>
-    </table></div>
-    @endif
+    <h2 style="margin-top:0">Ambiente das vendas</h2>
+    <form method="post" action="{{ route('financeiro.ambiente') }}">@csrf @method('PUT')
+        <div class="grade grade-2" style="gap:12px">
+            <label class="opcao-cartao"><input type="radio" name="ambiente_vendas" value="producao" @checked(! $homologacao)>
+                <span><b>Produção</b><small>Vendas reais: o comprador paga de verdade (Pix ou cartão) e o dinheiro entra na conta de recebimento.</small></span></label>
+            <label class="opcao-cartao"><input type="radio" name="ambiente_vendas" value="homologacao" @checked($homologacao)>
+                <span><b>Homologação (teste)</b><small>Para testar o caminho todo: comprar, receber o ingresso, fazer o check-in e cancelar com devolução. Usa as credenciais de teste; pague com a conta compradora de teste. Nada é cobrado. A página do evento mostra o aviso de teste.</small></span></label>
+        </div>
+        @can('financeiro.contas')<div style="margin-top:12px"><button class="botao botao--escuro botao--pequeno">Salvar ambiente</button></div>@endcan
+    </form>
+</section>
+
+<section class="cartao" style="padding:22px 24px;margin-top:18px">
+    <h2 style="margin-top:0">Onde as vendas são recebidas</h2>
+    @error('recebimento_modo')<div class="alerta alerta--erro"><p>{{ $message }}</p></div>@enderror
+    <form method="post" action="{{ route('financeiro.modo') }}" class="pilha">@csrf @method('PUT')
+        <div class="grade grade-2" style="gap:12px">
+        <label class="opcao-cartao"><input type="radio" name="recebimento_modo" value="plataforma" @checked($modoAtual === 'plataforma')>
+            <span><b>Pela plataforma, com repasse</b><small>O comprador paga na conta do Fora da Fila e você recebe por Pix ou transferência em até {{ \App\Support\Recebimento::PRAZO_DIAS_UTEIS }} dias úteis após o evento, já com a taxa descontada. Nada para configurar além dos dados para o repasse.</small></span></label>
+        <label class="opcao-cartao"><input type="radio" name="recebimento_modo" value="propria" @checked($modoAtual === 'propria') @disabled(! $propriaAtiva)>
+            <span><b>Direto na conta do Mercado Pago da empresa</b><small>Cada venda cai na hora na sua conta, pela aplicação que você criou no Mercado Pago (acima). A taxa da plataforma é cobrada à parte, em fatura.
+            @unless ($propriaAtiva)<br><b style="font-size:.8rem">Disponível depois de cadastrar e verificar o Access Token de produção.</b>@endunless</small></span></label>
+        </div>
+        @can('financeiro.contas')<div><button class="botao botao--escuro botao--pequeno">Salvar forma de recebimento</button></div>@endcan
+    </form>
 </section>
 @endif
 
