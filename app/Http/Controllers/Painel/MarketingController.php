@@ -55,6 +55,7 @@ class MarketingController extends Controller
         if (! empty($d['senha'])) {
             $dados['senha_cripto'] = Crypt::encryptString($d['senha']);
             $dados['testado_em'] = null;
+            $dados['ultimo_erro'] = null;
         }
         if ($conta) {
             DB::table('smtp_conta')->where('id', $conta->id)->update($dados);
