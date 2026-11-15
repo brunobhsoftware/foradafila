@@ -267,19 +267,11 @@ class Checkout
                     'installments' => $cartao['installments']]),
             ]]];
         }
-        // Split de comissão: quando a conta é OAuth (direta), a comissão da BH é retida automaticamente.
+        // Comissão da plataforma: quando a conta é OAuth (direta), a taxa da BH é retida via marketplace_fee da API de Orders.
         if ($conta->modo === 'direta') {
             $comissao = self::comissao($pedido);
-            $collectorId = MercadoPago::collectorId();
-            if ($comissao > 0 && $collectorId) {
-                if (isset($dados['transactions']['payments'])) {
-                    foreach ($dados['transactions']['payments'] as &$payment) {
-                        $payment['splits'] = [['collector_id' => $collectorId, 'amount' => number_format($comissao, 2, '.', '')]];
-                    }
-                    unset($payment);
-                } else {
-                    $dados['config']['marketplace_fee'] = number_format($comissao, 2, '.', '');
-                }
+            if ($comissao > 0) {
+                $dados['config']['marketplace_fee'] = number_format($comissao, 2, '.', '');
             }
         }
         $order = MercadoPago::criarOrder(self::token($conta), $dados);
