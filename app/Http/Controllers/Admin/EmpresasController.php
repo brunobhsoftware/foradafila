@@ -74,7 +74,11 @@ class EmpresasController extends Controller implements \Illuminate\Routing\Contr
         $marketing = \App\Support\Marketing::ativo($id);
         $marketingLimite = \App\Support\Marketing::limiteDia($id);
 
-        return view('admin.empresas.show', compact('organizador', 'numeros', 'usuarios', 'contas', 'auditoria', 'impersonacoes', 'taxas', 'simulacao', 'marketing', 'marketingLimite'));
+        $cupomCadastro = $organizador->cupom_cadastro_id
+            ? \Illuminate\Support\Facades\DB::table('cupom_cadastro')->find($organizador->cupom_cadastro_id)
+            : null;
+
+        return view('admin.empresas.show', compact('organizador', 'numeros', 'usuarios', 'contas', 'auditoria', 'impersonacoes', 'taxas', 'simulacao', 'marketing', 'marketingLimite', 'cupomCadastro'));
     }
 
     public function situacao(Request $request, Organizador $organizador)

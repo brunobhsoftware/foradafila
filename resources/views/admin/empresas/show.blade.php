@@ -11,7 +11,8 @@
 <div class="cabecalho">
     <div><h1>{{ $organizador->nomeExibicao() }}</h1>
         <p>{{ $organizador->razao_social }} · {{ $organizador->documentoFormatado() }} · cadastro em {{ data_local($organizador->criado_em, 'd/m/Y') }}
-            · <span class="selo {{ $organizador->situacao === 'ativo' ? 'selo--verde' : 'selo--amarelo' }}">{{ $S[$organizador->situacao] ?? $organizador->situacao }}</span></p></div>
+            · <span class="selo {{ $organizador->situacao === 'ativo' ? 'selo--verde' : 'selo--amarelo' }}">{{ $S[$organizador->situacao] ?? $organizador->situacao }}</span>
+            @if ($cupomCadastro) · <span class="selo selo--azul" title="{{ $cupomCadastro->nome }}">Cupom: {{ $cupomCadastro->codigo }}</span>@endif</p></div>
     <div class="cabecalho__acoes">
         <form method="post" action="{{ route('admin.empresas.assumir', $organizador) }}" class="filtros">
             @csrf <div class="campo"><input name="motivo" placeholder="Motivo (opcional, fica no registro)" maxlength="255"></div>

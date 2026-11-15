@@ -98,4 +98,10 @@ class Esquema
     {
         return self::$cache['v018'] ??= self::temV017() && Schema::hasTable('campanha_envio') && Schema::hasColumn('campanha', 'smtp_conta_id');
     }
+
+    /** V019: cupons de cadastro (cupom_cadastro + organizador.cupom_cadastro_id). */
+    public static function temV019(): bool
+    {
+        return self::$cache['v019'] ??= Schema::hasTable('cupom_cadastro') && Schema::hasColumn('organizador', 'cupom_cadastro_id');
+    }
 }

@@ -45,6 +45,10 @@
                 @error('razao_social')<span class="erro">{{ $message }}</span>@enderror
             </div>
             <x-campo nome="nome_fantasia" rotulo="Nome que o público conhece" ajuda="Aparece na página dos eventos." />
+            @if (\App\Support\Esquema::temV019())
+            <x-campo nome="codigo_promocional" rotulo="Código promocional (opcional)" classe="col-6"
+                ajuda="Se você recebeu um código de desconto na taxa, insira aqui." />
+            @endif
         </div>
     </fieldset>
 
