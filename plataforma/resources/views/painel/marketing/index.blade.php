@@ -23,7 +23,6 @@
                 <td>{{ $c->limite_hora }}/hora</td>
                 <td>
                     @if (! $c->ativo)<span class="selo">Desativada</span>
-                    @elseif ($c->ultimo_erro)<span class="selo selo--vermelho" title="{{ $c->ultimo_erro }}">Erro no teste</span>
                     @elseif ($c->testado_em)<span class="selo selo--verde">Testada {{ data_local($c->testado_em, 'd/m H:i') }}</span>
                     @else<span class="selo">Não testada</span>@endif
                 </td>
