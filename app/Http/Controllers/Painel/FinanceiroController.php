@@ -341,8 +341,15 @@ class FinanceiroController extends Controller
             'ultimo_erro' => null, 'ultimo_erro_em' => null,
         ])->save();
         Auditoria::registrar('conta_pagamento.ativar', $conta);
+        $org = \App\Models\Organizador::findOrFail(app(Tenant::class)->id());
+        if ($org->recebimento_modo !== 'propria') {
+            $antes = $org->getAttributes();
+            $org->forceFill(['recebimento_modo' => 'propria'])->save();
+            Auditoria::registrar('financeiro.recebimento_modo', $org, $antes, ['recebimento_modo' => 'propria', 'motivo' => 'conta_oauth_ativada']);
+        }
+        \App\Models\Evento::whereNotIn('status', ['encerrado', 'cancelado'])->update(['conta_pagamento_id' => $conta->id]);
 
-        return redirect()->route('financeiro')->with('ok', 'Conta do Mercado Pago ativada! Os eventos com ingresso pago já podem ser publicados.');
+        return redirect()->route('financeiro')->with('ok', 'Conta do Mercado Pago ativada! As vendas vão direto para a sua conta, com a comissão retida automaticamente.');
     }
 
     public function desconectar()
