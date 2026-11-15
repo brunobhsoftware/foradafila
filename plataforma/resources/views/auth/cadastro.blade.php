@@ -44,7 +44,7 @@
                 <input id="c_razao_social" name="razao_social" value="{{ old('razao_social') }}" required>
                 @error('razao_social')<span class="erro">{{ $message }}</span>@enderror
             </div>
-            <x-campo nome="nome_fantasia" rotulo="Nome que o público conhece" ajuda="Ex.: Choperia do Bruno. Aparece na página dos eventos." />
+            <x-campo nome="nome_fantasia" rotulo="Nome que o público conhece" ajuda="Aparece na página dos eventos." />
             <x-campo nome="email_contato" rotulo="E-mail de atendimento ao comprador" tipo="email" obrigatorio classe="col-6" ajuda="Vai no e-mail de confirmação da compra." />
             <x-campo nome="cidade" rotulo="Cidade" classe="col-4" />
             <x-campo nome="uf" rotulo="UF" classe="col-2" maxlength="2" />
@@ -54,16 +54,16 @@
     <fieldset>
         <legend><span class="numero">3</span> Termos</legend>
         <div class="alerta alerta--info">
-            <p>O Fora da Fila é uma plataforma de tecnologia. <b>O dinheiro das vendas cai direto na sua conta</b>,
-            e a responsabilidade pela realização do evento é do organizador.</p>
+            <p>O Fora da Fila é uma plataforma de tecnologia: <b>a única que permite que o dinheiro das vendas caia diretamente na sua conta</b>,
+            mediante contratação direta do evento. A responsabilidade pela realização do evento é do organizador.</p>
         </div>
         <div class="opcoes">
-            @php $rotulos = ['uso_organizador' => 'o Termo de uso do organizador', 'responsabilidade_organizador' => 'o Termo de responsabilidade do organizador', 'privacidade' => 'a Política de privacidade']; @endphp
+            @php $rotulos = ['uso_organizador' => ['o', 'Termo de uso do organizador'], 'responsabilidade_organizador' => ['o', 'Termo de responsabilidade do organizador'], 'privacidade' => ['a', 'Política de privacidade']]; @endphp
             @foreach (\App\Models\Termo::DO_ORGANIZADOR as $tipo)
                 @isset($termos[$tipo])
                     <label class="opcao">
                         <input type="checkbox" name="aceites[{{ $tipo }}]" value="1" @checked(old('aceites.'.$tipo)) required>
-                        <span>Li e aceito {{ $rotulos[$tipo] }} (<a href="{{ route('termo', $tipo) }}" target="_blank" rel="noopener">ler, versão {{ $termos[$tipo]->versao }}</a>).</span>
+                        <span>Li e aceito {{ $rotulos[$tipo][0] }} <a href="{{ route('termo', $tipo) }}" target="_blank" rel="noopener">{{ $rotulos[$tipo][1] }}</a>.</span>
                     </label>
                 @endisset
             @endforeach
