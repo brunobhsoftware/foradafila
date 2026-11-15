@@ -267,13 +267,8 @@ class Checkout
                     'installments' => $cartao['installments']]),
             ]]];
         }
-        // Comissão da plataforma: quando a conta é OAuth (direta), a taxa da BH é retida via marketplace_fee.
-        if ($conta->modo === 'direta') {
-            $comissao = self::comissao($pedido);
-            if ($comissao > 0) {
-                $dados['config']['marketplace_fee'] = round($comissao, 2);
-            }
-        }
+        // Comissão da plataforma (modo direta/OAuth): a API de Orders não suporta marketplace_fee nem splits;
+        // a comissão fica registrada no pedido (pedido_item.taxa_unitaria) e será cobrada por fatura.
         $order = MercadoPago::criarOrder(self::token($conta), $dados);
         self::$ultimaOrder = $order;
         if ($cartao) {
