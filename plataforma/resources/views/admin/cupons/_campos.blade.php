@@ -1,0 +1,17 @@
+{{-- Campos compartilhados entre criar e editar cupom de cadastro. $c = objeto ou null (criação). --}}
+<x-campo nome="codigo" rotulo="Código" obrigatorio classe="col-3" :valor="old('codigo', $c->codigo ?? '')"
+    ajuda="Somente letras e números, maiúsculas. Ex: LANCAMENTO" maxlength="50" />
+<x-campo nome="nome" rotulo="Nome / descrição interna" obrigatorio classe="col-9" :valor="old('nome', $c->nome ?? '')" />
+
+<div class="campo col-12">
+    <label class="opcao"><input type="checkbox" name="isento" value="1" @checked(old('isento', $c->isento ?? 0))>
+        <span><b>Isento de taxa</b> <small>— o produtor não paga taxa da plataforma no período do benefício</small></span></label>
+</div>
+<small class="suave col-12" style="margin-top:-6px">Ou defina valores específicos (deixe em branco para usar o padrão da plataforma):</small>
+<x-campo nome="percentual" rotulo="Percentual (%)" tipo="number" classe="col-3" :valor="old('percentual', $c->percentual ?? '')" min="0" max="100" step="0.01" ajuda="Ex: 2 para 2%" />
+<x-campo nome="valor_fixo" rotulo="Valor fixo (R$)" tipo="number" classe="col-3" :valor="old('valor_fixo', $c->valor_fixo ?? '')" min="0" step="0.01" />
+<x-campo nome="valor_minimo" rotulo="Valor mínimo (R$)" tipo="number" classe="col-3" :valor="old('valor_minimo', $c->valor_minimo ?? '')" min="0" step="0.01" />
+
+<x-campo nome="meses_validade" rotulo="Duração do benefício (meses)" tipo="number" classe="col-3" :valor="old('meses_validade', $c->meses_validade ?? '')" min="1" ajuda="Em branco = permanente" />
+<x-campo nome="limite_usos" rotulo="Limite de usos" tipo="number" classe="col-3" :valor="old('limite_usos', $c->limite_usos ?? '')" min="1" ajuda="Em branco = ilimitado" />
+<x-campo nome="observacao" rotulo="Observação interna" classe="col-9" :valor="old('observacao', $c->observacao ?? '')" maxlength="255" />

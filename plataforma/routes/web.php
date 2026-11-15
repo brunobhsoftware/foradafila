@@ -150,6 +150,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/taxas', [\App\Http\Controllers\Admin\TaxasController::class, 'index'])->name('taxas');
     Route::post('/taxas', [\App\Http\Controllers\Admin\TaxasController::class, 'salvar'])->name('taxas.criar');
     Route::put('/taxas/{regra}', [\App\Http\Controllers\Admin\TaxasController::class, 'salvar'])->name('taxas.salvar')->whereNumber('regra');
+    Route::get('/cupons', [\App\Http\Controllers\Admin\CuponsAdminController::class, 'index'])->name('cupons');
+    Route::post('/cupons', [\App\Http\Controllers\Admin\CuponsAdminController::class, 'store'])->name('cupons.store');
+    Route::put('/cupons/{id}', [\App\Http\Controllers\Admin\CuponsAdminController::class, 'update'])->name('cupons.update')->whereNumber('id');
+    Route::post('/cupons/{id}/alternar', [\App\Http\Controllers\Admin\CuponsAdminController::class, 'alternar'])->name('cupons.alternar')->whereNumber('id');
     Route::put('/mercadopago', [\App\Http\Controllers\Admin\AdminController::class, 'salvarMercadoPago'])->name('mercadopago.salvar')
         ->middleware('throttle:20,10,admin-mp');
     Route::post('/mercadopago/verificar', [\App\Http\Controllers\Admin\AdminController::class, 'verificarTokens'])->name('mercadopago.verificar')

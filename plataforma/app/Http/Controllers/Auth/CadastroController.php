@@ -11,6 +11,7 @@ use App\Models\Plano;
 use App\Models\Termo;
 use App\Models\TermoAceite;
 use App\Models\Usuario;
+use App\Http\Controllers\Admin\CuponsAdminController;
 use App\Rules\DocumentoValido;
 use App\Support\Auditoria;
 use App\Support\Documento;
@@ -52,6 +53,7 @@ class CadastroController extends Controller
             'documento' => ['required', new DocumentoValido($request->input('tipo_pessoa')), Rule::unique('organizador', 'documento')],
             'razao_social' => ['required', 'string', 'max:150'],
             'nome_fantasia' => ['nullable', 'string', 'max:150'],
+            'codigo_promocional' => ['nullable', 'string', 'max:50'],
             'cidade' => ['nullable', 'string', 'max:100'],
             'uf' => ['nullable', 'string', 'size:2'],
             'aceites' => ['required', 'array'],
@@ -61,13 +63,22 @@ class CadastroController extends Controller
             'documento.unique' => 'Este CPF/CNPJ já tem cadastro no Fora da Fila.',
         ]);
 
+        // Valida cupom promocional antes de criar a conta (falha fechada: código inválido = erro de formulário)
+        $cupom = null;
+        if (! empty($dados['codigo_promocional'])) {
+            $cupom = CuponsAdminController::conferir($dados['codigo_promocional']);
+            if (! $cupom) {
+                return back()->withInput()->withErrors(['codigo_promocional' => 'Código promocional inválido, expirado ou esgotado.']);
+            }
+        }
+
         $termos = Termo::vigente()->whereIn('tipo', Termo::DO_ORGANIZADOR)->get();
         $faltando = $termos->reject(fn ($t) => isset($dados['aceites'][$t->tipo]));
         if ($termos->isEmpty() || $faltando->isNotEmpty()) {
             return back()->withInput()->withErrors(['aceites' => 'É preciso aceitar todos os termos para criar a conta.']);
         }
 
-        $usuario = DB::transaction(function () use ($dados, $termos, $request) {
+        $usuario = DB::transaction(function () use ($dados, $termos, $request, $cupom) {
             $usuario = Usuario::create([
                 'nome' => $dados['nome'],
                 'email' => $dados['email'],
@@ -112,7 +123,29 @@ class CadastroController extends Controller
                 ]);
             }
 
-            Auditoria::registrar('organizador.cadastrar', $organizador);
+            // Aplica o benefício do cupom promocional como taxa específica da empresa
+            if ($cupom) {
+                $inicio = now()->toDateString();
+                $fim = $cupom->meses_validade ? now()->addMonths($cupom->meses_validade)->toDateString() : null;
+                DB::table('taxa_organizador')->insert([
+                    'organizador_id' => $organizador->id,
+                    'operacao'       => 'ingresso_pago',
+                    'isento'         => $cupom->isento,
+                    'percentual'     => $cupom->percentual,
+                    'valor_fixo'     => $cupom->valor_fixo,
+                    'valor_minimo'   => $cupom->valor_minimo,
+                    'inicio'         => $inicio,
+                    'fim'            => $fim,
+                    'observacao'     => 'Cupom '.$cupom->codigo.' — '.$cupom->nome,
+                    'criado_por'     => null,
+                    'criado_em'      => now(),
+                ]);
+                DB::table('cupom_cadastro')->where('id', $cupom->id)->increment('usos');
+                DB::table('organizador')->where('id', $organizador->id)->update(['cupom_cadastro_id' => $cupom->id]);
+            }
+
+            Auditoria::registrar('organizador.cadastrar', $organizador, null,
+                $cupom ? ['cupom' => $cupom->codigo] : []);
 
             return $usuario;
         });
