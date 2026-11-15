@@ -101,7 +101,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   ok((await P.content()).includes('Valor a devolver ao comprador: R$ 80,00'), 'ingresso cancelado com aviso do valor');
   ok(sql("SELECT i.status FROM ingresso i JOIN participante p ON p.ingresso_id=i.id WHERE p.nome='Pedro Amigo'") === 'reembolsado', 'ingresso pago fica "reembolsado"');
   ok(sql("SELECT CONCAT(valor,'|',motivo,'|',status) FROM reembolso") === '80.00|arrependimento|aprovado', 'devolução registrada (R$ 80, a devolver)');
-  ok(sql("SELECT status FROM pedido") === 'reembolso_parcial' && sql('SELECT vendido FROM lote') === '2', 'pedido em reembolso parcial e estoque devolvido');
+  ok(sql("SELECT status FROM pedido") === 'reembolso_parcial' && sql('SELECT vendido FROM lote') === '3', 'pedido em reembolso parcial; o ingresso cancelado não volta ao estoque');
   ok(sql("SELECT COUNT(*) FROM mensagem_envio WHERE tipo='cancelamento_organizacao' AND destinatario='ana@publico.test'") === '1', 'comprador avisado por e-mail');
 
   // exportar CSV
@@ -122,7 +122,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   ok((await P.locator('section:has-text("Cancelar o pedido")').innerText()).includes('não há valor a devolver'), 'restante é gratuito: sem valor a devolver');
   P.once('dialog', (d) => d.accept());
   await nav(P, P.click('button:has-text("Cancelar pedido")'));
-  ok((await P.content()).includes('2 ingresso(s) do pedido') && sql('SELECT status FROM pedido') === 'reembolsado' && sql('SELECT vendido FROM lote') === '0', 'cancelar pedido: todos cancelados e estoque devolvido');
+  ok((await P.content()).includes('2 ingresso(s) do pedido') && sql('SELECT status FROM pedido') === 'reembolsado' && sql('SELECT vendido FROM lote') === '3', 'cancelar pedido: todos cancelados, estoque não volta');
 
 
   ok(erros.length === 0, 'sem erros de JavaScript ' + erros.join(' | '));

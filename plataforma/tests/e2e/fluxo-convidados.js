@@ -77,7 +77,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   // remover emitido: cancela ingressos
   await nav(P, P.locator('tr:has-text("Maria Souza") button:has-text("Remover")').click());
   ok((await P.content()).includes('os ingressos foram cancelados') && sql("SELECT COUNT(*) FROM ingresso i JOIN participante p ON p.ingresso_id=i.id WHERE p.nome LIKE '%Maria Souza%' AND i.status='cancelado'") === '2', 'remover convidado emitido cancela os ingressos');
-  ok(sql("SELECT vendido FROM lote WHERE nome='Cortesia'") === '1', 'estoque devolvido');
+  ok(sql("SELECT vendido FROM lote WHERE nome='Cortesia'") === '3', 'ingresso cancelado não volta ao estoque');
 
   // limite da lista e do lote
   await P.fill('textarea[name=lote_texto]', 'A A; a@x.test\nB B; b@x.test\nC C; c@x.test\nD D; d@x.test');

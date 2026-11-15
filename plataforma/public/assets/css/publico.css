@@ -277,3 +277,6 @@ button.botao { cursor: pointer; font-family: var(--fonte-texto); }
 .pub-cupom__linha { display: flex; gap: 8px; margin: 8px 0 4px; }
 .pub-cupom__linha input { flex: 1; min-width: 0; }
 .pub-cupom .cupom-ok { color: #027A48; font-weight: 600; }
+
+/* "Corra! Últimos ingressos" (15/11/2026) */
+.pub-ultimos { display: inline-block; margin: 4px 0 2px; padding: 3px 10px; border-radius: 99px; background: #FFF1E8; color: #C4320A; font-size: .8rem; font-weight: 700; }
