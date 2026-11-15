@@ -8,6 +8,7 @@
         ...(\App\Support\Esquema::temV019() ? [['rota' => 'admin.cupons', 'icone' => 'cupom', 'texto' => 'Cupons de cadastro']] : []),
         ['rota' => 'admin.mercadopago', 'icone' => 'dinheiro', 'texto' => 'Mercado Pago'],
         ['rota' => 'admin.repasses', 'icone' => 'dinheiro', 'texto' => 'Repasses'],
+        ['rota' => 'admin.erros', 'icone' => 'alerta', 'texto' => 'Log de erros'],
         ['rota' => 'admin.emails', 'icone' => 'mensagem', 'texto' => 'E-mails enviados'],
         ['rota' => 'admin.banco', 'icone' => 'organizacao', 'texto' => 'Atualizações do banco'],
     ];

@@ -172,6 +172,18 @@ class AdminController extends Controller
 
     /** Atualizações do banco aplicadas pela Administração (sem phpMyAdmin). */
     /** Últimos e-mails (mensagem_envio): para conferir se saiu ou por que falhou. Sem o corpo (pode ter dados pessoais). */
+    public function erros(Request $request)
+    {
+        $busca = trim((string) $request->query('busca'));
+        $erros = \Illuminate\Support\Facades\Schema::hasTable('log_erro')
+            ? DB::table('log_erro')
+                ->when($busca !== '', fn ($q) => $q->where(fn ($q2) => $q2->where('contexto', 'like', '%'.$busca.'%')->orWhere('mensagem', 'like', '%'.$busca.'%')))
+                ->orderByDesc('id')->limit(200)->get()
+            : collect();
+
+        return view('admin.erros', compact('erros', 'busca'));
+    }
+
     public function emails(Request $request)
     {
         $busca = trim((string) $request->query('busca'));
