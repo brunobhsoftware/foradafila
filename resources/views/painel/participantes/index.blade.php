@@ -104,6 +104,6 @@
         </table></div>
         @endif
     </section>
-    @if ($ingressos instanceof \Illuminate\Pagination\LengthAwarePaginator)<x-paginacao :paginator="$ingressos" />@endif
+    @if ($ingressos instanceof \Illuminate\Pagination\LengthAwarePaginator){{ $ingressos->links() }}@endif
 @endif
 @endsection

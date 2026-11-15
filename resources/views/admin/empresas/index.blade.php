@@ -42,5 +42,5 @@
     </table></div>
     @endif
 </section>
-<x-paginacao :paginator="$empresas" />
+{{ $empresas->links() }}
 @endsection
