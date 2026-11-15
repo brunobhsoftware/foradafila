@@ -105,90 +105,178 @@
 @endphp
 
 @if (! $temPropria)
-<section class="cartao" style="padding:18px 24px;margin-top:18px"><b>Mercado Pago da empresa (aplicação própria)</b>
+<section class="cartao" style="padding:18px 24px;margin-top:18px"><b>Mercado Pago da empresa</b>
     <p class="suave" style="margin:6px 0 0">Disponível depois que a plataforma atualizar o banco de dados (V012 completo).</p></section>
 @else
-<details class="cartao" style="padding:18px 24px;margin-top:18px" @if (request('mp') || $verificacao || $errors->hasAny(['client_id','client_secret','access_token','public_key','webhook_secret'])) open @endif>
-    <summary style="cursor:pointer"><b style="font-size:1.1rem">Mercado Pago da empresa (aplicação própria)</b>
-        @if ($propriaAtiva)<span class="selo selo--verde" style="margin-left:8px">Ativa{{ $propria->email_conta ? ' — '.$propria->email_conta : '' }}</span>
+@php
+    $temManual = $propria && ($propria->client_id || $propria->access_token_cript || $propria->teste_access_token_cript);
+    $modoMpInicial = $temManual || request('mp') || $verificacao || $errors->hasAny(['client_id','client_secret','access_token','public_key','webhook_secret']) ? 'manual' : ($conectada ? 'automatica' : 'automatica');
+@endphp
+<details class="cartao" style="padding:18px 24px;margin-top:18px" @if (request('mp') || $verificacao || $conectada || $propriaAtiva || $errors->hasAny(['client_id','client_secret','access_token','public_key','webhook_secret'])) open @endif>
+    <summary style="cursor:pointer"><b style="font-size:1.1rem">Mercado Pago da empresa</b>
+        @if ($conectada)<span class="selo selo--verde" style="margin-left:8px">Conectada{{ $conta->email_conta ? ' — '.$conta->email_conta : '' }}</span>
+        @elseif ($propriaAtiva)<span class="selo selo--verde" style="margin-left:8px">Ativa (manual){{ $propria->email_conta ? ' — '.$propria->email_conta : '' }}</span>
         @elseif ($propria && $propria->ultimo_erro)<span class="selo selo--vermelho" style="margin-left:8px">Token recusado</span>
         @else<span class="selo selo--cinza" style="margin-left:8px">Não configurada</span>@endif</summary>
-    <p class="suave" style="margin:10px 0">Para receber as vendas direto na conta da empresa: crie uma aplicação no
-        <a href="https://www.mercadopago.com.br/developers/panel/app" target="_blank" rel="noopener">painel de desenvolvedores do Mercado Pago</a>
-        (logado na conta da empresa; tipo <b>Checkout Pro</b>, API de <b>Orders</b>), cadastre nela o endereço de notificações abaixo e cole aqui as chaves de teste e de produção.</p>
-    @if ($webhookPropria)
-        <div class="form-grade" style="margin-bottom:6px">
-            <div class="campo col-12"><label>URL de notificações (webhooks) — cadastre em "Webhooks" da aplicação, nos dois modos (teste e produção)</label>
-                <div class="copiar"><input id="mp-prop-webhook" value="{{ $webhookPropria }}" readonly><button type="button" class="botao botao--contorno botao--pequeno" data-copiar="mp-prop-webhook">Copiar</button></div>
-                <small class="suave">Eventos: <b>Order (Mercado Pago)</b> e <b>Pagamentos</b>. Depois copie a "assinatura secreta" gerada e cole nos campos abaixo.</small></div>
-            <div class="campo col-6"><label>Site da aplicação</label>
-                <div class="copiar"><input id="mp-prop-site" value="{{ url('/') }}" readonly><button type="button" class="botao botao--contorno botao--pequeno" data-copiar="mp-prop-site">Copiar</button></div></div>
-            <div class="campo col-6"><label>Tipo de solução</label><input value="Checkout Pro — API de Orders" readonly></div>
-        </div>
-    @endif
 
-    @if ($verificacao)
-        <div class="alerta alerta--info"><p><b>De quem são os tokens:</b><br>
-            @foreach (['producao' => 'Produção', 'teste' => 'Teste'] as $k => $t)
-                {{ $t }}: @if (! $verificacao[$k]) não cadastrado @elseif ($verificacao[$k]['ok']) {{ $verificacao[$k]['email'] ?? '—' }} ({{ $verificacao[$k]['apelido'] ?? '—' }}) — {{ $verificacao[$k]['teste'] ? 'conta de teste' : 'conta real' }} @else <b style="color:var(--vermelho)">recusado pelo Mercado Pago</b> @endif<br>
-            @endforeach</p></div>
-    @endif
+    <p class="suave" style="margin:10px 0 14px">Para receber as vendas direto na conta da empresa no Mercado Pago. Escolha como configurar:</p>
 
-    @can('financeiro.contas')
-    <form method="post" action="{{ route('financeiro.mp.propria', 'aplicacao') }}" class="form-grade" style="margin-top:16px;padding:14px 16px;background:#F4F5F7;border-left:3px solid var(--tinta);border-radius:6px">
-        @csrf @method('PUT')
-        <h3 class="col-12" style="margin:0">1. Aplicação <small class="suave" style="font-weight:400">— vale para teste e produção</small></h3>
-        <p class="col-12 suave" style="margin:0"><small>No Mercado Pago, Client ID e Client Secret ficam em <b>Credenciais de produção</b>. São um só para a aplicação.</small></p>
-        <x-campo nome="client_id" rotulo="Client ID" :valor="$propria?->client_id" classe="col-6" autocomplete="off" />
-        <x-campo nome="client_secret" rotulo="Client Secret" tipo="password" classe="col-6" autocomplete="new-password" :placeholder="$propria?->client_secret_cript ? 'salvo — em branco mantém' : ''" />
-        <div class="col-12"><button class="botao botao--escuro botao--pequeno">Salvar dados da aplicação</button></div>
-    </form>
-    @foreach (['teste' => '2. Ambiente de TESTE', 'producao' => '3. Ambiente de PRODUÇÃO'] as $amb => $titulo)
-        @php
-            $pre = $amb === 'teste' ? 'teste_' : '';
-            $tem = fn ($campo) => $propria && $propria->{$campo};
-        @endphp
-        <form method="post" action="{{ route('financeiro.mp.propria', $amb) }}" class="form-grade" style="margin-top:16px;padding:14px 16px;background:#F4F5F7;border-left:3px solid var(--laranja);border-radius:6px">
-            @csrf @method('PUT')
-            <h3 class="col-12" style="margin:0">{{ $titulo }} <small class="suave" style="font-weight:400">— Access Token, Public Key e assinatura dos webhooks {{ $amb === 'teste' ? 'de teste' : 'de produção' }}</small></h3>
-            <x-campo nome="access_token" rotulo="Access Token" tipo="password" classe="col-6" autocomplete="new-password" :placeholder="$tem($amb === 'teste' ? 'teste_access_token_cript' : 'access_token_cript') ? 'salvo — em branco mantém' : 'APP_USR-...'" />
-            <x-campo nome="public_key" rotulo="Public Key" :valor="$propria?->{$amb === 'teste' ? 'teste_public_key' : 'public_key'}" classe="col-6" autocomplete="off" />
-            <x-campo nome="webhook_secret" rotulo="Assinatura secreta dos webhooks ({{ $amb === 'teste' ? 'modo teste' : 'modo produção' }})" tipo="password" classe="col-12" autocomplete="new-password" :placeholder="$tem($pre.'webhook_secret_cript') ? 'salva — em branco mantém' : ''" />
-            <div class="col-12" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-                <button class="botao {{ $amb === 'teste' ? 'botao--contorno' : 'botao--primario' }} botao--pequeno">Salvar chaves {{ $amb === 'teste' ? 'de teste' : 'de produção' }}</button>
-                <button type="submit" form="mp-prop-verificar" class="botao botao--escuro botao--pequeno">Verificar de quem é o token</button>
-                @if ($verificacao && ($verificacao[$amb] ?? null))
-                    <small>@if ($verificacao[$amb]['ok'])✔ {{ $verificacao[$amb]['email'] ?? '—' }} ({{ $verificacao[$amb]['apelido'] ?? '—' }}) — {{ $verificacao[$amb]['teste'] ? 'conta de teste' : 'conta real' }}@else<b style="color:var(--vermelho)">✖ token recusado pelo Mercado Pago</b>@endif</small>
+    <div class="grade grade-2" style="gap:12px;margin-bottom:16px">
+        <label class="opcao-cartao"><input type="radio" name="mp_config_modo" value="automatica" data-mp-config @checked($modoMpInicial === 'automatica')>
+            <span><b>Configuração automática</b><small>Conecte a conta do Mercado Pago com um clique. O Fora da Fila cuida das chaves e dos webhooks automaticamente.</small></span></label>
+        <label class="opcao-cartao"><input type="radio" name="mp_config_modo" value="manual" data-mp-config @checked($modoMpInicial === 'manual')>
+            <span><b>Configuração manual</b><small>Crie a aplicação no painel de desenvolvedores do Mercado Pago e cole as chaves aqui. Para quem quer controle total.</small></span></label>
+    </div>
+
+    {{-- === AUTOMÁTICA: OAuth === --}}
+    <div id="mp-config-automatica" @if ($modoMpInicial !== 'automatica') hidden @endif>
+        <ol class="mp__etapas" aria-label="Etapas da integração" style="margin-bottom:16px">
+            @foreach ([1 => 'Liberação', 2 => 'Conectar a conta', 3 => 'Homologar e ativar'] as $n => $t)
+                <li class="{{ $n < $etapa ? 'feito' : ($n === $etapa ? 'atual' : '') }}" @if ($n === $etapa) aria-current="step" @endif>
+                    <span>{{ $n < $etapa ? '✓' : $n }}</span>{{ $t }}
+                </li>
+            @endforeach
+        </ol>
+
+        <details class="mp__bloco" @if ($etapa === 1) open @endif>
+            <summary><b>1. Liberação pela plataforma</b>
+                <small>{{ $configurado ? 'Concluído: a integração está liberada.' : 'A equipe do Fora da Fila está configurando a integração.' }}</small></summary>
+            <div class="mp__conteudo">
+                <p class="suave">O Fora da Fila tem uma aplicação única no Mercado Pago. Você não precisa criar nada nem copiar chaves:
+                    basta conectar a sua conta na etapa 2, e o dinheiro das vendas cai direto nela.</p>
+                @if (auth()->user()->admin_plataforma)
+                    <a href="{{ route('admin.mercadopago') }}" class="botao botao--escuro botao--pequeno">Configurar na Administração</a>
                 @endif
             </div>
-        </form>
+        </details>
 
-    @endforeach
-    @php $tokTeste = $propria?->teste_access_token_cript; $tokProd = $propria?->access_token_cript; $ambTeste = old('ambiente', $tokTeste ? 'teste' : 'producao'); @endphp
-    <form method="post" action="{{ route('financeiro.mp.propria.teste') }}" class="form-grade" style="margin-top:16px;padding:14px 16px;border:1px dashed var(--borda-forte);border-radius:6px">
-        @csrf
-        <h3 class="col-12" style="margin:0">4. Pagamento de teste</h3>
-        @error('pagamento_teste')<p class="col-12 erro" style="color:var(--vermelho);margin:0">{{ $message }}</p>@enderror
-        <div class="campo col-12"><div class="grade grade-2" style="gap:12px">
-            <label class="opcao-cartao"><input type="radio" name="ambiente" value="teste" @checked($ambTeste === 'teste') @disabled(! $tokTeste)>
-                <span><b>Teste (homologação)</b><small>Usa o Access Token de teste. Pague com a conta compradora de teste; nenhum dinheiro real é movimentado.@unless ($tokTeste)<br><b style="font-size:.8rem">Salve o Access Token de teste antes.</b>@endunless</small></span></label>
-            <label class="opcao-cartao"><input type="radio" name="ambiente" value="producao" @checked($ambTeste === 'producao') @disabled(! $tokProd)>
-                <span><b>Produção (cobrança real)</b><small>Usa o Access Token de produção: o valor cai de verdade na conta da empresa. Pague com outra conta do Mercado Pago.@unless ($tokProd)<br><b style="font-size:.8rem">Salve o Access Token de produção antes.</b>@endunless</small></span></label>
-        </div></div>
-        <div class="campo col-4"><label>CPF de quem paga</label><input name="cpf" required data-mascara="cpf" data-busca-cpf inputmode="numeric" value="{{ old('cpf') }}"></div>
-        <div class="campo col-8"><label>Nome completo</label><input name="nome" required data-pessoa="nome" value="{{ old('nome') }}"></div>
-        <div class="campo col-6"><label>E-mail de quem paga</label><input name="email" type="email" required data-pessoa="email" value="{{ old('email') }}" placeholder="no teste, o e-mail da conta compradora de teste"></div>
-        <div class="campo col-3"><label>Telefone com DDD</label><input name="telefone" data-mascara="telefone" data-pessoa="telefone" value="{{ old('telefone') }}"></div>
-        <div class="campo col-3"><label>Valor (R$)</label><input name="valor" type="number" step="0.01" min="1" max="100" value="{{ old('valor', '5.00') }}" required></div>
-        <div class="col-12"><button class="botao botao--escuro botao--pequeno" @disabled(! $tokTeste && ! $tokProd)>Gerar pagamento no Mercado Pago ↗</button>
-            <small class="suave">Abra o link em janela anônima ou no celular, fora da conta da empresa.</small></div>
-    </form>
-    @if ($propria)
-        <form method="post" action="{{ route('financeiro.mp.propria.verificar') }}" id="mp-prop-verificar" style="margin-top:14px">@csrf
-            <button class="botao botao--escuro botao--pequeno">Verificar de quem é o token</button>
-            <small class="suave">Confere no Mercado Pago a conta dos tokens. O de produção válido ativa a aplicação da empresa.</small></form>
-    @endif
-    @endcan
+        <details class="mp__bloco" @if ($etapa === 2 || $etapa === 3) open @endif>
+            <summary><b>2. Conectar a conta da organização</b>
+                <small>{{ $conectada ? 'Concluído.' : 'Entre com a conta que vai receber as vendas.' }}</small></summary>
+            <div class="mp__conteudo">
+                @if ($conectada)
+                    <dl class="mp__dados">
+                        <div><dt>Conta</dt><dd>{{ $conta->email_conta ?? '—' }}@if ($conta->apelido_externo) <small>({{ $conta->apelido_externo }})</small>@endif</dd></div>
+                        <div><dt>Identificador</dt><dd>{{ $conta->conta_externa_id }}</dd></div>
+                        <div><dt>Ambiente</dt><dd>{{ $conta->ambiente === 'producao' ? 'Produção' : 'Testes (sandbox)' }}</dd></div>
+                        <div><dt>Conectada em</dt><dd>{{ $conta->conectado_em ? data_local($conta->conectado_em) : '—' }}</dd></div>
+                        <div><dt>Autorização válida até</dt><dd>{{ $conta->token_expira_em ? data_local($conta->token_expira_em, 'd/m/Y') : '—' }}</dd></div>
+                    </dl>
+                    @if ($conta->ultimo_erro)<div class="alerta alerta--erro"><p>{{ $conta->ultimo_erro }}</p></div>@endif
+                    @can('financeiro.contas')
+                        <form method="post" action="{{ route('financeiro.mp.desconectar') }}" data-confirmar="Desconectar a conta do Mercado Pago? Os ingressos pagos deixam de ser vendidos.">
+                            @csrf <button class="botao botao--perigo botao--pequeno">Desconectar</button>
+                        </form>
+                    @endcan
+                @else
+                    <ol class="mp__passos">
+                        <li>Clique em <b>Conectar Mercado Pago</b> e entre com a conta que vai receber as vendas.</li>
+                        <li>Autorize o Fora da Fila a criar cobranças em nome da organização. Você não precisa copiar chaves.</li>
+                        <li>Você volta para esta tela com a conta conectada.</li>
+                    </ol>
+                    @if ($conta && $conta->status === 'revogada')<p><small>Conta desconectada em {{ data_local($conta->desconectado_em) }}.</small></p>@endif
+                    @unless ($configurado)
+                        <div class="alerta alerta--info"><p>O botão é liberado assim que a equipe do Fora da Fila concluir a configuração.</p></div>
+                    @endunless
+                    @can('financeiro.contas')
+                        <form method="post" action="{{ route('financeiro.mp.conectar') }}">
+                            @csrf <button class="botao botao--primario" @disabled(! $configurado)>Conectar Mercado Pago</button>
+                        </form>
+                    @else
+                        <p><small>Só quem tem a permissão "contas de recebimento" pode conectar a conta.</small></p>
+                    @endcan
+                @endif
+            </div>
+        </details>
+
+        <details class="mp__bloco" @if ($etapa === 3) open @endif>
+            <summary><b>3. Homologar e ativar</b><small>Testes de Pix, cartão, aviso de pagamento e reembolso.</small></summary>
+            <div class="mp__conteudo">
+                <p class="suave">Com a conta conectada, fazemos os testes obrigatórios no ambiente de testes do Mercado Pago. Depois deles a conta fica
+                    <b>ativa</b> e os eventos com ingresso pago podem ser publicados. Esta etapa será liberada em breve.</p>
+            </div>
+        </details>
+    </div>
+
+    {{-- === MANUAL: Client ID, tokens, webhooks === --}}
+    <div id="mp-config-manual" @if ($modoMpInicial !== 'manual') hidden @endif>
+        <p class="suave" style="margin:0 0 10px">Crie uma aplicação no
+            <a href="https://www.mercadopago.com.br/developers/panel/app" target="_blank" rel="noopener">painel de desenvolvedores do Mercado Pago</a>
+            (logado na conta da empresa; tipo <b>Checkout Pro</b>, API de <b>Orders</b>), cadastre nela o endereço de notificações abaixo e cole aqui as chaves de teste e de produção.</p>
+
+        @if ($webhookPropria)
+            <div class="form-grade" style="margin-bottom:6px">
+                <div class="campo col-12"><label>URL de notificações (webhooks) — cadastre em "Webhooks" da aplicação, nos dois modos (teste e produção)</label>
+                    <div class="copiar"><input id="mp-prop-webhook" value="{{ $webhookPropria }}" readonly><button type="button" class="botao botao--contorno botao--pequeno" data-copiar="mp-prop-webhook">Copiar</button></div>
+                    <small class="suave">Eventos: <b>Order (Mercado Pago)</b> e <b>Pagamentos</b>. Depois copie a "assinatura secreta" gerada e cole nos campos abaixo.</small></div>
+                <div class="campo col-6"><label>Site da aplicação</label>
+                    <div class="copiar"><input id="mp-prop-site" value="{{ url('/') }}" readonly><button type="button" class="botao botao--contorno botao--pequeno" data-copiar="mp-prop-site">Copiar</button></div></div>
+                <div class="campo col-6"><label>Tipo de solução</label><input value="Checkout Pro — API de Orders" readonly></div>
+            </div>
+        @endif
+
+        @if ($verificacao)
+            <div class="alerta alerta--info"><p><b>De quem são os tokens:</b><br>
+                @foreach (['producao' => 'Produção', 'teste' => 'Teste'] as $k => $t)
+                    {{ $t }}: @if (! $verificacao[$k]) não cadastrado @elseif ($verificacao[$k]['ok']) {{ $verificacao[$k]['email'] ?? '—' }} ({{ $verificacao[$k]['apelido'] ?? '—' }}) — {{ $verificacao[$k]['teste'] ? 'conta de teste' : 'conta real' }} @else <b style="color:var(--vermelho)">recusado pelo Mercado Pago</b> @endif<br>
+                @endforeach</p></div>
+        @endif
+
+        @can('financeiro.contas')
+        <form method="post" action="{{ route('financeiro.mp.propria', 'aplicacao') }}" class="form-grade" style="margin-top:16px;padding:14px 16px;background:#F4F5F7;border-left:3px solid var(--tinta);border-radius:6px">
+            @csrf @method('PUT')
+            <h3 class="col-12" style="margin:0">1. Aplicação <small class="suave" style="font-weight:400">— vale para teste e produção</small></h3>
+            <p class="col-12 suave" style="margin:0"><small>No Mercado Pago, Client ID e Client Secret ficam em <b>Credenciais de produção</b>. São um só para a aplicação.</small></p>
+            <x-campo nome="client_id" rotulo="Client ID" :valor="$propria?->client_id" classe="col-6" autocomplete="off" />
+            <x-campo nome="client_secret" rotulo="Client Secret" tipo="password" classe="col-6" autocomplete="new-password" :placeholder="$propria?->client_secret_cript ? 'salvo — em branco mantém' : ''" />
+            <div class="col-12"><button class="botao botao--escuro botao--pequeno">Salvar dados da aplicação</button></div>
+        </form>
+        @foreach (['teste' => '2. Ambiente de TESTE', 'producao' => '3. Ambiente de PRODUÇÃO'] as $amb => $titulo)
+            @php
+                $pre = $amb === 'teste' ? 'teste_' : '';
+                $tem = fn ($campo) => $propria && $propria->{$campo};
+            @endphp
+            <form method="post" action="{{ route('financeiro.mp.propria', $amb) }}" class="form-grade" style="margin-top:16px;padding:14px 16px;background:#F4F5F7;border-left:3px solid var(--laranja);border-radius:6px">
+                @csrf @method('PUT')
+                <h3 class="col-12" style="margin:0">{{ $titulo }} <small class="suave" style="font-weight:400">— Access Token, Public Key e assinatura dos webhooks {{ $amb === 'teste' ? 'de teste' : 'de produção' }}</small></h3>
+                <x-campo nome="access_token" rotulo="Access Token" tipo="password" classe="col-6" autocomplete="new-password" :placeholder="$tem($amb === 'teste' ? 'teste_access_token_cript' : 'access_token_cript') ? 'salvo — em branco mantém' : 'APP_USR-...'" />
+                <x-campo nome="public_key" rotulo="Public Key" :valor="$propria?->{$amb === 'teste' ? 'teste_public_key' : 'public_key'}" classe="col-6" autocomplete="off" />
+                <x-campo nome="webhook_secret" rotulo="Assinatura secreta dos webhooks ({{ $amb === 'teste' ? 'modo teste' : 'modo produção' }})" tipo="password" classe="col-12" autocomplete="new-password" :placeholder="$tem($pre.'webhook_secret_cript') ? 'salva — em branco mantém' : ''" />
+                <div class="col-12" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+                    <button class="botao {{ $amb === 'teste' ? 'botao--contorno' : 'botao--primario' }} botao--pequeno">Salvar chaves {{ $amb === 'teste' ? 'de teste' : 'de produção' }}</button>
+                    <button type="submit" form="mp-prop-verificar" class="botao botao--escuro botao--pequeno">Verificar de quem é o token</button>
+                    @if ($verificacao && ($verificacao[$amb] ?? null))
+                        <small>@if ($verificacao[$amb]['ok'])✔ {{ $verificacao[$amb]['email'] ?? '—' }} ({{ $verificacao[$amb]['apelido'] ?? '—' }}) — {{ $verificacao[$amb]['teste'] ? 'conta de teste' : 'conta real' }}@else<b style="color:var(--vermelho)">✖ token recusado pelo Mercado Pago</b>@endif</small>
+                    @endif
+                </div>
+            </form>
+        @endforeach
+        @php $tokTeste = $propria?->teste_access_token_cript; $tokProd = $propria?->access_token_cript; $ambTeste = old('ambiente', $tokTeste ? 'teste' : 'producao'); @endphp
+        <form method="post" action="{{ route('financeiro.mp.propria.teste') }}" class="form-grade" style="margin-top:16px;padding:14px 16px;border:1px dashed var(--borda-forte);border-radius:6px">
+            @csrf
+            <h3 class="col-12" style="margin:0">4. Pagamento de teste</h3>
+            @error('pagamento_teste')<p class="col-12 erro" style="color:var(--vermelho);margin:0">{{ $message }}</p>@enderror
+            <div class="campo col-12"><div class="grade grade-2" style="gap:12px">
+                <label class="opcao-cartao"><input type="radio" name="ambiente" value="teste" @checked($ambTeste === 'teste') @disabled(! $tokTeste)>
+                    <span><b>Teste (homologação)</b><small>Usa o Access Token de teste. Pague com a conta compradora de teste; nenhum dinheiro real é movimentado.@unless ($tokTeste)<br><b style="font-size:.8rem">Salve o Access Token de teste antes.</b>@endunless</small></span></label>
+                <label class="opcao-cartao"><input type="radio" name="ambiente" value="producao" @checked($ambTeste === 'producao') @disabled(! $tokProd)>
+                    <span><b>Produção (cobrança real)</b><small>Usa o Access Token de produção: o valor cai de verdade na conta da empresa. Pague com outra conta do Mercado Pago.@unless ($tokProd)<br><b style="font-size:.8rem">Salve o Access Token de produção antes.</b>@endunless</small></span></label>
+            </div></div>
+            <div class="campo col-4"><label>CPF de quem paga</label><input name="cpf" required data-mascara="cpf" data-busca-cpf inputmode="numeric" value="{{ old('cpf') }}"></div>
+            <div class="campo col-8"><label>Nome completo</label><input name="nome" required data-pessoa="nome" value="{{ old('nome') }}"></div>
+            <div class="campo col-6"><label>E-mail de quem paga</label><input name="email" type="email" required data-pessoa="email" value="{{ old('email') }}" placeholder="no teste, o e-mail da conta compradora de teste"></div>
+            <div class="campo col-3"><label>Telefone com DDD</label><input name="telefone" data-mascara="telefone" data-pessoa="telefone" value="{{ old('telefone') }}"></div>
+            <div class="campo col-3"><label>Valor (R$)</label><input name="valor" type="number" step="0.01" min="1" max="100" value="{{ old('valor', '5.00') }}" required></div>
+            <div class="col-12"><button class="botao botao--escuro botao--pequeno" @disabled(! $tokTeste && ! $tokProd)>Gerar pagamento no Mercado Pago ↗</button>
+                <small class="suave">Abra o link em janela anônima ou no celular, fora da conta da empresa.</small></div>
+        </form>
+        @if ($propria)
+            <form method="post" action="{{ route('financeiro.mp.propria.verificar') }}" id="mp-prop-verificar" style="margin-top:14px">@csrf
+                <button class="botao botao--escuro botao--pequeno">Verificar de quem é o token</button>
+                <small class="suave">Confere no Mercado Pago a conta dos tokens. O de produção válido ativa a aplicação da empresa.</small></form>
+        @endif
+        @endcan
+    </div>
 </details>
 @endif
 
@@ -212,109 +300,16 @@
         <div class="grade grade-2" style="gap:12px">
         <label class="opcao-cartao"><input type="radio" name="recebimento_modo" value="plataforma" @checked($modoAtual === 'plataforma')>
             <span><b>Pela plataforma, com repasse</b><small>O comprador paga na conta do Fora da Fila e você recebe por Pix ou transferência em até {{ \App\Support\Recebimento::PRAZO_DIAS_UTEIS }} dias úteis após o evento, já com a taxa descontada. Nada para configurar além dos dados para o repasse.</small></span></label>
-        <label class="opcao-cartao"><input type="radio" name="recebimento_modo" value="propria" @checked($modoAtual === 'propria') @disabled(! $propriaAtiva)>
-            <span><b>Direto na conta do Mercado Pago da empresa</b><small>Cada venda cai na hora na sua conta, pela aplicação que você criou no Mercado Pago (acima). A taxa da plataforma é cobrada à parte, em fatura.
-            @unless ($propriaAtiva)<br><b style="font-size:.8rem">Disponível depois de cadastrar e verificar o Access Token de produção.</b>@endunless</small></span></label>
+        @php $mpAtiva = $propriaAtiva || $conectada; @endphp
+        <label class="opcao-cartao"><input type="radio" name="recebimento_modo" value="propria" @checked($modoAtual === 'propria') @disabled(! $mpAtiva)>
+            <span><b>Direto na conta do Mercado Pago da empresa</b><small>Cada venda cai na hora na sua conta, pela conexão automática ou aplicação manual configurada acima. A taxa da plataforma é cobrada à parte, em fatura.
+            @unless ($mpAtiva)<br><b style="font-size:.8rem">Disponível depois de conectar ou configurar o Mercado Pago acima.</b>@endunless</small></span></label>
         </div>
         @can('financeiro.contas')<div><button class="botao botao--escuro botao--pequeno">Salvar forma de recebimento</button></div>@endcan
     </form>
 </section>
 @endif
 
-@if ($conexaoDireta || ! $v012)
-
-<section class="cartao mp">
-    <header class="mp__topo">
-        <div class="mp__marca" aria-hidden="true"><x-icone nome="dinheiro" /></div>
-        <div class="mp__titulo">
-            <h2>Mercado Pago</h2>
-            <small>Pix, cartão de crédito (até 12x) e boleto. Necessário para vender ingressos pagos.</small>
-        </div>
-        @if ($conectada)
-            <span class="selo selo--verde">{{ \App\Models\ContaPagamento::STATUS[$conta->status] }}</span>
-        @else
-            <span class="selo selo--cinza">Não conectada</span>
-        @endif
-    </header>
-
-    <ol class="mp__etapas" aria-label="Etapas da integração">
-        @foreach ([1 => 'Liberação', 2 => 'Conectar a conta', 3 => 'Homologar e ativar'] as $n => $t)
-            <li class="{{ $n < $etapa ? 'feito' : ($n === $etapa ? 'atual' : '') }}" @if ($n === $etapa) aria-current="step" @endif>
-                <span>{{ $n < $etapa ? '✓' : $n }}</span>{{ $t }}
-            </li>
-        @endforeach
-    </ol>
-
-    {{-- 1. Aplicação do Fora da Fila no Mercado Pago: feita uma vez pela equipe da plataforma (Administração) --}}
-    <details class="mp__bloco" @if ($etapa === 1) open @endif>
-        <summary><b>1. Liberação pela plataforma</b>
-            <small>{{ $configurado ? 'Concluído: a integração está liberada.' : 'A equipe do Fora da Fila está configurando a integração.' }}</small></summary>
-        <div class="mp__conteudo">
-            <p class="suave">O Fora da Fila tem uma aplicação única no Mercado Pago. Você não precisa criar nada nem copiar chaves:
-                basta conectar a sua conta na etapa 2, e o dinheiro das vendas cai direto nela.</p>
-            @if (auth()->user()->admin_plataforma)
-                <a href="{{ route('admin.mercadopago') }}" class="botao botao--escuro botao--pequeno">Configurar na Administração</a>
-            @endif
-        </div>
-    </details>
-
-    {{-- 2. Conectar a conta da organização --}}
-    <details class="mp__bloco" @if ($etapa === 2 || $etapa === 3) open @endif>
-        <summary><b>2. Conectar a conta da organização</b>
-            <small>{{ $conectada ? 'Concluído.' : 'Entre com a conta que vai receber as vendas.' }}</small></summary>
-        <div class="mp__conteudo">
-            @if ($conectada)
-                <dl class="mp__dados">
-                    <div><dt>Conta</dt><dd>{{ $conta->email_conta ?? '—' }}@if ($conta->apelido_externo) <small>({{ $conta->apelido_externo }})</small>@endif</dd></div>
-                    <div><dt>Identificador</dt><dd>{{ $conta->conta_externa_id }}</dd></div>
-                    <div><dt>Ambiente</dt><dd>{{ $conta->ambiente === 'producao' ? 'Produção' : 'Testes (sandbox)' }}</dd></div>
-                    <div><dt>Conectada em</dt><dd>{{ $conta->conectado_em ? data_local($conta->conectado_em) : '—' }}</dd></div>
-                    <div><dt>Autorização válida até</dt><dd>{{ $conta->token_expira_em ? data_local($conta->token_expira_em, 'd/m/Y') : '—' }}</dd></div>
-                </dl>
-                @if ($conta->ultimo_erro)<div class="alerta alerta--erro"><p>{{ $conta->ultimo_erro }}</p></div>@endif
-                @can('financeiro.contas')
-                    <form method="post" action="{{ route('financeiro.mp.desconectar') }}" data-confirmar="Desconectar a conta do Mercado Pago? Os ingressos pagos deixam de ser vendidos.">
-                        @csrf <button class="botao botao--perigo botao--pequeno">Desconectar</button>
-                    </form>
-                @endcan
-            @else
-                <ol class="mp__passos">
-                    <li>Clique em <b>Conectar Mercado Pago</b> e entre com a conta que vai receber as vendas.</li>
-                    <li>Autorize o Fora da Fila a criar cobranças em nome da organização. Você não precisa copiar chaves.</li>
-                    <li>Você volta para esta tela com a conta conectada.</li>
-                </ol>
-                @if ($conta && $conta->status === 'revogada')<p><small>Conta desconectada em {{ data_local($conta->desconectado_em) }}.</small></p>@endif
-                @unless ($configurado)
-                    <div class="alerta alerta--info"><p>O botão é liberado assim que a equipe do Fora da Fila concluir a configuração.</p></div>
-                @endunless
-                @can('financeiro.contas')
-                    <form method="post" action="{{ route('financeiro.mp.conectar') }}">
-                        @csrf <button class="botao botao--primario" @disabled(! $configurado)>Conectar Mercado Pago</button>
-                    </form>
-                @else
-                    <p><small>Só quem tem a permissão "contas de recebimento" pode conectar a conta.</small></p>
-                @endcan
-            @endif
-        </div>
-    </details>
-
-    {{-- 3. Homologação --}}
-    <details class="mp__bloco" @if ($etapa === 3) open @endif>
-        <summary><b>3. Homologar e ativar</b><small>Testes de Pix, cartão, aviso de pagamento e reembolso.</small></summary>
-        <div class="mp__conteudo">
-            <p class="suave">Com a conta conectada, fazemos os testes obrigatórios no ambiente de testes do Mercado Pago. Depois deles a conta fica
-                <b>ativa</b> e os eventos com ingresso pago podem ser publicados. Esta etapa será liberada em breve.</p>
-        </div>
-    </details>
-</section>
-@else
-<section class="cartao" style="margin-top:18px;padding:20px 24px;opacity:.85">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-        <h2 style="margin:0">Receber direto na sua conta do Mercado Pago</h2><span class="selo selo--cinza">Em breve</span></div>
-    <p class="suave" style="margin:8px 0 12px">Em breve você poderá conectar a conta do Mercado Pago da organização para receber cada venda direto, com a taxa da plataforma separada automaticamente. Até lá, as vendas são recebidas pela plataforma e repassadas como explicado acima.</p>
-    <button class="botao botao--contorno" disabled>Conectar Mercado Pago</button>
-</section>
-@endif
 
 <section class="cartao" style="margin-top:18px;padding:20px">
     <h2 style="margin-top:0">Em breve</h2>
