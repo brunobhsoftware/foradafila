@@ -285,6 +285,48 @@ class MercadoPago
         }
     }
 
+    /**
+     * API de Payments (Checkout Transparente): usada na conta conectada por OAuth, porque é a que aceita
+     * application_fee (comissão da plataforma retida na venda). Cria pelo SDK oficial.
+     */
+    public static function criarPagamento(string $accessToken, array $dados): array
+    {
+        self::sdk($accessToken);
+        $opcoes = new \MercadoPago\Client\Common\RequestOptions();
+        $opcoes->setCustomHeaders(['X-Idempotency-Key: '.\Illuminate\Support\Str::uuid()]);
+        try {
+            $pg = (new \MercadoPago\Client\Payment\PaymentClient())->create($dados, $opcoes);
+        } catch (\MercadoPago\Exceptions\MPApiException $e) {
+            $j = $e->getApiResponse()?->getContent() ?? [];
+            $causas = collect((array) ($j['cause'] ?? []))->map(fn ($c) => trim(($c['code'] ?? '').' '.($c['description'] ?? '')))->filter()->implode('; ');
+            $msg = trim(($j['message'] ?? '').($causas !== '' ? ' — '.$causas : ''));
+            \Illuminate\Support\Facades\Log::warning('Mercado Pago recusou pagamento', ['status' => $e->getStatusCode(), 'resposta' => $j]);
+            throw new RuntimeException('O Mercado Pago recusou a criação do pagamento (HTTP '.$e->getStatusCode().($msg ? ': '.mb_substr($msg, 0, 500) : '').').');
+        } catch (\Throwable $e) {
+            throw new RuntimeException('Não foi possível falar com o Mercado Pago: '.mb_substr($e->getMessage(), 0, 200));
+        }
+        $conteudo = $pg->getResponse()->getContent();
+        if (empty($conteudo['id'])) {
+            throw new RuntimeException('O Mercado Pago não devolveu o número do pagamento.');
+        }
+
+        return $conteudo;
+    }
+
+    /** Devolução de um pagamento da API de Payments: total (sem valor) ou parcial. */
+    public static function reembolsarPagamento(string $accessToken, string $id, ?float $valor = null): array
+    {
+        $r = Http::withToken($accessToken)->acceptJson()->asJson()->timeout(20)
+            ->withHeaders(['X-Idempotency-Key' => (string) \Illuminate\Support\Str::uuid()])
+            ->post(config('pagamentos.mercadopago.api_url').'/v1/payments/'.rawurlencode($id).'/refunds', $valor === null ? new \stdClass : ['amount' => round($valor, 2)]);
+        if (! $r->successful()) {
+            \Illuminate\Support\Facades\Log::warning('Mercado Pago recusou devolução', ['pagamento' => $id, 'resposta' => $r->json()]);
+            throw new RuntimeException('O Mercado Pago recusou a devolução (HTTP '.$r->status().($r->json('message') ? ': '.mb_substr((string) $r->json('message'), 0, 300) : '').').');
+        }
+
+        return (array) $r->json();
+    }
+
     public static function pagamento(string $accessToken, string $id): array
     {
         $r = Http::withToken($accessToken)->acceptJson()->timeout(15)->get(config('pagamentos.mercadopago.api_url').'/v1/payments/'.rawurlencode($id));
