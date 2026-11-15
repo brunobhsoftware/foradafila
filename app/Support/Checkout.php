@@ -280,6 +280,13 @@ class Checkout
             }
         }
         $order ??= MercadoPago::criarOrder(self::token($conta), $dados);
+        // Diagnóstico temporário do split (não é erro): qual conta vendeu e o que o Mercado Pago devolveu sobre a comissão.
+        LogErro::registrar('checkout.split_diagnostico', new RuntimeException('Diagnóstico do split: conta '.$conta->modo.', comissão '.$comissaoSplit
+            .', enviada '.($split ? 'sim' : 'não').', devolvida pelo MP: '.json_encode($order['marketplace_fee'] ?? null)), $pedido->organizador_id, [
+            'pedido' => $pedido->codigo, 'conta_id' => $conta->id, 'comissao_pedido' => self::comissao($pedido), 'forma' => $forma,
+            'order' => array_diff_key($order, ['payer' => 1, 'items' => 1, 'transactions' => 1]),
+            'pagamento' => array_diff_key((array) data_get($order, 'transactions.payments.0', []), ['payment_method' => 1]),
+        ]);
         self::$ultimaOrder = $order;
         if ($cartao) {
             $link = route('pedido.retorno', ['pedido' => $pedido->uuid]);
