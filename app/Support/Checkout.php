@@ -112,6 +112,9 @@ class Checkout
         if ($conta->modo === 'propria') {
             return ($teste ? $conta->teste_public_key : $conta->public_key) ?: null;
         }
+        if ($conta->modo === 'direta') {
+            return $conta->public_key ?: null;
+        }
 
         return MercadoPago::credencial($teste ? 'teste_public_key' : 'public_key') ?: null;
     }
