@@ -111,7 +111,7 @@
 @else
 @php
     $temManual = $propria && ($propria->client_id || $propria->access_token_cript || $propria->teste_access_token_cript);
-    $modoMpInicial = $temManual || request('mp') || $verificacao || $errors->hasAny(['client_id','client_secret','access_token','public_key','webhook_secret']) ? 'manual' : ($conectada ? 'automatica' : 'automatica');
+    $modoMpInicial = request('mp') || $verificacao || $errors->hasAny(['client_id','client_secret','access_token','public_key','webhook_secret']) ? 'manual' : $mpConfigModo;
 @endphp
 <details class="cartao" style="padding:18px 24px;margin-top:18px" @if (request('mp') || $verificacao || $conectada || $propriaAtiva || $errors->hasAny(['client_id','client_secret','access_token','public_key','webhook_secret'])) open @endif>
     <summary style="cursor:pointer"><b style="font-size:1.1rem">Mercado Pago da empresa</b>
@@ -123,12 +123,16 @@
 
     <p class="suave" style="margin:10px 0 14px">Para receber as vendas direto na conta da empresa no Mercado Pago. Escolha como configurar:</p>
 
-    <div class="grade grade-2" style="gap:12px;margin-bottom:16px">
+    <form method="post" action="{{ route('financeiro.mp.config') }}" id="form-mp-config">@csrf @method('PUT')
+    <div class="grade grade-2" style="gap:12px;margin-bottom:12px">
         <label class="opcao-cartao"><input type="radio" name="mp_config_modo" value="automatica" data-mp-config @checked($modoMpInicial === 'automatica')>
             <span><b>Configuração automática</b><small>Conecte a conta do Mercado Pago com um clique. O Fora da Fila cuida das chaves e dos webhooks automaticamente.</small></span></label>
         <label class="opcao-cartao"><input type="radio" name="mp_config_modo" value="manual" data-mp-config @checked($modoMpInicial === 'manual')>
             <span><b>Configuração manual</b><small>Crie a aplicação no painel de desenvolvedores do Mercado Pago e cole as chaves aqui. Para quem quer controle total.</small></span></label>
     </div>
+    @can('financeiro.contas')<div style="margin-bottom:16px"><button class="botao botao--escuro botao--pequeno">Salvar preferência</button>
+        <small class="suave" style="margin-left:6px">Salva qual configuração é usada nas vendas. As duas continuam salvas.</small></div>@endcan
+    </form>
 
     {{-- === AUTOMÁTICA: OAuth === --}}
     <div id="mp-config-automatica" @if ($modoMpInicial !== 'automatica') hidden @endif>
@@ -293,8 +297,8 @@
 </details>
 @endif
 
-@php $mpAtiva = $propriaAtiva || $conectada; @endphp
-@if ($mpAtiva && ! $contaAtiva)
+@php $mpAtiva = $propriaAtiva || $conectada; $ocultarPorOauth = $contaAtiva && $mpConfigModo === 'automatica'; @endphp
+@if ($mpAtiva && ! $ocultarPorOauth)
 <section class="cartao" style="padding:22px 24px;margin-top:18px">
     <h2 style="margin-top:0">Ambiente das vendas</h2>
     <form method="post" action="{{ route('financeiro.ambiente') }}">@csrf @method('PUT')
@@ -322,7 +326,7 @@
         @can('financeiro.contas')<div><button class="botao botao--escuro botao--pequeno">Salvar forma de recebimento</button></div>@endcan
     </form>
 </section>
-@elseif ($contaAtiva)
+@elseif ($ocultarPorOauth)
 <section class="cartao" style="padding:22px 24px;margin-top:18px">
     <h2 style="margin-top:0">Recebimento das vendas</h2>
     <p>As vendas caem direto na conta do Mercado Pago da empresa (<b>{{ $conta->email_conta }}</b>).

@@ -207,6 +207,7 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::put('/financeiro/ambiente-vendas', [FinanceiroController::class, 'ambienteVendas'])->name('financeiro.ambiente');
     Route::put('/financeiro/modo', [FinanceiroController::class, 'modoRecebimento'])->name('financeiro.modo');
     Route::put('/financeiro/recebimento', [FinanceiroController::class, 'salvarRecebimento'])->name('financeiro.recebimento');
+    Route::put('/financeiro/mercadopago/config', [FinanceiroController::class, 'salvarConfigMp'])->name('financeiro.mp.config');
     Route::post('/financeiro/mercadopago/conectar', [FinanceiroController::class, 'conectar'])->name('financeiro.mp.conectar');
     Route::get('/financeiro/mercadopago/retorno', [FinanceiroController::class, 'retorno'])->name('financeiro.mp.retorno');
     Route::post('/financeiro/mercadopago/ativar', [FinanceiroController::class, 'ativar'])->name('financeiro.mp.ativar');

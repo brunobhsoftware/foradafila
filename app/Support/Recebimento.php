@@ -52,7 +52,13 @@ class Recebimento
         return ContaPagamento::withoutGlobalScopes()->where('organizador_id', $organizadorId)->where('modo', $modo)->first();
     }
 
-    /** Conta usada nas vendas: OAuth direta (preferida), aplicação manual ou plataforma. */
+    /** Preferência de configuração do MP: 'automatica' (OAuth) ou 'manual'. */
+    public static function configMp(int $organizadorId): string
+    {
+        return DB::table('parametro_sistema')->where('chave', 'mp_config_org_'.$organizadorId)->value('valor') ?: 'automatica';
+    }
+
+    /** Conta usada nas vendas: respeita a preferência automática/manual da empresa. */
     public static function contaAtual(int $organizadorId): ?ContaPagamento
     {
         if (! Esquema::temV012()) {
@@ -60,7 +66,16 @@ class Recebimento
         }
         $modo = Organizador::whereKey($organizadorId)->value('recebimento_modo') ?: 'plataforma';
         if ($modo === 'propria') {
-            // Preferir OAuth (direta) se ativa; senão a aplicação manual (propria).
+            $config = self::configMp($organizadorId);
+            if ($config === 'manual') {
+                $propria = self::conta($organizadorId, 'propria');
+                if ($propria && $propria->status === 'ativa') {
+                    return $propria;
+                }
+                $direta = self::conta($organizadorId, 'direta');
+
+                return ($direta && $direta->status === 'ativa') ? $direta : $propria;
+            }
             $direta = self::conta($organizadorId, 'direta');
             if ($direta && $direta->status === 'ativa') {
                 return $direta;
