@@ -37,6 +37,7 @@ class FinanceiroController extends Controller
             'conta' => $conta,
             'configurado' => MercadoPago::configurado(),
             'ambiente' => config('pagamentos.mercadopago.ambiente'),
+            'mpConfigModo' => DB::table('parametro_sistema')->where('chave', 'mp_config_org_'.$org->id)->value('valor') ?: 'automatica',
         ]);
     }
 
@@ -252,6 +253,30 @@ class FinanceiroController extends Controller
         Auditoria::registrar('financeiro.recebimento_modo', $org, $antes, ['recebimento_modo' => $modo]);
 
         return back()->with('ok', $modo === 'propria' ? 'As vendas passam a cair direto na conta do Mercado Pago da empresa.' : 'As vendas passam a ser recebidas pela plataforma, com repasse.');
+    }
+
+    /** Salva a preferência de configuração do Mercado Pago (automática ou manual) e atualiza a conta dos eventos. */
+    public function salvarConfigMp(Request $request)
+    {
+        Gate::authorize('financeiro.contas');
+        $modo = $request->validate(['mp_config_modo' => ['required', 'in:automatica,manual']])['mp_config_modo'];
+        $org = \App\Models\Organizador::findOrFail(app(Tenant::class)->id());
+        DB::table('parametro_sistema')->updateOrInsert(
+            ['chave' => 'mp_config_org_'.$org->id],
+            ['valor' => $modo, 'descricao' => 'Preferência de configuração do MP: automática (OAuth) ou manual']
+        );
+        if ($org->recebimento_modo !== 'propria') {
+            $org->forceFill(['recebimento_modo' => 'propria'])->save();
+        }
+        $conta = \App\Support\Recebimento::contaAtual($org->id);
+        if ($conta && $conta->status === 'ativa') {
+            \App\Models\Evento::whereNotIn('status', ['encerrado', 'cancelado'])->update(['conta_pagamento_id' => $conta->id]);
+        }
+        Auditoria::registrar('financeiro.mp_config_modo', $org, null, ['modo' => $modo]);
+
+        return back()->with('ok', $modo === 'automatica'
+            ? 'Configuração automática selecionada. As vendas usam a conta conectada pelo Mercado Pago.'
+            : 'Configuração manual selecionada. As vendas usam a aplicação configurada manualmente.');
     }
 
     /** Vai para a tela de autorização do Mercado Pago. */
