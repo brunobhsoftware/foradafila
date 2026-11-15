@@ -34,7 +34,6 @@ class FinanceiroController extends Controller
             'verificacao' => session('verificacao_mp'),
             'saldo' => \App\Support\Esquema::temV012() ? \App\Support\Repasses::resumo($org->id) : null,
             'repasses' => \App\Support\Esquema::temV012() ? DB::table('repasse')->where('organizador_id', $org->id)->orderByDesc('id')->limit(20)->get() : collect(),
-            'conexaoDireta' => (bool) config('pagamentos.mercadopago.conexao_direta'),
             'conta' => $conta,
             'configurado' => MercadoPago::configurado(),
             'ambiente' => config('pagamentos.mercadopago.ambiente'),
@@ -252,9 +251,6 @@ class FinanceiroController extends Controller
     public function conectar(Request $request)
     {
         Gate::authorize('financeiro.contas');
-        if (! config('pagamentos.mercadopago.conexao_direta')) {
-            return back()->withErrors(['mercadopago' => 'A conexão direta com a sua conta do Mercado Pago estará disponível em breve.']);
-        }
         if (! MercadoPago::configurado()) {
             return back()->withErrors(['mercadopago' => 'A integração com o Mercado Pago ainda não foi configurada na plataforma.']);
         }
