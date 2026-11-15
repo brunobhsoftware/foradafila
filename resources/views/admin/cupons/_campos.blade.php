@@ -1,8 +1,12 @@
 {{-- Campos compartilhados entre criar e editar cupom de cadastro. $c = objeto ou null (criação). --}}
 <x-campo nome="codigo" rotulo="Código" obrigatorio classe="col-3" :valor="old('codigo', $c->codigo ?? '')"
-    ajuda="Somente letras e números, maiúsculas. Ex: LANCAMENTO" maxlength="50" />
-<x-campo nome="nome" rotulo="Descrição interna" obrigatorio classe="col-9" :valor="old('nome', $c->nome ?? '')"
-    ajuda="Descreva o benefício com detalhes, ex: Parceria de lançamento — taxa 2% sem mínimo por 12 meses" />
+    ajuda="Letras e números, sem espaço. Ex: LANCAMENTO" maxlength="50" />
+
+<div class="campo col-9 {{ $errors->has('nome') ? 'com-erro' : '' }}">
+    <label for="campo_nome">Descrição interna *</label>
+    <textarea id="campo_nome" name="nome" rows="2" maxlength="150" required style="resize:vertical">{{ old('nome', $c->nome ?? '') }}</textarea>
+    @error('nome')<span class="erro">{{ $message }}</span>@enderror
+</div>
 
 <div class="campo col-12">
     <label class="opcao"><input type="checkbox" name="isento" value="1" @checked(old('isento', $c->isento ?? 0))>
@@ -13,9 +17,11 @@
 <x-campo nome="valor_fixo" rotulo="Valor fixo (R$)" tipo="number" classe="col-3" :valor="old('valor_fixo', $c->valor_fixo ?? '')" min="0" step="0.01" />
 <x-campo nome="valor_minimo" rotulo="Valor mínimo (R$)" tipo="number" classe="col-3" :valor="old('valor_minimo', $c->valor_minimo ?? '')" min="0" step="0.01" />
 
-<x-campo nome="meses_validade" rotulo="Duração do benefício (meses)" tipo="number" classe="col-3" :valor="old('meses_validade', $c->meses_validade ?? '')" min="1" ajuda="Em branco = permanente" />
+<x-campo nome="meses_validade" rotulo="Duração (meses)" tipo="number" classe="col-3" :valor="old('meses_validade', $c->meses_validade ?? '')" min="1" ajuda="Em branco = permanente" />
 <x-campo nome="limite_usos" rotulo="Limite de usos" tipo="number" classe="col-3" :valor="old('limite_usos', $c->limite_usos ?? '')" min="1" ajuda="Em branco = ilimitado" />
-<div class="campo col-12">
+
+<div class="campo col-12 {{ $errors->has('observacao') ? 'com-erro' : '' }}">
     <label for="campo_observacao">Observação interna</label>
-    <textarea id="campo_observacao" name="observacao" rows="3" maxlength="500" style="resize:vertical">{{ old('observacao', $c->observacao ?? '') }}</textarea>
+    <textarea id="campo_observacao" name="observacao" rows="3" maxlength="500" style="resize:vertical" placeholder="Detalhes adicionais sobre esta promoção (uso interno, não aparece para o produtor)">{{ old('observacao', $c->observacao ?? '') }}</textarea>
+    @error('observacao')<span class="erro">{{ $message }}</span>@enderror
 </div>
