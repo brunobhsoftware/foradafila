@@ -55,29 +55,25 @@
                 @can('evento.criar')<a href="{{ route('eventos.create') }}" class="botao botao--primario">Criar evento</a>@endcan
             </div>
         @else
-            <div class="tabela-rolagem">
-                <table class="tabela">
-                    <thead><tr><th>Evento</th><th>Data</th><th>Status</th><th>Vendas</th><th></th></tr></thead>
-                    <tbody>
-                    @foreach ($proximos as $e)
-                        @php $pct = $e->ingressos_ofertados ? 100 * $e->ingressos_vendidos / $e->ingressos_ofertados : 0; @endphp
-                        <tr>
-                            <td><b>{{ $e->titulo }}</b></td>
-                            <td>{{ data_local($e->data_inicio) }}</td>
-                            <td><x-status-evento :status="$e->status" /></td>
-                            <td style="min-width:160px">
-                                <small>{{ numero($e->ingressos_vendidos) }} / {{ numero($e->ingressos_ofertados) }}</small>
-                                <div class="barra"><span style="width: {{ min(100, $pct) }}%"></span></div>
-                            </td>
-                            <td class="num" style="white-space:nowrap">
-                                <a href="{{ route('eventos.show', $e->uuid) }}" class="botao botao--contorno botao--pequeno">Abrir</a>
-                                @can('evento.criar')<a href="{{ route('eventos.edit', $e->uuid) }}" class="botao botao--primario botao--pequeno">Editar</a>@endcan
-                            </td>
-                        </tr>
-                    @endforeach
-                    </tbody>
-                </table>
-            </div>
+            @foreach ($proximos as $e)
+                @php $pct = $e->ingressos_ofertados ? 100 * $e->ingressos_vendidos / $e->ingressos_ofertados : 0; @endphp
+                <div class="dash-evento">
+                    <p class="dash-evento__nome">{{ $e->titulo }}</p>
+                    <div class="dash-evento__info">
+                        <small>{{ data_local($e->data_inicio) }}</small>
+                        <x-status-evento :status="$e->status" />
+                        <div class="dash-evento__vendas">
+                            <small>{{ numero($e->ingressos_vendidos) }}/{{ numero($e->ingressos_ofertados) }}</small>
+                            <div class="barra"><span style="width: {{ min(100, $pct) }}%"></span></div>
+                            <small>{{ moeda($e->receita_bruta) }}</small>
+                        </div>
+                    </div>
+                    <div class="dash-evento__acoes">
+                        <a href="{{ route('eventos.show', $e->uuid) }}" class="botao botao--contorno botao--pequeno">Abrir</a>
+                        @can('evento.criar')<a href="{{ route('eventos.edit', $e->uuid) }}" class="botao botao--primario botao--pequeno">Editar</a>@endcan
+                    </div>
+                </div>
+            @endforeach
         @endif
     </section>
 
