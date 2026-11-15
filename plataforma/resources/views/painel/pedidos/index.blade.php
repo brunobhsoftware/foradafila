@@ -41,5 +41,5 @@
     </table></div>
     @endif
 </section>
-<x-paginacao :paginator="$pedidos" />
+{{ $pedidos->links() }}
 @endsection
