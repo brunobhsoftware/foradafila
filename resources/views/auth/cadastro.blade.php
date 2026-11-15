@@ -47,7 +47,8 @@
             <x-campo nome="nome_fantasia" rotulo="Nome que o público conhece" ajuda="Aparece na página dos eventos." />
             @if (\App\Support\Esquema::temV019())
             <x-campo nome="codigo_promocional" rotulo="Código promocional (opcional)" classe="col-6"
-                ajuda="Se você recebeu um código de desconto na taxa, insira aqui." />
+                ajuda="Se você recebeu um código de desconto na taxa, insira aqui."
+                :valor="old('codigo_promocional', request('cupom'))" />
             @endif
         </div>
     </fieldset>

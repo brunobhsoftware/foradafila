@@ -34,6 +34,7 @@
                 <td>{{ $limite }}</td>
                 <td><span class="selo {{ $c->ativo ? 'selo--verde' : 'selo--cinza' }}">{{ $c->ativo ? 'Ativo' : 'Inativo' }}</span></td>
                 <td class="num" style="white-space:nowrap">
+                    <button type="button" class="botao botao--contorno botao--pequeno" data-compartilhar="{{ url('/cadastro?cupom='.urlencode($c->codigo)) }}" title="Copiar link de cadastro com este cupom">Copiar link</button>
                     <button type="button" class="botao botao--contorno botao--pequeno" data-alternar="editar-{{ $c->id }}">Editar</button>
                     <form method="post" action="{{ route('admin.cupons.alternar', $c->id) }}" style="display:inline">@csrf
                         <button class="botao botao--{{ $c->ativo ? 'perigo' : 'contorno' }} botao--pequeno">{{ $c->ativo ? 'Desativar' : 'Ativar' }}</button>
