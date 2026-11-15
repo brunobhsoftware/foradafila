@@ -267,9 +267,19 @@ class Checkout
                     'installments' => $cartao['installments']]),
             ]]];
         }
-        // Comissão da plataforma (modo direta/OAuth): a API de Orders não suporta marketplace_fee nem splits;
-        // a comissão fica registrada no pedido (pedido_item.taxa_unitaria) e será cobrada por fatura.
-        $order = MercadoPago::criarOrder(self::token($conta), $dados);
+        // Comissão retida na venda (só conta OAuth/direta): marketplace_fee na RAIZ da order. Se o Mercado Pago recusar,
+        // a order é refeita sem a comissão (a venda não para) e o motivo vai para o Log de erros.
+        $split = false;
+        $comissaoSplit = $conta->modo === 'direta' ? self::comissao($pedido) : 0;
+        if ($comissaoSplit > 0) {
+            try {
+                $order = MercadoPago::criarOrder(self::token($conta), $dados + ['marketplace_fee' => number_format($comissaoSplit, 2, '.', '')]);
+                $split = true;
+            } catch (\Throwable $e) {
+                LogErro::registrar('checkout.marketplace_fee', $e, $pedido->organizador_id, ['pedido' => $pedido->codigo, 'forma' => $forma, 'comissao' => $comissaoSplit]);
+            }
+        }
+        $order ??= MercadoPago::criarOrder(self::token($conta), $dados);
         self::$ultimaOrder = $order;
         if ($cartao) {
             $link = route('pedido.retorno', ['pedido' => $pedido->uuid]);
@@ -293,7 +303,7 @@ class Checkout
             'status_gateway' => mb_substr((string) ($order['status'] ?? ''), 0, 60), 'valor' => $pedido->valor_total,
             'comissao_retida' => self::comissao($pedido), 'valor_liquido_org' => round((float) $pedido->valor_total - self::comissao($pedido), 2),
             'link_pagamento' => mb_substr($link, 0, 500), 'expira_em' => $pedido->expira_em,
-            'resposta_gateway' => json_encode(['ambiente' => self::modoTeste($pedido->organizador_id) ? 'teste' : 'producao', 'order' => $order['id']] + ($pix ? ['pix' => $pix] : [])),
+            'resposta_gateway' => json_encode(['ambiente' => self::modoTeste($pedido->organizador_id) ? 'teste' : 'producao', 'order' => $order['id'], 'split' => $split] + ($pix ? ['pix' => $pix] : [])),
         ]);
 
         return $link;
