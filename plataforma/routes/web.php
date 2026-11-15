@@ -136,6 +136,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/usuarios/{usuario}/email', [\App\Http\Controllers\Admin\EmpresasController::class, 'corrigirEmail'])->name('empresas.email');
     Route::get('/repasses', [\App\Http\Controllers\Admin\RepassesController::class, 'index'])->name('repasses');
     Route::post('/repasses/{organizador}', [\App\Http\Controllers\Admin\RepassesController::class, 'registrar'])->name('repasses.registrar');
+    Route::get('/erros', [\App\Http\Controllers\Admin\AdminController::class, 'erros'])->name('erros');
     Route::get('/emails', [\App\Http\Controllers\Admin\AdminController::class, 'emails'])->name('emails');
     Route::get('/banco', [\App\Http\Controllers\Admin\AdminController::class, 'banco'])->name('banco');
     Route::post('/banco', [\App\Http\Controllers\Admin\AdminController::class, 'aplicarBanco'])->name('banco.aplicar')->middleware('throttle:10,10,admin-banco');

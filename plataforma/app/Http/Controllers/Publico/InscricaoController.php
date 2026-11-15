@@ -360,12 +360,11 @@ class InscricaoController extends Controller
             $link = \App\Support\Checkout::criarOrder($pedido, $evento, $compradorFinal, $conta, $cpf, $dados['forma_pagamento'] ?? null);
         } catch (\Throwable $e) {
             report($e);
+            \App\Support\LogErro::registrar('checkout.criarOrder', $e, $pedido->organizador_id);
             \App\Support\Checkout::liberar($pedido->fresh(), 'cancelado');
 
-            $detalhe = app()->isProduction() ? mb_substr($e->getMessage(), 0, 300) : (string) $e;
-
             return redirect()->to($evento->linkPublico())
-                ->withErrors(['q' => 'Não foi possível abrir o pagamento: '.$detalhe]);
+                ->withErrors(['q' => 'Não foi possível abrir o pagamento agora. Tente de novo em alguns minutos.']);
         }
 
         return redirect()->away($link);

@@ -234,7 +234,7 @@ class MercadoPago
             $partes = collect((array) ($j['errors'] ?? []))->map(fn ($er) => trim(($er['message'] ?? '').' '.implode(', ', array_map(
                 fn ($d) => is_scalar($d) ? (string) $d : json_encode($d, JSON_UNESCAPED_UNICODE), (array) ($er['details'] ?? [])))))->filter();
             $msg = trim(($j['message'] ?? '').($partes->isNotEmpty() ? ' — '.$partes->implode('; ') : ''));
-            \Illuminate\Support\Facades\Log::warning('Mercado Pago recusou order', ['status' => $e->getStatusCode(), 'resposta' => $j]);
+            \Illuminate\Support\Facades\Log::warning('Mercado Pago recusou order', ['status' => $e->getStatusCode(), 'resposta' => $j, 'dados_enviados' => array_diff_key($dados, ['payer' => 1])]);
             throw new RuntimeException('O Mercado Pago recusou a criação da order (HTTP '.$e->getStatusCode().($msg ? ': '.mb_substr($msg, 0, 500) : '').').');
         } catch (\Throwable $e) {
             throw new RuntimeException('Não foi possível falar com o Mercado Pago: '.mb_substr($e->getMessage(), 0, 200));
