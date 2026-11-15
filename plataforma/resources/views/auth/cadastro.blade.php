@@ -54,8 +54,8 @@
     <fieldset>
         <legend><span class="numero">3</span> Termos</legend>
         <div class="alerta alerta--info">
-            <p>O Fora da Fila é uma plataforma de tecnologia: <b>a única que permite que o dinheiro das vendas caia diretamente na sua conta</b>,
-            mediante contratação direta do evento. A responsabilidade pela realização do evento é do organizador.</p>
+            <p>O Fora da Fila é uma plataforma de tecnologia completa para venda de ingressos e check-in: <b>taxas diferenciadas, relatórios detalhados e controle total sobre seus eventos</b>.
+            A responsabilidade pela realização do evento é do organizador.</p>
         </div>
         <div class="opcoes">
             @php $rotulos = ['uso_organizador' => ['o', 'Termo de uso do organizador'], 'responsabilidade_organizador' => ['o', 'Termo de responsabilidade do organizador'], 'privacidade' => ['a', 'Política de privacidade']]; @endphp
