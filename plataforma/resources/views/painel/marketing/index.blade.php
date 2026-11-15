@@ -13,13 +13,12 @@
         <div class="vazio"><h3>Nenhuma conta cadastrada</h3><p>Cadastre abaixo os dados do e-mail da sua empresa (os mesmos que você usa no Outlook ou no celular).</p></div>
     @else
     <div class="tabela-rolagem"><table class="tabela">
-        <thead><tr><th>Conta</th><th>Remetente</th><th>Servidor</th><th>Limite</th><th>Situação</th><th class="num"></th></tr></thead>
+        <thead><tr><th>Conta</th><th>Remetente</th><th>Limite</th><th>Situação</th><th class="num"></th></tr></thead>
         <tbody>
         @foreach ($contas as $c)
             <tr>
                 <td><b>{{ $c->nome }}</b></td>
                 <td>{{ $c->remetente_nome }}<br><small class="suave">{{ $c->remetente_email }}</small></td>
-                <td>{{ $c->host }}:{{ $c->porta }} <small class="suave">{{ strtoupper($c->seguranca) }}</small></td>
                 <td>{{ $c->limite_hora }}/hora</td>
                 <td>
                     @if (! $c->ativo)<span class="selo">Desativada</span>
@@ -31,14 +30,14 @@
                     <button type="button" class="botao botao--contorno botao--pequeno" data-alternar="smtp-editar-{{ $c->id }}">Editar</button>
                 </td>
             </tr>
-            <tr class="linha-acoes" id="smtp-teste-{{ $c->id }}" hidden><td colspan="6">
+            <tr class="linha-acoes" id="smtp-teste-{{ $c->id }}" hidden><td colspan="5">
                 <form method="post" action="{{ route('marketing.smtp.testar', $c->uuid) }}" class="form-grade">@csrf
                     <x-campo nome="para" rotulo="Enviar um e-mail de teste para" tipo="email" :valor="auth()->user()->email" classe="col-6" />
                     <div class="campo col-6" style="align-self:end"><button class="botao botao--primario">Enviar teste agora</button></div>
                 </form>
                 @if ($c->ultimo_erro)<p class="suave" style="margin:8px 0 0"><b>Último erro:</b> {{ $c->ultimo_erro }}</p>@endif
             </td></tr>
-            <tr class="linha-acoes" id="smtp-editar-{{ $c->id }}" hidden><td colspan="6">
+            <tr class="linha-acoes" id="smtp-editar-{{ $c->id }}" hidden><td colspan="5">
                 @include('painel.marketing._form', ['c' => $c])
                 <form method="post" action="{{ route('marketing.smtp.remover', $c->uuid) }}" onsubmit="return confirm('Remover a conta {{ $c->nome }}?')" style="margin-top:10px">@csrf
                     <button class="botao botao--perigo botao--pequeno">Remover esta conta</button></form>
