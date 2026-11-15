@@ -362,8 +362,10 @@ class InscricaoController extends Controller
             report($e);
             \App\Support\Checkout::liberar($pedido->fresh(), 'cancelado');
 
+            $detalhe = app()->isProduction() ? mb_substr($e->getMessage(), 0, 300) : (string) $e;
+
             return redirect()->to($evento->linkPublico())
-                ->withErrors(['q' => 'Não foi possível abrir o pagamento agora. Tente de novo em alguns minutos.']);
+                ->withErrors(['q' => 'Não foi possível abrir o pagamento: '.$detalhe]);
         }
 
         return redirect()->away($link);
