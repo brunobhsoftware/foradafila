@@ -1,0 +1,25 @@
+-- Fora da Fila — V019: Cupons de cadastro para novos produtores
+
+CREATE TABLE IF NOT EXISTS `cupom_cadastro` (
+    id           BIGINT        NOT NULL AUTO_INCREMENT,
+    uuid         CHAR(36)      NOT NULL,
+    codigo       VARCHAR(50)   NOT NULL,
+    nome         VARCHAR(150)  NOT NULL,
+    isento       TINYINT(1)    NOT NULL DEFAULT 0,
+    percentual   DECIMAL(5,2)           DEFAULT NULL,
+    valor_fixo   DECIMAL(12,2)          DEFAULT NULL,
+    valor_minimo DECIMAL(12,2)          DEFAULT NULL,
+    meses_validade INT                  DEFAULT NULL,
+    limite_usos  INT                    DEFAULT NULL,
+    usos         INT           NOT NULL DEFAULT 0,
+    observacao   VARCHAR(255)           DEFAULT NULL,
+    ativo        TINYINT(1)    NOT NULL DEFAULT 1,
+    criado_por   BIGINT                 DEFAULT NULL,
+    criado_em    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_cupom_cadastro_uuid   (uuid),
+    UNIQUE KEY uk_cupom_cadastro_codigo (codigo)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE `organizador`
+    ADD COLUMN IF NOT EXISTS `cupom_cadastro_id` BIGINT DEFAULT NULL AFTER `situacao_motivo`;
