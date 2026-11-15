@@ -28,10 +28,17 @@ class Checkout
 {
     public const RESERVA_MIN = 30;
 
-    /** Token da conta: aplicação da BH (plataforma) ou da própria empresa; em modo de teste, o token de teste. */
+    /** Token da conta: OAuth do produtor (direta), aplicação da BH (plataforma) ou da própria empresa; em modo de teste, o token de teste. */
     public static function token(ContaPagamento $conta): string
     {
         $teste = self::modoTeste($conta->organizador_id);
+        if ($conta->modo === 'direta') {
+            if (! $conta->access_token_cript) {
+                throw new RuntimeException('A conta do Mercado Pago não está conectada. Conecte no Financeiro.');
+            }
+
+            return decrypt($conta->access_token_cript, false);
+        }
         if ($conta->modo === 'propria') {
             $cript = $teste ? $conta->teste_access_token_cript : $conta->access_token_cript;
             if (! $cript) {
@@ -58,9 +65,13 @@ class Checkout
     /** Token da conta conforme o ambiente em que o pagamento foi feito ('teste' ou 'producao'). */
     public static function tokenDoAmbiente(ContaPagamento $conta, string $ambiente): string
     {
-        $t = $ambiente === 'teste'
-            ? ($conta->modo === 'propria' ? ($conta->teste_access_token_cript ? decrypt($conta->teste_access_token_cript, false) : null) : MercadoPago::tokenTeste())
-            : ($conta->modo === 'propria' ? ($conta->access_token_cript ? decrypt($conta->access_token_cript, false) : null) : MercadoPago::tokenAplicacao());
+        if ($conta->modo === 'direta') {
+            $t = $conta->access_token_cript ? decrypt($conta->access_token_cript, false) : null;
+        } else {
+            $t = $ambiente === 'teste'
+                ? ($conta->modo === 'propria' ? ($conta->teste_access_token_cript ? decrypt($conta->teste_access_token_cript, false) : null) : MercadoPago::tokenTeste())
+                : ($conta->modo === 'propria' ? ($conta->access_token_cript ? decrypt($conta->access_token_cript, false) : null) : MercadoPago::tokenAplicacao());
+        }
         if (! $t) {
             throw new RuntimeException('Sem o Access Token '.($ambiente === 'teste' ? 'de teste' : 'de produção').' da conta de recebimento.');
         }
@@ -252,6 +263,21 @@ class Checkout
                 'payment_method' => array_filter(['id' => $cartao['id'], 'type' => $cartao['type'], 'token' => $cartao['token'],
                     'installments' => $cartao['installments']]),
             ]]];
+        }
+        // Split de comissão: quando a conta é OAuth (direta), a comissão da BH é retida automaticamente.
+        if ($conta->modo === 'direta') {
+            $comissao = self::comissao($pedido);
+            $collectorId = MercadoPago::collectorId();
+            if ($comissao > 0 && $collectorId) {
+                if (isset($dados['transactions']['payments'])) {
+                    foreach ($dados['transactions']['payments'] as &$payment) {
+                        $payment['splits'] = [['collector_id' => $collectorId, 'amount' => number_format($comissao, 2, '.', '')]];
+                    }
+                    unset($payment);
+                } else {
+                    $dados['config']['marketplace_fee'] = number_format($comissao, 2, '.', '');
+                }
+            }
         }
         $order = MercadoPago::criarOrder(self::token($conta), $dados);
         self::$ultimaOrder = $order;

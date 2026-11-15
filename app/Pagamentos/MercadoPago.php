@@ -98,6 +98,20 @@ class MercadoPago
         return filled(self::credencial('client_id')) && filled(self::credencial('client_secret'));
     }
 
+    /** Collector ID da BH Software (da conta da aplicação): usado como destino do split de comissão. Cacheado 24 h. */
+    public static function collectorId(): ?int
+    {
+        return \Illuminate\Support\Facades\Cache::remember('mp_collector_id', now()->addHours(24), function () {
+            try {
+                $u = self::usuario(self::tokenAplicacao());
+
+                return $u['id'] ?? null;
+            } catch (\Throwable) {
+                return null;
+            }
+        });
+    }
+
     public static function retornoUrl(): string
     {
         return url(config('pagamentos.mercadopago.retorno_oauth'));

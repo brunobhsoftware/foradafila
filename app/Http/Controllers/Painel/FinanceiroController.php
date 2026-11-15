@@ -232,10 +232,17 @@ class FinanceiroController extends Controller
         Gate::authorize('financeiro.contas');
         $modo = $request->validate(['recebimento_modo' => ['required', 'in:plataforma,propria']])['recebimento_modo'];
         $org = \App\Models\Organizador::findOrFail(app(Tenant::class)->id());
-        $conta = \App\Support\Recebimento::conta($org->id, $modo);
+        if ($modo === 'propria') {
+            $conta = \App\Support\Recebimento::conta($org->id, 'direta');
+            if (! $conta || $conta->status !== 'ativa') {
+                $conta = \App\Support\Recebimento::conta($org->id, 'propria');
+            }
+        } else {
+            $conta = \App\Support\Recebimento::conta($org->id, $modo);
+        }
         if (! $conta || $conta->status !== 'ativa') {
             return back()->withErrors(['recebimento_modo' => $modo === 'propria'
-                ? 'Cadastre e verifique o Access Token de produção da aplicação da empresa antes de usá-la.'
+                ? 'Conecte o Mercado Pago ou cadastre a aplicação da empresa antes de usá-la.'
                 : 'Cadastre os dados para o repasse antes de receber pela plataforma.']);
         }
         $antes = $org->getAttributes();
