@@ -13,7 +13,7 @@
 <section class="cartao" style="padding:20px;margin-bottom:18px">
     <div class="tabela-rolagem"><table class="tabela">
         <thead><tr>
-            <th>Código</th><th>Nome / observação</th><th>Taxa aplicada</th><th>Validade</th><th>Usos</th><th>Situação</th><th></th>
+            <th>Código</th><th>Taxa aplicada</th><th>Validade</th><th>Usos</th><th>Situação</th><th></th>
         </tr></thead>
         <tbody>
         @foreach ($cupons as $c)
@@ -28,7 +28,6 @@
             @endphp
             <tr>
                 <td><b>{{ $c->codigo }}</b></td>
-                <td>{{ $c->nome }}<br>@if ($c->observacao)<small class="suave">{{ $c->observacao }}</small>@endif</td>
                 <td>{{ $taxa ?: 'padrão do sistema' }}</td>
                 <td>{{ $validade }}</td>
                 <td>{{ $limite }}</td>
@@ -41,7 +40,7 @@
                     </form>
                 </td>
             </tr>
-            <tr class="linha-acoes" id="editar-{{ $c->id }}" @unless ((string) old('_cupom') === (string) $c->id) hidden @endunless><td colspan="7">
+            <tr class="linha-acoes" id="editar-{{ $c->id }}" @unless ((string) old('_cupom') === (string) $c->id) hidden @endunless><td colspan="6">
                 <form method="post" action="{{ route('admin.cupons.update', $c->id) }}" class="form-grade">
                     @csrf @method('PUT')
                     <input type="hidden" name="_cupom" value="{{ $c->id }}">
