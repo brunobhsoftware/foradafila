@@ -267,13 +267,11 @@ class Checkout
                     'installments' => $cartao['installments']]),
             ]]];
         }
-        // Comissão da plataforma: quando a conta é OAuth (direta) e o checkout é por redirect (manual),
-        // a taxa da BH é retida via marketplace_fee. No Pix/cartão direto (automatic) o marketplace_fee
-        // não é suportado: a comissão será cobrada por fatura/repasse, igual ao modo plataforma.
-        if ($conta->modo === 'direta' && $dados['processing_mode'] === 'manual') {
+        // Comissão da plataforma: quando a conta é OAuth (direta), a taxa da BH é retida via marketplace_fee.
+        if ($conta->modo === 'direta') {
             $comissao = self::comissao($pedido);
             if ($comissao > 0) {
-                $dados['config']['marketplace_fee'] = number_format($comissao, 2, '.', '');
+                $dados['config']['marketplace_fee'] = round($comissao, 2);
             }
         }
         $order = MercadoPago::criarOrder(self::token($conta), $dados);
