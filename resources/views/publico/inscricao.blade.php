@@ -23,6 +23,9 @@
       <div class="pub-trilha" style="margin-bottom:4px"><a href="{{ $evento->linkPublico() }}" style="color:var(--laranja)">‹ Voltar ao evento</a></div>
       <h1 style="font-size:1.7rem;margin-bottom:18px">{{ $pago ? 'Comprar ingresso' : 'Garantir ingresso' }}</h1>
 
+      @if ($selecao->contains(fn ($s) => $s['lote']->ultimosIngressos()))
+        <p class="pub-ultimos" style="margin:0 0 14px">🔥 Corra! Últimos ingressos</p>
+      @endif
       <h2 style="font-size:1.15rem">1. Seus dados</h2>
       @if ($comprador)
         <p>Você está em <b>Meus ingressos</b> como <b>{{ $comprador->nome }}</b> ({{ $comprador->email }}). Os ingressos ficarão nesta conta.</p>

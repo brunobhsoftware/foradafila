@@ -103,6 +103,7 @@
             <div class="pub-lote">
               <div>
                 <b>{{ $lote->tipo->nome }} · {{ $lote->nome }}</b>
+                @if ($disponivel && $lote->ultimosIngressos())<span class="pub-ultimos">🔥 Corra! Últimos ingressos</span>@endif
                 <small>{{ \App\Models\Lote::MODALIDADES[$lote->modalidade] }}
                   @if (! $disponivel)
                     · @if ($lote->status === 'esgotado' || $lote->quantidade - $lote->vendido - $lote->reservado <= 0) esgotado

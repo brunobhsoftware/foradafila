@@ -54,10 +54,8 @@ class MeusIngressosController extends Controller
         $tenant->definir($pedido->organizadorPublico);
         DB::transaction(function () use ($pedido) {
             $validos = $pedido->ingressos->where('status', 'valido');
-            foreach ($validos->groupBy('lote_id')->sortKeys() as $loteId => $ingressos) {
-                DB::update("UPDATE lote SET vendido = vendido - ?, status = IF(status = 'esgotado', 'ativo', status) WHERE id = ? AND vendido >= ?",
-                    [$ingressos->count(), $loteId, $ingressos->count()]);
-            }
+            // O ingresso cancelado NÃO volta ao estoque (decisão do Bruno, 15/11/2026): lote.vendido não diminui, para não reabrir
+            // lote esgotado nem mexer na fila dos lotes seguintes ("Por lote").
             Ingresso::withoutGlobalScope('organizador')->whereIn('id', $validos->pluck('id'))
                 ->update(['status' => 'cancelado', 'cancelado_em' => now()]);
             $antes = $pedido->getAttributes();

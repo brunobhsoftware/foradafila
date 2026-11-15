@@ -9,6 +9,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Lote extends Model
 {
+    /**
+     * "Corra! Últimos ingressos" (decisão do Bruno, 15/11/2026): restam poucos — até 15% do lote (no mínimo 5).
+     * A tela não diz quantos nem de qual lote.
+     */
+    public function ultimosIngressos(): bool
+    {
+        $restam = $this->quantidade - $this->vendido - $this->reservado;
+
+        return $restam > 0 && $restam <= max(5, (int) ceil($this->quantidade * 0.15));
+    }
+
     use PertenceAoOrganizador, TemUuid;
 
     protected $table = 'lote';

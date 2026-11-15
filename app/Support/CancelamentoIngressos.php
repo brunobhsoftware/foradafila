@@ -8,7 +8,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Cancelamento de ingressos pela organização (painel). Devolve o estoque do lote, marca os ingressos,
+ * Cancelamento de ingressos pela organização (painel). O estoque do lote NÃO é devolvido (15/11/2026). Marca os ingressos,
  * atualiza o pedido e, se houve valor pago, registra a devolução em `reembolso` (a devolução do dinheiro é
  * responsabilidade do produtor; com a integração de pagamento, sai pela API da operadora).
  */
@@ -45,10 +45,8 @@ class CancelamentoIngressos
         }
 
         DB::transaction(function () use ($pedido, $alvos, $motivo, $observacao, $devolvido, $valor, $devolverDe, $solicitadoPor) {
-            foreach ($alvos->groupBy('lote_id')->sortKeys() as $loteId => $grupo) {
-                DB::update("UPDATE lote SET vendido = vendido - ?, status = IF(status = 'esgotado', 'ativo', status) WHERE id = ? AND vendido >= ?",
-                    [$grupo->count(), $loteId, $grupo->count()]);
-            }
+            // O ingresso cancelado NÃO volta ao estoque (decisão do Bruno, 15/11/2026): lote.vendido não diminui, para não reabrir
+            // lote esgotado nem mexer na fila dos lotes seguintes ("Por lote").
             $novoStatus = $valor > 0 ? 'reembolsado' : 'cancelado'; // ingresso pago e devolvido (inteiro ou sem a taxa) → reembolsado
             Ingresso::withoutGlobalScope('organizador')->whereIn('id', $alvos->pluck('id'))->update(['status' => $novoStatus, 'cancelado_em' => now('UTC')]);
 
