@@ -303,8 +303,9 @@ class FinanceiroController extends Controller
             Auditoria::registrar('conta_pagamento.conectar', $conta, $antes);
         } catch (\Throwable $e) {
             Log::warning('Mercado Pago OAuth: '.$e->getMessage(), ['trace' => mb_substr($e->getTraceAsString(), 0, 500)]);
+            $msg = str_contains($e->getMessage(), 'SQLSTATE') ? 'Erro ao salvar a conta. Verifique se a migration V019 foi aplicada.' : $e->getMessage();
 
-            return redirect()->route('financeiro')->withErrors(['mercadopago' => 'Erro ao conectar: '.$e->getMessage()]);
+            return redirect()->route('financeiro')->withErrors(['mercadopago' => 'Erro ao conectar: '.$msg]);
         }
 
         return redirect()->route('financeiro')->with('ok', 'Conta do Mercado Pago conectada'.($conta->email_conta ? " ({$conta->email_conta})" : '').'.');
