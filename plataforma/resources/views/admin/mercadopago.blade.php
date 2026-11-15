@@ -76,6 +76,11 @@
         </div>
         <div class="acoes-form"><button class="botao botao--escuro">Salvar dados da aplicação</button></div>
     </form>
+    @if ($collectorId)
+        <p style="margin:12px 0 0;font-size:13px" class="suave">Collector ID da BH Software: <b>{{ $collectorId }}</b> <span class="selo selo--verde" style="font-size:11px">Split ativo</span></p>
+    @elseif ($configurado)
+        <p style="margin:12px 0 0;font-size:13px" class="suave">Collector ID: <b>não gravado</b> — salve as chaves ou verifique os tokens de produção para obtê-lo.</p>
+    @endif
 </section>
 
 @foreach ($ambientes as $amb => $a)
