@@ -45,18 +45,13 @@
                 @error('razao_social')<span class="erro">{{ $message }}</span>@enderror
             </div>
             <x-campo nome="nome_fantasia" rotulo="Nome que o público conhece" ajuda="Aparece na página dos eventos." />
-            <x-campo nome="email_contato" rotulo="E-mail de atendimento ao comprador" tipo="email" obrigatorio classe="col-6" ajuda="Vai no e-mail de confirmação da compra." />
-            <x-campo nome="cidade" rotulo="Cidade" classe="col-4" />
-            <x-campo nome="uf" rotulo="UF" classe="col-2" maxlength="2" />
         </div>
     </fieldset>
 
     <fieldset>
         <legend><span class="numero">3</span> Termos</legend>
         <div class="alerta alerta--info">
-            <p>O Fora da Fila é uma plataforma de tecnologia completa para <b>organização e venda de ingressos</b>: check-in online, taxas diferenciadas, relatórios detalhados e
-            segurança em cada etapa — <b>controle total para o seu evento</b>.
-            A responsabilidade pela realização do evento é do organizador.</p>
+            <p><b>Nota:</b> O Fora da Fila atua como intermediador tecnológico; a produção e realização do evento são de inteira responsabilidade do organizador.</p>
         </div>
         <div class="opcoes">
             @php $rotulos = ['uso_organizador' => ['o', 'Termo de uso do organizador'], 'responsabilidade_organizador' => ['o', 'Termo de responsabilidade do organizador'], 'privacidade' => ['a', 'Política de privacidade']]; @endphp
