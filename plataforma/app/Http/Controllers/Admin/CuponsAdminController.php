@@ -29,18 +29,18 @@ class CuponsAdminController extends Controller
             'uuid'           => (string) Str::uuid(),
             'codigo'         => strtoupper(trim($d['codigo'])),
             'nome'           => $d['nome'],
-            'isento'         => isset($d['isento']) ? 1 : 0,
-            'percentual'     => $d['percentual'] !== '' ? $d['percentual'] : null,
-            'valor_fixo'     => $d['valor_fixo'] !== '' ? $d['valor_fixo'] : null,
-            'valor_minimo'   => $d['valor_minimo'] !== '' ? $d['valor_minimo'] : null,
-            'meses_validade' => $d['meses_validade'] !== '' ? $d['meses_validade'] : null,
-            'limite_usos'    => $d['limite_usos'] !== '' ? $d['limite_usos'] : null,
-            'observacao'     => $d['observacao'] ?: null,
+            'isento'         => empty($d['isento']) ? 0 : 1,
+            'percentual'     => $d['percentual'] ?? null,
+            'valor_fixo'     => $d['valor_fixo'] ?? null,
+            'valor_minimo'   => $d['valor_minimo'] ?? null,
+            'meses_validade' => $d['meses_validade'] ?? null,
+            'limite_usos'    => $d['limite_usos'] ?? null,
+            'observacao'     => $d['observacao'] ?? null,
             'ativo'          => 1,
             'criado_por'     => auth()->id(),
             'criado_em'      => now(),
         ]);
-        Auditoria::registrar('admin.cupom_cadastro.criar', null, null, ['codigo' => strtoupper(trim($d['codigo']))]);
+        Auditoria::registrar('admin.cupom_cadastro.criar', auth()->user(), null, ['codigo' => strtoupper(trim($d['codigo']))]);
 
         return redirect()->route('admin.cupons')->with('ok', 'Cupom '.strtoupper(trim($d['codigo'])).' criado.');
     }
@@ -48,20 +48,20 @@ class CuponsAdminController extends Controller
     public function update(Request $request, int $id)
     {
         abort_unless(Esquema::temV019(), 404);
-        $cupom = DB::table('cupom_cadastro')->findOrFail($id);
+        $cupom = DB::table('cupom_cadastro')->where('id', $id)->first() ?? abort(404);
         $d = $this->validar($request, $id);
         DB::table('cupom_cadastro')->where('id', $id)->update([
             'codigo'         => strtoupper(trim($d['codigo'])),
             'nome'           => $d['nome'],
-            'isento'         => isset($d['isento']) ? 1 : 0,
-            'percentual'     => $d['percentual'] !== '' ? $d['percentual'] : null,
-            'valor_fixo'     => $d['valor_fixo'] !== '' ? $d['valor_fixo'] : null,
-            'valor_minimo'   => $d['valor_minimo'] !== '' ? $d['valor_minimo'] : null,
-            'meses_validade' => $d['meses_validade'] !== '' ? $d['meses_validade'] : null,
-            'limite_usos'    => $d['limite_usos'] !== '' ? $d['limite_usos'] : null,
-            'observacao'     => $d['observacao'] ?: null,
+            'isento'         => empty($d['isento']) ? 0 : 1,
+            'percentual'     => $d['percentual'] ?? null,
+            'valor_fixo'     => $d['valor_fixo'] ?? null,
+            'valor_minimo'   => $d['valor_minimo'] ?? null,
+            'meses_validade' => $d['meses_validade'] ?? null,
+            'limite_usos'    => $d['limite_usos'] ?? null,
+            'observacao'     => $d['observacao'] ?? null,
         ]);
-        Auditoria::registrar('admin.cupom_cadastro.editar', null, null, ['id' => $id, 'codigo' => strtoupper(trim($d['codigo']))]);
+        Auditoria::registrar('admin.cupom_cadastro.editar', auth()->user(), (array) $cupom, ['codigo' => strtoupper(trim($d['codigo']))]);
 
         return redirect()->route('admin.cupons')->with('ok', 'Cupom atualizado.');
     }
@@ -72,7 +72,7 @@ class CuponsAdminController extends Controller
         $cupom = DB::table('cupom_cadastro')->where('id', $id)->first() ?? abort(404);
         $novo = $cupom->ativo ? 0 : 1;
         DB::table('cupom_cadastro')->where('id', $id)->update(['ativo' => $novo]);
-        Auditoria::registrar('admin.cupom_cadastro.'.($novo ? 'ativar' : 'desativar'), null, null, ['id' => $id]);
+        Auditoria::registrar('admin.cupom_cadastro.'.($novo ? 'ativar' : 'desativar'), auth()->user(), null, ['id' => $id]);
 
         return back()->with('ok', $novo ? 'Cupom ativado.' : 'Cupom desativado.');
     }
@@ -89,7 +89,7 @@ class CuponsAdminController extends Controller
             'valor_minimo'   => ['nullable', 'numeric', 'min:0'],
             'meses_validade' => ['nullable', 'integer', 'min:1'],
             'limite_usos'    => ['nullable', 'integer', 'min:1'],
-            'observacao'     => ['nullable', 'string', 'max:255'],
+            'observacao'     => ['nullable', 'string', 'max:500'],
         ], [
             'codigo.alpha_num' => 'O código deve conter apenas letras e números (sem espaço ou símbolo).',
             'codigo.unique'    => 'Já existe um cupom com este código.',
