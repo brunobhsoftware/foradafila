@@ -294,7 +294,7 @@
 @endif
 
 @php $mpAtiva = $propriaAtiva || $conectada; @endphp
-@if ($mpAtiva)
+@if ($mpAtiva && ! $contaAtiva)
 <section class="cartao" style="padding:22px 24px;margin-top:18px">
     <h2 style="margin-top:0">Ambiente das vendas</h2>
     <form method="post" action="{{ route('financeiro.ambiente') }}">@csrf @method('PUT')
@@ -321,6 +321,13 @@
         </div>
         @can('financeiro.contas')<div><button class="botao botao--escuro botao--pequeno">Salvar forma de recebimento</button></div>@endcan
     </form>
+</section>
+@elseif ($contaAtiva)
+<section class="cartao" style="padding:22px 24px;margin-top:18px">
+    <h2 style="margin-top:0">Recebimento das vendas</h2>
+    <p>As vendas caem direto na conta do Mercado Pago da empresa (<b>{{ $conta->email_conta }}</b>).
+        A comissão da plataforma é retida automaticamente em cada venda.</p>
+    <p class="suave" style="margin:8px 0 0;font-size:13px">Conta {{ $conta->conta_externa_id }} · Ambiente de produção</p>
 </section>
 @endif
 @endif
