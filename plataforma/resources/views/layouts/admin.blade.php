@@ -5,7 +5,7 @@
         ['rota' => 'admin.inicio', 'icone' => 'painel', 'texto' => 'Início'],
         ['rota' => 'admin.empresas', 'icone' => 'organizacao', 'texto' => 'Empresas'],
         ['rota' => 'admin.taxas', 'icone' => 'financeiro', 'texto' => 'Taxas e isenções'],
-        ['rota' => 'admin.cupons', 'icone' => 'cupom', 'texto' => 'Cupons de cadastro'],
+        ...(\App\Support\Esquema::temV019() ? [['rota' => 'admin.cupons', 'icone' => 'cupom', 'texto' => 'Cupons de cadastro']] : []),
         ['rota' => 'admin.mercadopago', 'icone' => 'dinheiro', 'texto' => 'Mercado Pago'],
         ['rota' => 'admin.repasses', 'icone' => 'dinheiro', 'texto' => 'Repasses'],
         ['rota' => 'admin.emails', 'icone' => 'mensagem', 'texto' => 'E-mails enviados'],
