@@ -192,6 +192,15 @@
     b.setAttribute('aria-expanded', String(!alvo.hidden));
   }));
 
+  // Financeiro: alternar entre configuração automática e manual do Mercado Pago
+  $$('[data-mp-config]').forEach((r) => r.addEventListener('change', () => {
+    const auto = document.getElementById('mp-config-automatica');
+    const manual = document.getElementById('mp-config-manual');
+    if (!auto || !manual) return;
+    auto.hidden = r.value !== 'automatica';
+    manual.hidden = r.value !== 'manual';
+  }));
+
   // Check-in pelo navegador: leitor (teclado), câmera (BarcodeDetector) e busca manual
   $$('[data-checkin]').forEach((raiz) => {
     const token = document.querySelector('meta[name=csrf-token]')?.content;
