@@ -103,6 +103,9 @@ small, .suave { color: var(--suave); }
 
 /* Tabelas */
 .tabela-rolagem { overflow-x: auto; }
+.celula-quebra { overflow-wrap: anywhere; min-width: 150px; }
+.so-estreito { display: none; }
+}
 table.tabela { width: 100%; border-collapse: collapse; font-size: .92rem; }
 .tabela th { text-align: left; font-weight: 600; color: var(--suave); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; padding: 11px 16px; background: #FCFCFD; border-bottom: 1px solid var(--borda); white-space: nowrap; }
 .tabela td { padding: 13px 16px; border-bottom: 1px solid var(--borda); vertical-align: middle; }
@@ -464,3 +467,14 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 .interruptor-visivel__chave::after { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; transition: left .15s; }
 .interruptor-visivel__chave.ligado { background: #12B76A; }
 .interruptor-visivel__chave.ligado::after { left: 15px; }
+
+/* Listas de Pedidos e Participantes no celular: menos colunas e menos margem */
+@media (max-width: 600px) {
+  .tabela .col-larga { display: none; }
+  .so-estreito { display: inline; }
+  .tabela th, .tabela td { padding-left: 7px; padding-right: 7px; }
+  .tabela td { font-size: .88rem; }
+  .tabela td .botao--pequeno { padding-left: 9px; padding-right: 9px; }
+  .celula-quebra { min-width: 0; }
+  .linha-acoes td { overflow-wrap: anywhere; }
+  .linha-acoes .acoes-linha { flex-wrap: wrap; }
