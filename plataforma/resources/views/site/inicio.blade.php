@@ -9,8 +9,8 @@
     <img src="{{ asset('assets/img/hero-show.jpg') }}" alt="Público com as mãos para o alto em um show com luzes no palco" width="1170" height="570">
   </picture>
   <div class="container hero__conteudo">
-    <h1>Venda ingressos com taxa <span class="sublinhado">justa</span><span class="ponto">.</span></h1>
-    <p>Taxas competitivas e transparentes, o dinheiro direto na sua conta e você decide: absorve a taxa ou repassa ao comprador.</p>
+    <h1>Tecnologia completa para vender e organizar o seu evento<span class="ponto">.</span></h1>
+    <p>Ecossistema completo de gestão e venda de ingressos: check-in digital, taxas competitivas, relatórios em tempo real e controle total para produtores de qualquer porte.</p>
     <div class="hero__acoes">
       <a href="{{ route('cadastro') }}" class="botao botao--amarelo">Criar evento grátis <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       <a href="{{ route('solucao') }}" class="botao botao--contorno">Conhecer a plataforma</a>
@@ -30,7 +30,7 @@
   </div>
   <div class="diferencial">
     <svg class="i i--laranja i--cheio" viewBox="0 0 24 24"><rect x="3" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
-    <span>Dinheiro direto<br>na sua conta</span>
+    <span>Relatórios e<br>controle total</span>
   </div>
   <div class="diferencial">
     <svg class="i i--laranja" viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/><path d="M19.5 19c0 1.5-2 2.5-5.5 2.5"/></svg>
@@ -84,12 +84,12 @@
   <div class="container solucao__linha">
     <div class="solucao__texto">
       <span class="traco"></span>
-      <h2>Uma solução completa para organizadores de todos os portes.</h2>
-      <p>Do evento local ao grande festival, o <strong>fora da fila.</strong> se adapta à sua realidade, com ferramentas que simplificam a gestão, aumentam as vendas e oferecem uma experiência incrível para o público.</p>
+      <h2>Um ecossistema completo para transformar a organização do seu evento.</h2>
+      <p>O <strong>fora da fila.</strong> reúne tudo o que você precisa em um só lugar: criação de páginas personalizadas, taxas competitivas e transparentes, gestão inteligente de lotes, controle de acesso ágil com check-in digital e relatórios financeiros e de público em tempo real.</p>
       <ul class="lista-check">
-        <li>Flexível para pequenos, médios e grandes eventos.</li>
-        <li>Mais autonomia e controle na sua operação.</li>
-        <li>Tecnologia confiável e sempre em evolução.</li>
+        <li>Infraestrutura robusta e segurança antifraude em cada etapa.</li>
+        <li>Autonomia para produtores de qualquer porte escalarem suas operações.</li>
+        <li>Sem burocracia: do cadastro à portaria em minutos.</li>
       </ul>
     </div>
 
@@ -164,7 +164,7 @@
     </article>
     <article class="cartao">
       <h3>Escolha por evento</h3>
-      <p>Defina o padrão da sua organização e mude em cada evento quando quiser. O dinheiro das vendas cai direto na sua conta.</p>
+      <p>Defina o padrão da sua organização e mude em cada evento quando quiser, com total transparência para o comprador.</p>
     </article>
   </div>
   <p style="margin-top:20px"><a href="{{ route('precos') }}" class="botao botao--contorno">Ver preços e taxas</a></p>

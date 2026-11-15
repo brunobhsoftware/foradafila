@@ -52,7 +52,6 @@ class CadastroController extends Controller
             'documento' => ['required', new DocumentoValido($request->input('tipo_pessoa')), Rule::unique('organizador', 'documento')],
             'razao_social' => ['required', 'string', 'max:150'],
             'nome_fantasia' => ['nullable', 'string', 'max:150'],
-            'email_contato' => ['required', 'email:filter', 'max:150'],
             'cidade' => ['nullable', 'string', 'max:100'],
             'uf' => ['nullable', 'string', 'size:2'],
             'aceites' => ['required', 'array'],
@@ -82,11 +81,9 @@ class CadastroController extends Controller
                 'razao_social' => $dados['razao_social'],
                 'nome_fantasia' => $dados['nome_fantasia'] ?? null,
                 'slug' => Organizador::slugDisponivel($dados['nome_fantasia'] ?: $dados['razao_social']),
-                'email_contato' => $dados['email_contato'],
+                'email_contato' => $dados['email'],
                 'email_financeiro' => $dados['email'],
                 'whatsapp' => Documento::digitos($dados['telefone']),
-                'cidade' => $dados['cidade'] ?? null,
-                'uf' => isset($dados['uf']) ? strtoupper($dados['uf']) : null,
                 // Projeto piloto: a conta já nasce ativa. Quando o e-mail transacional estiver
                 // configurado, passa a nascer 'pendente' até confirmar o e-mail (regras, seção 5).
                 'situacao' => 'ativo',

@@ -36,8 +36,8 @@
 <section class="pub-cabecalho">
   <div class="container">
     <span class="traco"></span>
-    <h1>Tudo para vender e organizar o seu evento, com taxa justa<span class="ponto">.</span></h1>
-    <p>O Fora da Fila é uma plataforma de tecnologia para produtores: taxas competitivas, o dinheiro direto na sua conta e a liberdade de decidir se a taxa fica com você ou com o comprador.</p>
+    <h1>Ecossistema completo de tecnologia e gestão para o seu evento<span class="ponto">.</span></h1>
+    <p>O Fora da Fila reúne tudo o que você precisa em um só lugar: criação de páginas personalizadas, taxas competitivas e transparentes, gestão inteligente de lotes, controle de acesso ágil com check-in digital e relatórios financeiros e de público em tempo real. Com infraestrutura robusta e segurança antifraude em cada etapa da transação, oferecemos autonomia e controle total para produtores de qualquer porte escalarem suas operações sem burocracia.</p>
   </div>
 </section>
 
