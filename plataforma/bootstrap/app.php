@@ -28,6 +28,10 @@ $app = Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo(fn ($request) => $request->is('minha-conta*') ? route('comprador.ingressos') : route('painel'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Todo erro inesperado (500) vai para Administração → Log de erros.
+        $exceptions->report(function (\Throwable $e) {
+            \App\Support\LogErro::registrar('erro.500', $e, rescue(fn () => app(\App\Support\Tenant::class)->id(), null, false));
+        });
         // Sessão expirada (419): volta ao formulário com o que foi digitado, em vez da página "Page Expired".
         $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, \Illuminate\Http\Request $request) {
             if ($e->getStatusCode() !== 419 || $request->expectsJson()) {
