@@ -104,4 +104,10 @@ class Esquema
     {
         return self::$cache['v019'] ??= Schema::hasTable('cupom_cadastro') && Schema::hasColumn('organizador', 'cupom_cadastro_id');
     }
+
+    /** V020: coluna `taxa_organizador.beneficiario` (plataforma ou empresa). */
+    public static function temV020(): bool
+    {
+        return self::$cache['v020'] ??= Schema::hasColumn('taxa_organizador', 'beneficiario');
+    }
 }
