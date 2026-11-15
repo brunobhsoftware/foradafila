@@ -81,7 +81,8 @@
             <tr>
                 <td>{{ $O[$t->operacao] ?? $t->operacao }}</td>
                 <td>@if ($t->isento)<span class="selo selo--verde">Isenta</span>@else
-                    {{ $t->percentual !== null ? numero($t->percentual, 2).'%' : 'padrão %' }} · fixo {{ $t->valor_fixo !== null ? moeda($t->valor_fixo) : 'padrão' }} · mínimo {{ $t->valor_minimo !== null ? moeda($t->valor_minimo) : 'padrão' }}@endif</td>
+                    {{ $t->percentual !== null ? numero($t->percentual, 2).'%' : 'padrão %' }} · fixo {{ $t->valor_fixo !== null ? moeda($t->valor_fixo) : 'padrão' }} · mínimo {{ $t->valor_minimo !== null ? moeda($t->valor_minimo) : 'padrão' }}@endif
+                    @if (isset($t->beneficiario) && $t->beneficiario === 'empresa')<br><span class="selo selo--amarelo" title="A empresa fica com tudo — a plataforma não cobra comissão">fica com a empresa</span>@endif</td>
                 <td>{{ \Illuminate\Support\Carbon::parse($t->inicio)->format('d/m/Y') }} → {{ $t->fim ? \Illuminate\Support\Carbon::parse($t->fim)->format('d/m/Y') : 'sem fim' }}
                     @if ($vigente)<span class="selo selo--azul">vigente</span>@endif</td>
                 <td>{{ $t->observacao }}<br><small>{{ $t->autor }}</small></td>

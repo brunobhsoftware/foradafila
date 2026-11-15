@@ -131,6 +131,7 @@ class EmpresasController extends Controller implements \Illuminate\Routing\Contr
         $d = $request->validate([
             'operacao' => ['required', 'in:todas,'.implode(',', array_keys(MotorTaxas::OPERACOES))],
             'isento' => ['nullable', 'boolean'],
+            'beneficiario' => ['nullable', 'in:plataforma,empresa'],
             'percentual' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'valor_fixo' => ['nullable', 'numeric', 'min:0', 'max:100000'],
             'valor_minimo' => ['nullable', 'numeric', 'min:0', 'max:100000'],
@@ -141,9 +142,11 @@ class EmpresasController extends Controller implements \Illuminate\Routing\Contr
         if (! $isento && $d['percentual'] === null && $d['valor_fixo'] === null && $d['valor_minimo'] === null) {
             return back()->withInput()->withErrors(['percentual' => 'Marque a isenção ou informe pelo menos um valor (percentual, tarifa fixa ou mínima).']);
         }
+        $beneficiario = \App\Support\Esquema::temV020() ? ($d['beneficiario'] ?? 'plataforma') : null;
         $valores = ['operacao' => $d['operacao'], 'isento' => $isento,
             'percentual' => $isento ? null : $d['percentual'], 'valor_fixo' => $isento ? null : $d['valor_fixo'], 'valor_minimo' => $isento ? null : $d['valor_minimo'],
-            'inicio' => $d['inicio'], 'fim' => $d['fim'] ?? null, 'observacao' => $d['observacao'] ?? null];
+            'inicio' => $d['inicio'], 'fim' => $d['fim'] ?? null, 'observacao' => $d['observacao'] ?? null]
+            + ($beneficiario !== null ? ['beneficiario' => $beneficiario] : []);
         if ($taxa) {
             // Editar a taxa existente (sem criar outra): vale do início informado até o fim (em branco = sempre ativa).
             $antes = DB::table('taxa_organizador')->where('organizador_id', $organizador->id)->where('id', $taxa)->first();
