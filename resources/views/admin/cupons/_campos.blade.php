@@ -1,7 +1,8 @@
 {{-- Campos compartilhados entre criar e editar cupom de cadastro. $c = objeto ou null (criação). --}}
 <x-campo nome="codigo" rotulo="Código" obrigatorio classe="col-3" :valor="old('codigo', $c->codigo ?? '')"
     ajuda="Somente letras e números, maiúsculas. Ex: LANCAMENTO" maxlength="50" />
-<x-campo nome="nome" rotulo="Nome / descrição interna" obrigatorio classe="col-9" :valor="old('nome', $c->nome ?? '')" />
+<x-campo nome="nome" rotulo="Descrição interna" obrigatorio classe="col-9" :valor="old('nome', $c->nome ?? '')"
+    ajuda="Descreva o benefício com detalhes, ex: Parceria de lançamento — taxa 2% sem mínimo por 12 meses" />
 
 <div class="campo col-12">
     <label class="opcao"><input type="checkbox" name="isento" value="1" @checked(old('isento', $c->isento ?? 0))>
@@ -14,4 +15,7 @@
 
 <x-campo nome="meses_validade" rotulo="Duração do benefício (meses)" tipo="number" classe="col-3" :valor="old('meses_validade', $c->meses_validade ?? '')" min="1" ajuda="Em branco = permanente" />
 <x-campo nome="limite_usos" rotulo="Limite de usos" tipo="number" classe="col-3" :valor="old('limite_usos', $c->limite_usos ?? '')" min="1" ajuda="Em branco = ilimitado" />
-<x-campo nome="observacao" rotulo="Observação interna" classe="col-9" :valor="old('observacao', $c->observacao ?? '')" maxlength="255" />
+<div class="campo col-12">
+    <label for="campo_observacao">Observação interna</label>
+    <textarea id="campo_observacao" name="observacao" rows="3" maxlength="500" style="resize:vertical">{{ old('observacao', $c->observacao ?? '') }}</textarea>
+</div>
