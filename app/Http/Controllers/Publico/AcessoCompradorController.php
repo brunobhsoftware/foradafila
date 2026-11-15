@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Publico;
 use App\Http\Controllers\Controller;
 use App\Models\Comprador;
 use App\Models\Pedido;
+use App\Models\Usuario;
 use App\Rules\DocumentoValido;
 use App\Support\CadastroPessoa;
 use App\Support\CodigoVerificacao;
@@ -53,7 +54,19 @@ class AcessoCompradorController extends Controller
         if ($comprador) {
             return $this->enviarPara($comprador);
         }
-        // Sem cadastro: código para confirmar o e-mail antes de criar a conta.
+        // E-mail não está em comprador: verifica se já existe como produtor ou no cadastro único por CPF.
+        // Se sim, cria o comprador automaticamente com o nome já conhecido (pula a etapa "Complete seu cadastro").
+        $nome = Usuario::where('email', $email)->value('nome');
+        if (! $nome) {
+            // tenta pelo cadastro único de pessoas (nome pode estar lá por CPF de compra anterior)
+            $nome = \Illuminate\Support\Facades\DB::table('pessoa')->where('email', $email)->value('nome');
+        }
+        if ($nome) {
+            $comprador = Comprador::create(['nome' => $nome, 'email' => $email, 'senha_hash' => null]);
+
+            return $this->enviarPara($comprador);
+        }
+        // Sem nenhum cadastro: código para confirmar o e-mail antes de preencher os dados.
         session(['acesso_comprador' => null, 'acesso_email' => $email, 'cadastro_email' => $email]);
         if ($codigo = CodigoVerificacao::gerar(self::idCadastro($email), 'cadastro-novo')) {
             Notificacoes::codigoVerificacao('', $email, $codigo, 'criar a sua conta');
