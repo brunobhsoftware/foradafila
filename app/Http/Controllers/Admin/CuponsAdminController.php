@@ -81,7 +81,7 @@ class CuponsAdminController extends Controller
     {
         return $request->validate([
             'codigo'         => ['required', 'string', 'max:50', 'alpha_num',
-                \Illuminate\Validation\Rule::unique('cupom_cadastro', 'codigo')->ignore($ignorarId)->withoutTrashed()],
+                \Illuminate\Validation\Rule::unique('cupom_cadastro', 'codigo')->ignore($ignorarId)],
             'nome'           => ['required', 'string', 'max:150'],
             'isento'         => ['nullable', 'boolean'],
             'percentual'     => ['nullable', 'numeric', 'min:0', 'max:100'],
