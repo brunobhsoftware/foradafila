@@ -24,17 +24,16 @@
         <div class="vazio"><h3>Nenhum pedido encontrado</h3></div>
     @else
     <div class="tabela-rolagem"><table class="tabela">
-        <thead><tr><th>Pedido</th><th>Comprador</th><th>Evento</th><th class="num">Ingressos</th><th class="num">Total</th><th>Situação</th><th>Data</th></tr></thead>
+        <thead><tr><th>Pedido</th><th>Evento / comprador</th><th class="num">Total</th><th class="num col-larga">Ações</th></tr></thead>
         <tbody>
         @foreach ($pedidos as $p)
             <tr>
-                <td><a href="{{ route('pedidos.show', $p) }}"><b>{{ $p->codigo }}</b></a></td>
-                <td>{{ $p->comprador?->nome }}<br><small>{{ $p->comprador?->email }}</small></td>
-                <td>{{ $p->evento?->titulo }}</td>
-                <td class="num">{{ $p->ingressos_count }}</td>
-                <td class="num">{{ (float) $p->valor_total > 0 ? moeda($p->valor_total) : 'Grátis' }}</td>
-                <td><span class="selo {{ ['pago' => 'selo--verde', 'cancelado' => 'selo--cinza', 'reembolsado' => 'selo--laranja', 'reembolso_parcial' => 'selo--laranja'][$p->status] ?? 'selo--amarelo' }}">{{ $S[$p->status] ?? $p->status }}</span></td>
-                <td>{{ data_local($p->criado_em, 'd/m/Y H:i') }}</td>
+                <td style="white-space:nowrap"><a href="{{ route('pedidos.show', $p) }}"><b>{{ $p->codigo }}</b></a><br>
+                    <span class="selo {{ ['pago' => 'selo--verde', 'cancelado' => 'selo--cinza', 'reembolsado' => 'selo--laranja', 'reembolso_parcial' => 'selo--laranja'][$p->status] ?? 'selo--amarelo' }}">{{ $S[$p->status] ?? $p->status }}</span><br>
+                    <small>{{ data_local($p->criado_em, 'd/m/y H:i') }}</small></td>
+                <td class="celula-quebra"><b>{{ $p->evento?->titulo }}</b><br>{{ $p->comprador?->nome }}<br><small>{{ $p->comprador?->email }}</small></td>
+                <td class="num" style="white-space:nowrap">{{ (float) $p->valor_total > 0 ? moeda($p->valor_total) : 'Grátis' }}<br><small>{{ $p->ingressos_count }} {{ $p->ingressos_count == 1 ? 'ingresso' : 'ingressos' }}</small></td>
+                <td class="num col-larga"><a href="{{ route('pedidos.show', $p) }}" class="botao botao--contorno botao--pequeno">Abrir</a></td>
             </tr>
         @endforeach
         </tbody>

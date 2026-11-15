@@ -42,17 +42,18 @@
             <div class="vazio"><h3>Nenhum participante encontrado</h3><p>Quando alguém se inscrever ou comprar, aparece aqui.</p></div>
         @else
         <div class="tabela-rolagem"><table class="tabela">
-            <thead><tr><th>Ingresso</th><th>Participante</th><th>Tipo / lote</th><th class="num">Valor pago</th><th>Pedido</th><th>Situação</th><th class="num">Ações</th></tr></thead>
+            <thead><tr><th>Ingresso</th><th>Participante</th><th class="col-larga">Pedido</th><th class="num">Ações</th></tr></thead>
             <tbody>
             @foreach ($ingressos as $i)
                 <tr>
-                    <td style="white-space:nowrap"><b>{{ $i->numeroExibicao() }}</b></td>
-                    <td>{{ $i->participante?->nome ?? '—' }}<br><small>{{ $i->participante?->email ?? "comprador: ".$i->pedido?->comprador?->email }}</small></td>
-                    <td>{{ $i->tipo?->nome }}<br><small>{{ $i->lote?->nome }}</small></td>
-                    <td class="num">{{ (float) $i->valor_pago > 0 ? moeda($i->valor_pago) : 'Grátis' }}</td>
-                    <td>@can('pedido.ver')<a href="{{ route('pedidos.show', $i->pedido) }}">{{ $i->pedido?->codigo }}</a>@else{{ $i->pedido?->codigo }}@endcan<br><small>{{ $i->pedido?->comprador?->nome }}</small></td>
-                    <td><span class="selo {{ ['valido' => 'selo--verde', 'utilizado' => 'selo--azul', 'cancelado' => 'selo--cinza', 'reembolsado' => 'selo--laranja'][$i->status] ?? '' }}">{{ $S[$i->status] ?? $i->status }}</span>
+                    <td style="white-space:nowrap"><b>{{ $i->numeroExibicao() }}</b><br>
+                        <span class="selo {{ ['valido' => 'selo--verde', 'utilizado' => 'selo--azul', 'cancelado' => 'selo--cinza', 'reembolsado' => 'selo--laranja'][$i->status] ?? '' }}">{{ $S[$i->status] ?? $i->status }}</span>
                         @if ($i->primeiro_checkin_em)<br><small>{{ data_local($i->primeiro_checkin_em, 'd/m H:i') }}</small>@endif</td>
+                    <td class="celula-quebra"><b>{{ $i->participante?->nome ?? '—' }}</b><br><small>{{ $i->participante?->email ?? "comprador: ".$i->pedido?->comprador?->email }}</small><br>
+                        <small>{{ $i->tipo?->nome }} · {{ $i->lote?->nome }}</small>
+                        <small class="so-estreito"><br>Pedido {{ $i->pedido?->codigo }} · {{ (float) $i->valor_pago > 0 ? moeda($i->valor_pago) : 'Grátis' }}</small></td>
+                    <td class="celula-quebra col-larga">@can('pedido.ver')<a href="{{ route('pedidos.show', $i->pedido) }}">{{ $i->pedido?->codigo }}</a>@else{{ $i->pedido?->codigo }}@endcan
+                        · {{ (float) $i->valor_pago > 0 ? moeda($i->valor_pago) : 'Grátis' }}<br><small>{{ $i->pedido?->comprador?->nome }}</small></td>
                     <td class="num">
                         @if (in_array($i->status, ['valido', 'utilizado']))
                             <button type="button" class="botao botao--contorno botao--pequeno" data-alternar="acoes-{{ $i->uuid }}" aria-expanded="false">Ações</button>
@@ -61,7 +62,7 @@
                 </tr>
                 @if (in_array($i->status, ['valido', 'utilizado']))
                 <tr class="linha-acoes" id="acoes-{{ $i->uuid }}" @unless (old('_ingresso') === $i->uuid) hidden @endunless>
-                    <td colspan="7">
+                    <td colspan="4">
                         <div class="linha-acoes__grade">
                             <div>
                                 <p class="linha-acoes__titulo">Reenviar ingresso por e-mail</p>
