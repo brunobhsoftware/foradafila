@@ -224,6 +224,12 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   Financeiro da produtora mostra o **extrato** (vendas, taxa, liberado, aguardando, repasses recebidos). Ainda não:
   parcelamento configurável, cupom de desconto no checkout pago já aplica o desconto (`Cupom::desconto`). Teste `fluxo-checkout.js`
   (31, porta 8001 + MP falso).
+- **Comissão retida na venda (conta OAuth, 15/11/2026)**: com a conta `direta` (Financeiro → configuração automática, `Recebimento::configMp`) e comissão > 0,
+  Pix e cartão são criados pela **API de Payments** com `application_fee` (`Checkout::criarPagamentoDireto`, `MercadoPago::criarPagamento`); `pagamento.gateway_pagamento_id`
+  = id do pagamento, `resposta_gateway.api = payments`; conferência em `sincronizarPagamento`, devolução em `MercadoPago::reembolsarPagamento`. Se o MP recusar, a venda
+  segue pela order sem reter (Log de erros `checkout.application_fee`). A API de Orders **não** retém: recusa `marketplace_fee` em `config` e ignora na raiz (testado).
+  Modos `plataforma` e `propria` continuam só com Orders. `checkout.split_diagnostico` no Log de erros é temporário.
+- **Log de erros** (V022, `App\Support\LogErro`, Administração → Log de erros): todo erro 500 (`bootstrap/app.php`, contexto `erro.500`) e os erros do checkout.
 - Sem cron ainda: lote `agendado` abre quando chega `venda_inicio`; lote com `lote_anterior_id` só abre quando o
   anterior esgota, encerra ou passa do fim (`EventoPublicoController::loteAVenda`).
 - **Imagem de divulgação do evento** (opcional): JPEG/GIF/PNG até 2 MB, recomendada 1600 x 838, campo "clique ou

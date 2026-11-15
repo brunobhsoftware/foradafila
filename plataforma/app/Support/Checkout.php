@@ -86,21 +86,28 @@ class Checkout
     public static function reembolsar(Pedido $pedido, float $valor): ?array
     {
         // Também depois de uma devolução parcial (estorno_parcial): o segundo cancelamento do mesmo pedido devolve o que falta.
-        $pg = DB::table('pagamento')->where('pedido_id', $pedido->id)->whereIn('status', ['aprovado', 'estorno_parcial'])->whereNotNull('gateway_pedido_id')->orderByDesc('id')->first();
+        $pg = DB::table('pagamento')->where('pedido_id', $pedido->id)->whereIn('status', ['aprovado', 'estorno_parcial'])
+            ->where(fn ($q) => $q->whereNotNull('gateway_pedido_id')->orWhereNotNull('gateway_pagamento_id'))->orderByDesc('id')->first();
         if (! $pg || $valor <= 0) {
             return null;
         }
         $conta = ContaPagamento::withoutGlobalScopes()->findOrFail($pg->conta_pagamento_id);
-        $ambiente = json_decode((string) $pg->resposta_gateway, true)['ambiente'] ?? 'producao';
+        $resposta = json_decode((string) $pg->resposta_gateway, true) ?: [];
+        $ambiente = $resposta['ambiente'] ?? 'producao';
         $jaDevolvido = (float) DB::table('reembolso')->where('pedido_id', $pedido->id)->where('status', 'concluido')->sum('valor');
         $total = round($valor + $jaDevolvido, 2) >= round((float) $pg->valor, 2);
         // Devolução "total" (sem corpo) só quando nada foi devolvido antes; depois de uma parcial, sempre com o valor.
         $corpo = ($total && $jaDevolvido <= 0) || ! $pg->gateway_pagamento_id ? null
             : ['transactions' => [['id' => $pg->gateway_pagamento_id, 'amount' => number_format($valor, 2, '.', '')]]];
-        $r = MercadoPago::reembolsarOrder(self::tokenDoAmbiente($conta, $ambiente), $pg->gateway_pedido_id, $corpo);
+        if (($resposta['api'] ?? 'orders') === 'payments') {
+            // Venda com a comissão retida (API de Payments): devolução total sem valor; parcial com o valor.
+            $r = MercadoPago::reembolsarPagamento(self::tokenDoAmbiente($conta, $ambiente), $pg->gateway_pagamento_id, $total && $jaDevolvido <= 0 ? null : $valor);
+        } else {
+            $r = MercadoPago::reembolsarOrder(self::tokenDoAmbiente($conta, $ambiente), $pg->gateway_pedido_id, $corpo);
+        }
         DB::table('pagamento')->where('id', $pg->id)->update(['status' => $total ? 'estornado' : 'estorno_parcial',
             'status_gateway' => mb_substr((string) ($r['status'] ?? ''), 0, 60)]);
-        Auditoria::registrar('pedido.reembolso_mercadopago', $pedido, null, ['valor' => $valor, 'total' => $total, 'order' => $pg->gateway_pedido_id, 'ambiente' => $ambiente]);
+        Auditoria::registrar('pedido.reembolso_mercadopago', $pedido, null, ['valor' => $valor, 'total' => $total, 'order' => $pg->gateway_pedido_id ?: $pg->gateway_pagamento_id, 'ambiente' => $ambiente]);
 
         return ['valor' => $valor, 'ambiente' => $ambiente];
     }
@@ -267,26 +274,17 @@ class Checkout
                     'installments' => $cartao['installments']]),
             ]]];
         }
-        // Comissão retida na venda (só conta OAuth/direta): marketplace_fee na RAIZ da order. Se o Mercado Pago recusar,
-        // a order é refeita sem a comissão (a venda não para) e o motivo vai para o Log de erros.
-        $split = false;
-        $comissaoSplit = $conta->modo === 'direta' ? self::comissao($pedido) : 0;
-        if ($comissaoSplit > 0) {
+        // Conta conectada por OAuth com comissão a reter: Pix e cartão vão pela API de Payments (application_fee),
+        // porque a API de Orders aceita marketplace_fee no pagamento direto mas não aplica (testado em 15/11/2026).
+        if ($conta->modo === 'direta' && ($forma === 'pix' || $cartao) && self::comissao($pedido) > 0) {
             try {
-                $order = MercadoPago::criarOrder(self::token($conta), $dados + ['marketplace_fee' => number_format($comissaoSplit, 2, '.', '')]);
-                $split = true;
+                return self::criarPagamentoDireto($pedido, $evento, $comprador, $conta, $cpf, $forma, $cartao, $itens);
             } catch (\Throwable $e) {
-                LogErro::registrar('checkout.marketplace_fee', $e, $pedido->organizador_id, ['pedido' => $pedido->codigo, 'forma' => $forma, 'comissao' => $comissaoSplit]);
+                // A venda não para: segue pela order (sem reter a comissão) e o motivo fica no Log de erros.
+                LogErro::registrar('checkout.application_fee', $e, $pedido->organizador_id, ['pedido' => $pedido->codigo, 'forma' => $forma]);
             }
         }
-        $order ??= MercadoPago::criarOrder(self::token($conta), $dados);
-        // Diagnóstico temporário do split (não é erro): qual conta vendeu e o que o Mercado Pago devolveu sobre a comissão.
-        LogErro::registrar('checkout.split_diagnostico', new RuntimeException('Diagnóstico do split: conta '.$conta->modo.', comissão '.$comissaoSplit
-            .', enviada '.($split ? 'sim' : 'não').', devolvida pelo MP: '.json_encode($order['marketplace_fee'] ?? null)), $pedido->organizador_id, [
-            'pedido' => $pedido->codigo, 'conta_id' => $conta->id, 'comissao_pedido' => self::comissao($pedido), 'forma' => $forma,
-            'order' => array_diff_key($order, ['payer' => 1, 'items' => 1, 'transactions' => 1]),
-            'pagamento' => array_diff_key((array) data_get($order, 'transactions.payments.0', []), ['payment_method' => 1]),
-        ]);
+        $order = MercadoPago::criarOrder(self::token($conta), $dados);
         self::$ultimaOrder = $order;
         if ($cartao) {
             $link = route('pedido.retorno', ['pedido' => $pedido->uuid]);
@@ -310,8 +308,78 @@ class Checkout
             'status_gateway' => mb_substr((string) ($order['status'] ?? ''), 0, 60), 'valor' => $pedido->valor_total,
             'comissao_retida' => self::comissao($pedido), 'valor_liquido_org' => round((float) $pedido->valor_total - self::comissao($pedido), 2),
             'link_pagamento' => mb_substr($link, 0, 500), 'expira_em' => $pedido->expira_em,
-            'resposta_gateway' => json_encode(['ambiente' => self::modoTeste($pedido->organizador_id) ? 'teste' : 'producao', 'order' => $order['id'], 'split' => $split] + ($pix ? ['pix' => $pix] : [])),
+            'resposta_gateway' => json_encode(['ambiente' => self::modoTeste($pedido->organizador_id) ? 'teste' : 'producao', 'order' => $order['id']] + ($pix ? ['pix' => $pix] : [])),
         ]);
+
+        return $link;
+    }
+
+    /**
+     * Venda pela conta conectada por OAuth com a comissão da plataforma retida na hora (application_fee da API de
+     * Payments): o Mercado Pago credita a comissão na conta da BH Software e o restante na conta da empresa.
+     */
+    private static function criarPagamentoDireto(Pedido $pedido, Evento $evento, Comprador $comprador, ContaPagamento $conta, ?string $cpf, ?string $forma, ?array $cartao, array $itens): string
+    {
+        $comissao = self::comissao($pedido);
+        $partes = preg_split('/\s+/', trim($comprador->nome), 2);
+        $aviso = route('webhook.mercadopago');
+        $dados = array_filter([
+            'transaction_amount' => round((float) $pedido->valor_total, 2),
+            'description' => mb_substr('Ingressos — '.$evento->titulo, 0, 150),
+            'external_reference' => $pedido->codigo,
+            'statement_descriptor' => 'FORADAFILA',
+            'application_fee' => $comissao,
+            'notification_url' => str_starts_with($aviso, 'https://') ? $aviso : null,
+            'payer' => array_filter([
+                'email' => ($cartao['email'] ?? null) ?: $comprador->email,
+                'first_name' => $partes[0],
+                'last_name' => $partes[1] ?? $partes[0],
+                'identification' => $cpf ? ['type' => 'CPF', 'number' => $cpf] : null,
+            ]),
+            'additional_info' => ['items' => array_map(fn ($i) => [
+                'id' => $i['external_code'], 'title' => $i['title'], 'description' => $i['description'], 'category_id' => 'tickets',
+                'quantity' => $i['quantity'], 'unit_price' => (float) $i['unit_price'],
+            ], $itens)],
+        ]);
+        if ($cartao) {
+            $dados += array_filter([
+                'token' => $cartao['token'], 'installments' => (int) $cartao['installments'], 'payment_method_id' => $cartao['id'],
+                'issuer_id' => ! empty($cartao['issuer_id']) ? (int) $cartao['issuer_id'] : null,
+            ]);
+        } else {
+            $dados += ['payment_method_id' => 'pix', 'date_of_expiration' => now()->addMinutes(self::RESERVA_MIN)->format('Y-m-d\TH:i:s.vP')];
+        }
+        $pg = MercadoPago::criarPagamento(self::token($conta), $dados);
+        $status = (string) ($pg['status'] ?? '');
+        // Mesmo formato da order, para o cartão saber na hora se aprovou.
+        self::$ultimaOrder = ['id' => $pg['id'], 'status' => match ($status) { 'approved' => 'processed', 'rejected' => 'failed', default => $status },
+            'status_detail' => $status === 'approved' ? 'accredited' : (string) ($pg['status_detail'] ?? '')];
+        $pix = null;
+        if ($cartao) {
+            $link = route('pedido.retorno', ['pedido' => $pedido->uuid]);
+        } else {
+            $td = (array) data_get($pg, 'point_of_interaction.transaction_data', []);
+            $pix = ['qr' => (string) ($td['qr_code'] ?? ''), 'ticket' => (string) ($td['ticket_url'] ?? '')];
+            if ($pix['qr'] === '') {
+                throw new RuntimeException('O Mercado Pago não devolveu o código do Pix.');
+            }
+            $link = route('pedido.pix', $pedido->uuid);
+        }
+        DB::table('pagamento')->insert([
+            'organizador_id' => $pedido->organizador_id, 'pedido_id' => $pedido->id, 'conta_pagamento_id' => $conta->id,
+            'gateway_pagamento_id' => mb_substr((string) $pg['id'], 0, 100), 'referencia_externa' => $pedido->codigo,
+            'chave_idempotencia' => (string) \Illuminate\Support\Str::uuid(), 'metodo' => $cartao ? 'cartao' : 'pix', 'status' => 'criado',
+            'status_gateway' => mb_substr($status, 0, 60), 'valor' => $pedido->valor_total,
+            'comissao_retida' => $comissao, 'valor_liquido_org' => round((float) $pedido->valor_total - $comissao, 2),
+            'link_pagamento' => mb_substr($link, 0, 500), 'expira_em' => $pedido->expira_em,
+            'resposta_gateway' => json_encode(['ambiente' => self::modoTeste($pedido->organizador_id) ? 'teste' : 'producao', 'api' => 'payments',
+                'payment' => $pg['id'], 'split' => true] + ($pix ? ['pix' => $pix] : [])),
+        ]);
+        // Diagnóstico temporário do split (não é erro): o que o Mercado Pago devolveu sobre a comissão.
+        LogErro::registrar('checkout.split_diagnostico', new RuntimeException('Diagnóstico do split (Payments): comissão '.$comissao.', situação '.$status
+            .', tarifas: '.json_encode($pg['fee_details'] ?? null)), $pedido->organizador_id, ['pedido' => $pedido->codigo, 'pagamento' => $pg['id'],
+            'forma' => $cartao ? 'cartao' : 'pix', 'status_detail' => $pg['status_detail'] ?? null, 'application_fee' => $pg['application_fee'] ?? null,
+            'collector_id' => $pg['collector_id'] ?? null, 'transaction_details' => $pg['transaction_details'] ?? null]);
 
         return $link;
     }
@@ -332,14 +400,18 @@ class Checkout
             return 'aprovado';
         }
         $pg = DB::table('pagamento')->where('pedido_id', $pedido->id)->orderByDesc('id')->first();
-        if (! $pg || ! $pg->gateway_pedido_id) {
+        if (! $pg || ! ($pg->gateway_pedido_id || $pg->gateway_pagamento_id)) {
             return 'pendente';
         }
         $conta = ContaPagamento::withoutGlobalScopes()->find($pg->conta_pagamento_id);
         if (! $conta) {
             return 'pendente';
         }
-        $ambiente = json_decode((string) $pg->resposta_gateway, true)['ambiente'] ?? 'producao';
+        $resposta = json_decode((string) $pg->resposta_gateway, true) ?: [];
+        $ambiente = $resposta['ambiente'] ?? 'producao';
+        if (($resposta['api'] ?? 'orders') === 'payments') {
+            return self::sincronizarPagamento($pedido, $pg, $conta, $ambiente);
+        }
         try {
             $token = self::tokenDoAmbiente($conta, $ambiente);
             $order = MercadoPago::order((string) $token, $pg->gateway_pedido_id);
@@ -372,6 +444,46 @@ class Checkout
             DB::table('pagamento')->where('id', $pg->id)->update(['status' => $status === 'expired' ? 'expirado' : ($status === 'failed' ? 'recusado' : 'cancelado'),
                 'motivo_recusa' => mb_substr($detalhe, 0, 255) ?: null]);
             self::liberar($pedido->fresh(), $status === 'expired' ? 'expirado' : 'recusado');
+
+            return 'recusado';
+        }
+        DB::table('pagamento')->where('id', $pg->id)->whereIn('status', ['criado'])->update(['status' => 'pendente']);
+
+        return 'pendente';
+    }
+
+    /** Mesma conferência do sincronizar(), para a venda criada pela API de Payments (comissão retida na hora). */
+    private static function sincronizarPagamento(Pedido $pedido, object $pg, ContaPagamento $conta, string $ambiente): string
+    {
+        try {
+            $p = MercadoPago::pagamento(self::tokenDoAmbiente($conta, $ambiente), (string) $pg->gateway_pagamento_id);
+        } catch (\Throwable $e) {
+            Log::warning('Checkout: não consultou o pagamento '.$pg->gateway_pagamento_id.': '.$e->getMessage());
+
+            return 'pendente';
+        }
+        if (! $p) {
+            return 'pendente';
+        }
+        $status = (string) ($p['status'] ?? '');
+        $detalhe = (string) ($p['status_detail'] ?? '');
+        $metodo = match ($p['payment_type_id'] ?? null) {
+            'credit_card', 'debit_card', 'prepaid_card' => 'cartao', 'ticket' => 'boleto', default => 'pix',
+        };
+        DB::table('pagamento')->where('id', $pg->id)->update([
+            'status_gateway' => mb_substr($status, 0, 60), 'status_detalhe' => mb_substr($detalhe, 0, 80),
+            'metodo' => $metodo, 'parcelas' => (int) (($p['installments'] ?? null) ?: 1),
+        ]);
+        if ($status === 'approved') {
+            self::aprovar($pedido->fresh(), $pg->id, $metodo);
+
+            return 'aprovado';
+        }
+        if (in_array($status, ['rejected', 'cancelled', 'refunded', 'charged_back'], true)) {
+            $vencido = $status === 'cancelled' && str_contains($detalhe, 'expired');
+            DB::table('pagamento')->where('id', $pg->id)->update(['status' => $vencido ? 'expirado' : ($status === 'rejected' ? 'recusado' : 'cancelado'),
+                'motivo_recusa' => mb_substr($detalhe, 0, 255) ?: null]);
+            self::liberar($pedido->fresh(), $vencido ? 'expirado' : 'recusado');
 
             return 'recusado';
         }
