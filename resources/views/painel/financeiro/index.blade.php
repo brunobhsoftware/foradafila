@@ -280,6 +280,8 @@
 </details>
 @endif
 
+@php $mpAtiva = $propriaAtiva || $conectada; @endphp
+@if ($mpAtiva)
 <section class="cartao" style="padding:22px 24px;margin-top:18px">
     <h2 style="margin-top:0">Ambiente das vendas</h2>
     <form method="post" action="{{ route('financeiro.ambiente') }}">@csrf @method('PUT')
@@ -300,7 +302,6 @@
         <div class="grade grade-2" style="gap:12px">
         <label class="opcao-cartao"><input type="radio" name="recebimento_modo" value="plataforma" @checked($modoAtual === 'plataforma')>
             <span><b>Pela plataforma, com repasse</b><small>O comprador paga na conta do Fora da Fila e você recebe por Pix ou transferência em até {{ \App\Support\Recebimento::PRAZO_DIAS_UTEIS }} dias úteis após o evento, já com a taxa descontada. Nada para configurar além dos dados para o repasse.</small></span></label>
-        @php $mpAtiva = $propriaAtiva || $conectada; @endphp
         <label class="opcao-cartao"><input type="radio" name="recebimento_modo" value="propria" @checked($modoAtual === 'propria') @disabled(! $mpAtiva)>
             <span><b>Direto na conta do Mercado Pago da empresa</b><small>Cada venda cai na hora na sua conta, pela conexão automática ou aplicação manual configurada acima. A taxa da plataforma é cobrada à parte, em fatura.
             @unless ($mpAtiva)<br><b style="font-size:.8rem">Disponível depois de conectar ou configurar o Mercado Pago acima.</b>@endunless</small></span></label>
@@ -308,6 +309,7 @@
         @can('financeiro.contas')<div><button class="botao botao--escuro botao--pequeno">Salvar forma de recebimento</button></div>@endcan
     </form>
 </section>
+@endif
 @endif
 
 
