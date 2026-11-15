@@ -54,7 +54,8 @@
     <fieldset>
         <legend><span class="numero">3</span> Termos</legend>
         <div class="alerta alerta--info">
-            <p>O Fora da Fila é uma plataforma de tecnologia completa para venda de ingressos e check-in: <b>taxas diferenciadas, relatórios detalhados e controle total sobre seus eventos</b>.
+            <p>O Fora da Fila é uma plataforma de tecnologia completa para <b>organização e venda de ingressos</b>: check-in online, taxas diferenciadas, relatórios detalhados e
+            segurança em cada etapa — <b>controle total para o seu evento</b>.
             A responsabilidade pela realização do evento é do organizador.</p>
         </div>
         <div class="opcoes">
