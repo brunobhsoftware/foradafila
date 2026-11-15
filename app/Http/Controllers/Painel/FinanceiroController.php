@@ -276,36 +276,36 @@ class FinanceiroController extends Controller
 
         try {
             $t = MercadoPago::trocarCodigo((string) $request->query('code'), $sessao['verifier']);
+            $u = MercadoPago::usuario($t['access_token']);
+
+            $conta = $this->contaMercadoPago() ?? new ContaPagamento([
+                'gateway_id' => $this->gatewayId(), 'apelido' => 'Mercado Pago', 'padrao' => 1,
+            ]);
+            $antes = $conta->exists ? $conta->getAttributes() : null;
+            $conta->fill([
+                'ambiente' => ($t['live_mode'] ?? false) ? 'producao' : 'sandbox',
+                'status' => 'conectada',
+                'conta_externa_id' => (string) ($t['user_id'] ?? $u['id'] ?? ''),
+                'email_conta' => $u['email'] ?? null,
+                'apelido_externo' => $u['nickname'] ?? null,
+                'pais_conta' => $u['site_id'] ?? null,
+                'public_key' => $t['public_key'] ?? null,
+                'access_token_cript' => encrypt($t['access_token'], false),
+                'refresh_token_cript' => isset($t['refresh_token']) ? encrypt($t['refresh_token'], false) : null,
+                'token_expira_em' => isset($t['expires_in']) ? now('UTC')->addSeconds((int) $t['expires_in']) : null,
+                'escopos' => $t['scope'] ?? null,
+                'conectado_por' => auth()->id(),
+                'conectado_em' => now('UTC'),
+                'desconectado_em' => null,
+                'ultimo_erro' => null, 'ultimo_erro_em' => null,
+            ]);
+            $conta->save();
+            Auditoria::registrar('conta_pagamento.conectar', $conta, $antes);
         } catch (\Throwable $e) {
-            Log::warning('Mercado Pago OAuth: '.$e->getMessage());
+            Log::warning('Mercado Pago OAuth: '.$e->getMessage(), ['trace' => mb_substr($e->getTraceAsString(), 0, 500)]);
 
-            return redirect()->route('financeiro')->withErrors(['mercadopago' => $e->getMessage()]);
+            return redirect()->route('financeiro')->withErrors(['mercadopago' => 'Erro ao conectar: '.$e->getMessage()]);
         }
-        $u = MercadoPago::usuario($t['access_token']);
-
-        $conta = $this->contaMercadoPago() ?? new ContaPagamento([
-            'gateway_id' => $this->gatewayId(), 'apelido' => 'Mercado Pago', 'padrao' => 1,
-        ]);
-        $antes = $conta->exists ? $conta->getAttributes() : null;
-        $conta->fill([
-            'ambiente' => ($t['live_mode'] ?? false) ? 'producao' : 'sandbox',
-            'status' => 'conectada',
-            'conta_externa_id' => (string) ($t['user_id'] ?? $u['id'] ?? ''),
-            'email_conta' => $u['email'] ?? null,
-            'apelido_externo' => $u['nickname'] ?? null,
-            'pais_conta' => $u['site_id'] ?? null,
-            'public_key' => $t['public_key'] ?? null,
-            'access_token_cript' => encrypt($t['access_token'], false),
-            'refresh_token_cript' => isset($t['refresh_token']) ? encrypt($t['refresh_token'], false) : null,
-            'token_expira_em' => isset($t['expires_in']) ? now('UTC')->addSeconds((int) $t['expires_in']) : null,
-            'escopos' => $t['scope'] ?? null,
-            'conectado_por' => auth()->id(),
-            'conectado_em' => now('UTC'),
-            'desconectado_em' => null,
-            'ultimo_erro' => null, 'ultimo_erro_em' => null,
-        ]);
-        $conta->save();
-        Auditoria::registrar('conta_pagamento.conectar', $conta, $antes);
 
         return redirect()->route('financeiro')->with('ok', 'Conta do Mercado Pago conectada'.($conta->email_conta ? " ({$conta->email_conta})" : '').'.');
     }
