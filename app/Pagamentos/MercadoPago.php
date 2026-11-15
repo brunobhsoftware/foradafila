@@ -98,18 +98,31 @@ class MercadoPago
         return filled(self::credencial('client_id')) && filled(self::credencial('client_secret'));
     }
 
-    /** Collector ID da BH Software (da conta da aplicação): usado como destino do split de comissão. Cacheado 24 h. */
+    /** Collector ID da BH Software (user_id no MP): destino do split de comissão. Gravado em parametro_sistema. */
     public static function collectorId(): ?int
     {
-        return \Illuminate\Support\Facades\Cache::remember('mp_collector_id', now()->addHours(24), function () {
-            try {
-                $u = self::usuario(self::tokenAplicacao());
+        $v = \Illuminate\Support\Facades\DB::table('parametro_sistema')->where('chave', 'mp_collector_id')->value('valor');
 
-                return $u['id'] ?? null;
-            } catch (\Throwable) {
-                return null;
-            }
-        });
+        return $v ? (int) $v : null;
+    }
+
+    /** Busca o user_id da conta da aplicação no Mercado Pago e grava em parametro_sistema. */
+    public static function atualizarCollectorId(): ?int
+    {
+        try {
+            $u = self::usuario(self::tokenAplicacao());
+            $id = $u['id'] ?? null;
+        } catch (\Throwable) {
+            return null;
+        }
+        if ($id) {
+            \Illuminate\Support\Facades\DB::table('parametro_sistema')->updateOrInsert(
+                ['chave' => 'mp_collector_id'],
+                ['valor' => (string) $id, 'descricao' => 'Mercado Pago: user_id da BH Software (collector do split)']
+            );
+        }
+
+        return $id;
     }
 
     public static function retornoUrl(): string

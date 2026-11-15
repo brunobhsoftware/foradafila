@@ -163,6 +163,9 @@ class AdminController extends Controller
         } catch (\Throwable $e) {
             $resultado = ['erro' => $e->getMessage()];
         }
+        if ($ambiente === 'producao' && is_array($resultado) && ! empty($resultado['id']) && empty($resultado['teste'])) {
+            MercadoPago::atualizarCollectorId();
+        }
 
         return redirect()->to(route('admin.mercadopago').'#ambiente-'.$ambiente)->with('verificacao', [$ambiente => $resultado]);
     }
@@ -206,7 +209,7 @@ class AdminController extends Controller
     public function mercadoPago()
     {
         return view('admin.mercadopago', ['credenciais' => MercadoPago::situacaoCredenciais(), 'configurado' => MercadoPago::configurado(), 'pkce' => MercadoPago::usaPkce(),
-            'avisos' => DB::table('webhook_evento')->orderByDesc('id')->limit(10)->get()]);
+            'collectorId' => MercadoPago::collectorId(), 'avisos' => DB::table('webhook_evento')->orderByDesc('id')->limit(10)->get()]);
     }
 
     public function salvarMercadoPago(Request $request)
@@ -245,6 +248,7 @@ class AdminController extends Controller
             return back()->withErrors(['client_id' => 'Preencha pelo menos um campo. Campos em branco mantêm o valor atual.']);
         }
         MercadoPago::salvarCredenciais($dados);
+        MercadoPago::atualizarCollectorId();
         Auditoria::registrar('plataforma.mercadopago_credenciais', $request->user(), null, ['alteradas' => $alteradas]);
 
         return redirect()->route('admin.mercadopago')->with('ok', 'Chaves do Mercado Pago salvas. Os segredos ficam criptografados no banco.');
