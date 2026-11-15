@@ -52,15 +52,24 @@ class Recebimento
         return ContaPagamento::withoutGlobalScopes()->where('organizador_id', $organizadorId)->where('modo', $modo)->first();
     }
 
-    /** Conta usada nas vendas: a aplicação própria (se escolhida e ativa) ou o recebimento pela plataforma. */
+    /** Conta usada nas vendas: OAuth direta (preferida), aplicação manual ou plataforma. */
     public static function contaAtual(int $organizadorId): ?ContaPagamento
     {
         if (! Esquema::temV012()) {
             return null;
         }
         $modo = Organizador::whereKey($organizadorId)->value('recebimento_modo') ?: 'plataforma';
+        if ($modo === 'propria') {
+            // Preferir OAuth (direta) se ativa; senão a aplicação manual (propria).
+            $direta = self::conta($organizadorId, 'direta');
+            if ($direta && $direta->status === 'ativa') {
+                return $direta;
+            }
 
-        return self::conta($organizadorId, $modo === 'propria' ? 'propria' : 'plataforma');
+            return self::conta($organizadorId, 'propria');
+        }
+
+        return self::conta($organizadorId, 'plataforma');
     }
 
     /** Aplicação Mercado Pago da própria empresa (cria o registro vazio na primeira vez). */
