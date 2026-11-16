@@ -75,9 +75,6 @@
 </section>
 @endif
 
-</section>
-@endif
-
 @if ($v012)
 @php
     $modoAtual = $org->recebimento_modo ?: 'plataforma';
