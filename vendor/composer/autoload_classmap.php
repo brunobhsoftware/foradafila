@@ -97,6 +97,7 @@ return array(
     'App\\Support\\JanelaCheckin' => $baseDir . '/app/Support/JanelaCheckin.php',
     'App\\Support\\LogErro' => $baseDir . '/app/Support/LogErro.php',
     'App\\Support\\Logomarca' => $baseDir . '/app/Support/Logomarca.php',
+    'App\\Support\\MargemTaxas' => $baseDir . '/app/Support/MargemTaxas.php',
     'App\\Support\\Marketing' => $baseDir . '/app/Support/Marketing.php',
     'App\\Support\\ModeloMensagem' => $baseDir . '/app/Support/ModeloMensagem.php',
     'App\\Support\\MotorTaxas' => $baseDir . '/app/Support/MotorTaxas.php',

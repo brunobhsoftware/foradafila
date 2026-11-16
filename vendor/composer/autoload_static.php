@@ -577,6 +577,7 @@ class ComposerStaticInit19cf629833914b10fb54311306124002
         'App\\Support\\JanelaCheckin' => __DIR__ . '/../..' . '/app/Support/JanelaCheckin.php',
         'App\\Support\\LogErro' => __DIR__ . '/../..' . '/app/Support/LogErro.php',
         'App\\Support\\Logomarca' => __DIR__ . '/../..' . '/app/Support/Logomarca.php',
+        'App\\Support\\MargemTaxas' => __DIR__ . '/../..' . '/app/Support/MargemTaxas.php',
         'App\\Support\\Marketing' => __DIR__ . '/../..' . '/app/Support/Marketing.php',
         'App\\Support\\ModeloMensagem' => __DIR__ . '/../..' . '/app/Support/ModeloMensagem.php',
         'App\\Support\\MotorTaxas' => __DIR__ . '/../..' . '/app/Support/MotorTaxas.php',

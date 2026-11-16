@@ -65,6 +65,8 @@ class TaxasController extends Controller implements \Illuminate\Routing\Controll
         }
         Auditoria::registrar('plataforma.taxa_regra_salvar', $request->user(), null, ['taxa_regra_id' => $regra] + $d);
 
-        return redirect()->route('admin.taxas')->with('ok', "Regra “{$d['nome']}” salva.");
+        $aviso = $d['operacao'] === 'ingresso_pago' && $d['ativo'] ? \App\Support\MargemTaxas::aviso((float) $d['percentual'], (float) $d['valor_fixo'], (float) $d['valor_minimo']) : null;
+
+        return redirect()->route('admin.taxas')->with('ok', "Regra “{$d['nome']}” salva.")->with('aviso', $aviso);
     }
 }

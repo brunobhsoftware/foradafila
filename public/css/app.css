@@ -478,3 +478,9 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
   .celula-quebra { min-width: 0; }
   .linha-acoes td { overflow-wrap: anywhere; }
   .linha-acoes .acoes-linha { flex-wrap: wrap; }
+
+/* Conferência "a taxa cobre a tarifa do Mercado Pago?" (Administração → Taxas) */
+.margem-taxa { margin-top: 8px; }
+.margem-taxa summary { cursor: pointer; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.margem-taxa .tabela-rolagem { margin: 8px 0 6px; max-width: 640px; }
+.tabela--compacta th, .tabela--compacta td { padding: 6px 12px; }

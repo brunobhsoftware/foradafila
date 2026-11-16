@@ -3,7 +3,7 @@
         'name' => 'bhsoftware/foradafila',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '2076bb596a2beb615397cfbef10d09335c727ca6',
+        'reference' => '65df80a8cc6551554c96300c075ab9285161f3d9',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'bhsoftware/foradafila' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '2076bb596a2beb615397cfbef10d09335c727ca6',
+            'reference' => '65df80a8cc6551554c96300c075ab9285161f3d9',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
