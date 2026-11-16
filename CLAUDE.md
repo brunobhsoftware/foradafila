@@ -229,6 +229,11 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   = id do pagamento, `resposta_gateway.api = payments`; conferência em `sincronizarPagamento`, devolução em `MercadoPago::reembolsarPagamento`. Se o MP recusar, a venda
   segue pela order sem reter (Log de erros `checkout.application_fee`). A API de Orders **não** retém: recusa `marketplace_fee` em `config` e ignora na raiz (testado).
   Modos `plataforma` e `propria` continuam só com Orders. `checkout.split_diagnostico` no Log de erros é temporário.
+- **Tarifa do Mercado Pago abatida da comissão** (decisão do Bruno, 15/11/2026): na venda da conta conectada, a empresa recebe o valor cheio — `application_fee`
+  = comissão − tarifa estimada (`MercadoPago::tarifaEstimada`, % sobre o total; `parametro_sistema` `mp_tarifa_pix_pct`/`mp_tarifa_cartao_pct`, Administração →
+  Mercado Pago → "Tarifa do Mercado Pago abatida da comissão"; 0 = não abate; nunca negativa). `pagamento.resposta_gateway` guarda `tarifa_estimada`, `comissao_enviada`
+  e, na aprovação, `tarifa_real`/`comissao_real`/`liquido_empresa`. Pix medido em produção: 0,99%. A aplicação do MP precisou virar Checkout Transparente + API Payments
+  com a opção **Split** marcada (sem isso: erro 2059).
 - **Log de erros** (V022, `App\Support\LogErro`, Administração → Log de erros): todo erro 500 (`bootstrap/app.php`, contexto `erro.500`) e os erros do checkout.
 - Sem cron ainda: lote `agendado` abre quando chega `venda_inicio`; lote com `lote_anterior_id` só abre quando o
   anterior esgota, encerra ou passa do fim (`EventoPublicoController::loteAVenda`).

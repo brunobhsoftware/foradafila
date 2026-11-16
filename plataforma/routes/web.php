@@ -157,6 +157,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/cupons/{id}/alternar', [\App\Http\Controllers\Admin\CuponsAdminController::class, 'alternar'])->name('cupons.alternar')->whereNumber('id');
     Route::put('/mercadopago', [\App\Http\Controllers\Admin\AdminController::class, 'salvarMercadoPago'])->name('mercadopago.salvar')
         ->middleware('throttle:20,10,admin-mp');
+    Route::put('/mercadopago/tarifas', [\App\Http\Controllers\Admin\AdminController::class, 'salvarTarifas'])->name('mercadopago.tarifas');
     Route::post('/mercadopago/verificar', [\App\Http\Controllers\Admin\AdminController::class, 'verificarTokens'])->name('mercadopago.verificar')
         ->middleware('throttle:20,10,admin-mp-verificar');
     Route::post('/mercadopago/teste', [\App\Http\Controllers\Admin\AdminController::class, 'testarPagamento'])->name('mercadopago.teste')
