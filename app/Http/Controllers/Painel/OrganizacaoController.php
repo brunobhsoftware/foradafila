@@ -76,7 +76,7 @@ class OrganizacaoController extends Controller
         ];
         if ($v004) {
             $regras += [
-                'representante_nome' => ['required', 'string', 'max:150'],
+                'representante_nome' => ['required', 'string', 'max:150', new \App\Rules\NomeCompleto],
                 'representante_cpf' => ['required', new DocumentoValido('PF')],
                 // Dados bancários e Pix: agora em Financeiro → Dados para o repasse.
             ];

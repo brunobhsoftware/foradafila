@@ -103,7 +103,7 @@ class AcessoCompradorController extends Controller
         abort_unless($email, 404);
         $request->merge(['cpf' => Documento::digitos((string) $request->input('cpf'))]);
         $d = $request->validate([
-            'nome' => ['required', 'string', 'max:150'],
+            'nome' => ['required', 'string', 'max:150', new \App\Rules\NomeCompleto],
             'cpf' => ['required', new DocumentoValido('PF')],
             'telefone' => ['required', 'string', 'min:10', 'max:20'],
             'data_nascimento' => ['required', 'date', 'before:today', 'after:1900-01-01'],
@@ -223,7 +223,7 @@ class AcessoCompradorController extends Controller
         abort_unless(self::verificado(), 403, 'Confirme o seu e-mail com o código antes de editar os dados.');
         $request->merge(['cpf' => Documento::digitos((string) $request->input('cpf'))]);
         $d = $request->validate([
-            'nome' => ['required', 'string', 'max:150'],
+            'nome' => ['required', 'string', 'max:150', new \App\Rules\NomeCompleto],
             'telefone' => ['required', 'string', 'min:10', 'max:20'],
             'data_nascimento' => ['required', 'date', 'before:today', 'after:1900-01-01'],
             'cpf' => [$c->cpf ? 'prohibited' : 'required', new DocumentoValido('PF')],

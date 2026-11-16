@@ -10,6 +10,11 @@ use Illuminate\Support\Str;
 
 class Organizador extends Model
 {
+    public function setRepresentanteNomeAttribute($v): void
+    {
+        $this->attributes['representante_nome'] = $v === null ? null : \App\Support\NomePessoa::padronizar((string) $v);
+    }
+
     use TemUuid;
 
     protected $table = 'organizador';

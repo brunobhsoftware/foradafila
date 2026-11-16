@@ -45,7 +45,7 @@ class CadastroController extends Controller
         ]);
 
         $dados = $request->validate([
-            'nome' => ['required', 'string', 'max:150'],
+            'nome' => ['required', 'string', 'max:150', new \App\Rules\NomeCompleto],
             'email' => ['required', 'email:filter', 'max:150', Rule::unique('usuario', 'email')],
             'telefone' => ['required', 'string', 'max:20'],
             'senha' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],

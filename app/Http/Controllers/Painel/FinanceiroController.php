@@ -166,7 +166,7 @@ class FinanceiroController extends Controller
         $ambiente = $request->input('ambiente') === 'producao' ? 'producao' : 'teste';
         $d = $request->validate([
             'cpf' => ['required', new \App\Rules\DocumentoValido('PF')],
-            'nome' => ['required', 'string', 'max:150'],
+            'nome' => ['required', 'string', 'max:150', new \App\Rules\NomeCompleto],
             'email' => ['required', 'email:filter', 'max:150'],
             'telefone' => ['nullable', 'string', 'regex:/^\D*(\d\D*){10,11}$/'],
             'valor' => ['required', 'numeric', 'min:1', 'max:100'],

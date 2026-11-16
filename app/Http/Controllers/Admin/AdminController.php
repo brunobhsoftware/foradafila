@@ -34,7 +34,7 @@ class AdminController extends Controller
             'valor' => ['required', 'numeric', 'min:1', 'max:100'],
             'ambiente' => ['required', 'in:teste,producao'],
             'email' => ['required', 'email:filter', 'max:150'],
-            'nome' => ['required', 'string', 'max:150'],
+            'nome' => ['required', 'string', 'max:150', new \App\Rules\NomeCompleto],
             'cpf' => ['required', 'string', 'regex:/^\D*(\d\D*){11}$/'],
             'telefone' => ['nullable', 'string', 'regex:/^\D*(\d\D*){10,11}$/'],
         ], ['cpf.regex' => 'Informe os 11 números do CPF.', 'telefone.regex' => 'Telefone com DDD (10 ou 11 números).'],
@@ -229,6 +229,16 @@ class AdminController extends Controller
         Auditoria::registrar('plataforma.banco_atualizar', $request->user(), null, ['arquivo' => $arquivo, 'comandos' => $n]);
 
         return redirect()->route('admin.banco')->with('ok', "{$arquivo} aplicado ({$n} comando(s)). Recarregue as telas do painel para ver as novidades.");
+    }
+
+    public function padronizarNomes(Request $request)
+    {
+        $r = \App\Support\PadronizarNomes::executar();
+        Auditoria::registrar('plataforma.padronizar_nomes', $request->user(), null, $r);
+        $total = array_sum($r);
+
+        return redirect()->route('admin.banco')->with('ok', "Nomes padronizados: {$total} registro(s) corrigido(s) — "
+            .collect($r)->map(fn ($n, $t) => "{$t}: {$n}")->implode(', ').'.');
     }
 
     public function mercadoPago()

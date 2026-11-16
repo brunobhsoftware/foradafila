@@ -19,7 +19,7 @@ class CadastroPessoa
             return;
         }
         $novos = array_filter([
-            'nome' => mb_substr($nome, 0, 150),
+            'nome' => mb_substr(NomePessoa::padronizar($nome), 0, 150),
             'email' => $email ? mb_strtolower(trim($email)) : null,
             'telefone' => preg_replace('/\D/', '', (string) $telefone) ?: null,
         ]);

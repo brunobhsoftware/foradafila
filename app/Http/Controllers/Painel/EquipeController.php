@@ -41,7 +41,7 @@ class EquipeController extends Controller
         Gate::authorize('equipe.gerenciar');
         $request->merge(['email' => mb_strtolower(trim((string) $request->input('email')))]);
         $dados = $this->validar($request, $tenant) + $request->validate([
-            'nome' => ['required', 'string', 'max:150'],
+            'nome' => ['required', 'string', 'max:150', new \App\Rules\NomeCompleto],
             'email' => ['required', 'email:filter', 'max:150'],
         ]);
 

@@ -83,7 +83,7 @@ class CompradorAuthController extends Controller
     public static function regrasConta(): array
     {
         return [
-            'nome' => ['required', 'string', 'max:150'],
+            'nome' => ['required', 'string', 'max:150', new \App\Rules\NomeCompleto],
             'email' => ['required', 'email:filter', 'max:150', Rule::unique('comprador', 'email')],
             'telefone' => ['nullable', 'string', 'max:20'],
             'senha' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],

@@ -99,6 +99,9 @@ class Formularios
                 'texto_longo' => ['string', 'max:2000'],
                 default => ['string', 'max:150'],
             };
+            if ($c['chave'] === 'nome') {
+                $tipo[] = new \App\Rules\NomeCompleto;
+            }
             $r['participantes.*.'.$c['chave']] = array_merge($base, $tipo);
         }
 

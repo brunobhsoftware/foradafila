@@ -142,6 +142,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/emails', [\App\Http\Controllers\Admin\AdminController::class, 'emails'])->name('emails');
     Route::get('/banco', [\App\Http\Controllers\Admin\AdminController::class, 'banco'])->name('banco');
     Route::post('/banco', [\App\Http\Controllers\Admin\AdminController::class, 'aplicarBanco'])->name('banco.aplicar')->middleware('throttle:10,10,admin-banco');
+    Route::post('/banco/padronizar-nomes', [\App\Http\Controllers\Admin\AdminController::class, 'padronizarNomes'])->name('banco.nomes')->middleware('throttle:10,10,admin-nomes');
     Route::get('/empresas', [\App\Http\Controllers\Admin\EmpresasController::class, 'index'])->name('empresas');
     Route::get('/empresas/{organizador}', [\App\Http\Controllers\Admin\EmpresasController::class, 'show'])->name('empresas.show');
     Route::put('/empresas/{organizador}/situacao', [\App\Http\Controllers\Admin\EmpresasController::class, 'situacao'])->name('empresas.situacao');
