@@ -281,7 +281,12 @@ class Checkout
                 return self::criarPagamentoDireto($pedido, $evento, $comprador, $conta, $cpf, $forma, $cartao, $itens);
             } catch (\Throwable $e) {
                 // A venda não para: segue pela order (sem reter a comissão) e o motivo fica no Log de erros.
-                LogErro::registrar('checkout.application_fee', $e, $pedido->organizador_id, ['pedido' => $pedido->codigo, 'forma' => $forma]);
+                // Só as partes não secretas do token (APP_USR-<aplicação>-<data>-<segredo>-<conta>): de qual aplicação e de qual conta ele é.
+                $tk = explode('-', (string) rescue(fn () => self::token($conta), '', false));
+                LogErro::registrar('checkout.application_fee', $e, $pedido->organizador_id, ['pedido' => $pedido->codigo, 'forma' => $forma,
+                    'token_aplicacao' => $tk[1] ?? null, 'token_conta' => count($tk) >= 5 ? end($tk) : null, 'token_partes' => count($tk),
+                    'aplicacao_bh' => MercadoPago::credencial('client_id'), 'conta_bh' => MercadoPago::collectorId(),
+                    'conta_conectada_em' => (string) ($conta->conectada_em ?? $conta->atualizado_em ?? ''), 'pagador' => $comprador->email]);
             }
         }
         $order = MercadoPago::criarOrder(self::token($conta), $dados);
