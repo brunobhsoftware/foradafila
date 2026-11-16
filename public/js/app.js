@@ -227,6 +227,8 @@
     if (!auto || !manual) return;
     auto.hidden = r.value !== 'automatica';
     manual.hidden = r.value !== 'manual';
+    const det = document.querySelector('#mp-detalhes[data-mp-abrir-ao-escolher]');
+    if (det) det.hidden = false;
   }));
 
   // Check-in pelo navegador: leitor (teclado), câmera (BarcodeDetector) e busca manual
