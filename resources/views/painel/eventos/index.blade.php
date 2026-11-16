@@ -47,8 +47,8 @@
                 <div class="evento-painel__numeros">
                     <div><small>Ingressos vendidos</small><b>{{ numero($v->ingressos) }}</b><small>de {{ numero($v->ofertados) }} ofertados</small></div>
                     <div><small>Total vendido</small><b>{{ moeda($v->total) }}</b><small>{{ numero($v->pedidos) }} {{ $v->pedidos == 1 ? 'pedido' : 'pedidos' }}</small></div>
-                    <div><small>Descontos (cupons)</small><b>{{ moeda($v->descontos) }}</b></div>
-                    <div><small>Taxa da plataforma</small><b>{{ moeda($v->taxa) }}</b></div>
+                    <div><small>Descontos (cupons)</small><b>{{ moeda($v->descontos) }}</b><small>{{ numero($v->cupons) }} {{ $v->cupons == 1 ? 'cupom' : 'cupons' }}</small></div>
+                    <div><small>Taxa da plataforma</small><b>{{ moeda($v->taxa) }}</b><small>comissão de serviço</small></div>
                     <div><small>Devolvido</small><b>{{ moeda($v->devolvido) }}</b><small>{{ numero($v->cancelados) }} {{ $v->cancelados == 1 ? 'cancelamento' : 'cancelamentos' }}</small></div>
                     <div class="destaque"><small>Líquido a receber</small><b>{{ moeda($v->liquido) }}</b><small>total − taxa − devolvido</small></div>
                 </div>

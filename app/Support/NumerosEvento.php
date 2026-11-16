@@ -43,7 +43,7 @@ class NumerosEvento
             return collect();
         }
         $pedidos = DB::table('pedido')->whereIn('evento_id', $ids)->whereIn('status', self::PAGOS)->groupBy('evento_id')
-            ->selectRaw('evento_id, SUM(valor_total) AS bruto, SUM(valor_desconto) AS descontos')->get()->keyBy('evento_id');
+            ->selectRaw('evento_id, SUM(valor_total) AS bruto, SUM(valor_desconto) AS descontos, SUM(cupom_id IS NOT NULL AND valor_desconto > 0) AS cupons')->get()->keyBy('evento_id');
         $ingressos = DB::table('ingresso as i')->leftJoin('pedido_item as pi', 'pi.id', '=', 'i.pedido_item_id')
             ->whereIn('i.evento_id', $ids)->whereIn('i.status', self::VALIDOS)->groupBy('i.evento_id')
             ->selectRaw('i.evento_id, COUNT(*) AS qtd, COALESCE(SUM(pi.taxa_unitaria), 0) AS taxa, COUNT(DISTINCT i.pedido_id) AS pedidos,
@@ -72,6 +72,7 @@ class NumerosEvento
                 'pedidos' => $qtdPedidos,
                 'total' => $total,
                 'descontos' => (float) ($pedidos[$id]->descontos ?? 0),
+                'cupons' => (int) ($pedidos[$id]->cupons ?? 0),
                 'taxa' => $taxa,
                 'devolvido' => $dev,
                 'liquido' => round($bruto - $taxa - $dev, 2),
@@ -84,7 +85,7 @@ class NumerosEvento
     public static function somar(Collection $resumos): object
     {
         $s = (object) [];
-        foreach (['ingressos', 'ofertados', 'reservados', 'cortesias', 'checkins', 'cancelados', 'pedidos', 'total', 'descontos', 'taxa', 'devolvido', 'liquido'] as $k) {
+        foreach (['ingressos', 'ofertados', 'reservados', 'cortesias', 'checkins', 'cancelados', 'pedidos', 'total', 'descontos', 'cupons', 'taxa', 'devolvido', 'liquido'] as $k) {
             $s->$k = $resumos->sum($k);
         }
 
