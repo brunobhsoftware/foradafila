@@ -505,10 +505,14 @@ class Checkout
         if ($status === 'approved') {
             // Tarifa que o Mercado Pago cobrou de verdade e comissão creditada à BH, para conferir a estimativa.
             $tarifas = collect((array) ($p['fee_details'] ?? []));
+            $comissaoReal = round((float) $tarifas->where('type', 'application_fee')->sum('amount'), 2);
+            $liquido = data_get($p, 'transaction_details.net_received_amount');
+            $pago = (float) (data_get($p, 'transaction_details.total_paid_amount') ?: $pg->valor);
             $resposta = (json_decode((string) $pg->resposta_gateway, true) ?: []) + [
-                'tarifa_real' => round((float) $tarifas->where('type', 'mercadopago_fee')->sum('amount'), 2),
-                'comissao_real' => round((float) $tarifas->where('type', 'application_fee')->sum('amount'), 2),
-                'liquido_empresa' => data_get($p, 'transaction_details.net_received_amount'),
+                // O que o Mercado Pago descontou de fato = pago − comissão − líquido (fee_details nem sempre lista tudo: no cartão veio só metade).
+                'tarifa_real' => $liquido !== null ? round($pago - $comissaoReal - (float) $liquido, 2) : round((float) $tarifas->where('type', 'mercadopago_fee')->sum('amount'), 2),
+                'comissao_real' => $comissaoReal,
+                'liquido_empresa' => $liquido,
             ];
             DB::table('pagamento')->where('id', $pg->id)->update(['resposta_gateway' => json_encode($resposta)]);
             self::aprovar($pedido->fresh(), $pg->id, $metodo);
