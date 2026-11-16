@@ -28,7 +28,7 @@
         <tbody>
         @foreach ($pedidos as $p)
             <tr>
-                <td style="white-space:nowrap"><a href="{{ route('pedidos.show', $p) }}"><b>{{ $p->codigo }}</b></a><br>
+                <td class="celula-fixa"><a href="{{ route('pedidos.show', $p) }}"><b>{{ $p->codigo }}</b></a><br>
                     <span class="selo {{ ['pago' => 'selo--verde', 'cancelado' => 'selo--cinza', 'reembolsado' => 'selo--laranja', 'reembolso_parcial' => 'selo--laranja'][$p->status] ?? 'selo--amarelo' }}">{{ $S[$p->status] ?? $p->status }}</span><br>
                     <small>{{ data_local($p->criado_em, 'd/m/y H:i') }}</small></td>
                 <td class="celula-quebra"><b>{{ $p->evento?->titulo }}</b><br>{{ $p->comprador?->nome }}<br><small>{{ $p->comprador?->email }}</small></td>

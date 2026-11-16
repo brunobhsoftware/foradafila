@@ -105,6 +105,7 @@ small, .suave { color: var(--suave); }
 .tabela-rolagem { overflow-x: auto; }
 .celula-quebra { overflow-wrap: anywhere; min-width: 150px; }
 .so-estreito { display: none; }
+.celula-fixa { white-space: nowrap; }
 table.tabela { width: 100%; border-collapse: collapse; font-size: .92rem; }
 .tabela th { text-align: left; font-weight: 600; color: var(--suave); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; padding: 11px 16px; background: #FCFCFD; border-bottom: 1px solid var(--borda); white-space: nowrap; }
 .tabela td { padding: 13px 16px; border-bottom: 1px solid var(--borda); vertical-align: middle; }
@@ -475,6 +476,8 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
   .tabela td { font-size: .88rem; }
   .tabela td .botao--pequeno { padding-left: 9px; padding-right: 9px; }
   .celula-quebra { min-width: 0; }
+  .celula-fixa { white-space: normal; }
+  .celula-fixa .selo { white-space: normal; text-align: left; }
   .linha-acoes td { overflow-wrap: anywhere; }
   .linha-acoes .acoes-linha { flex-wrap: wrap; }
 }
