@@ -49,7 +49,7 @@ class MargemTaxas
         foreach (['pix' => 'Pix', 'cartao' => 'cartão'] as $forma => $nome) {
             if ($a['sem_sobra'][$forma]) {
                 $partes[] = "no {$nome} (tarifa de ".numero($a['pct'][$forma], 2).'%) não sobra nada para a plataforma em ingressos de '
-                    .implode(', ', array_map(fn ($v) => 'R$ '.$v, $a['sem_sobra'][$forma])).'; para cobrir, a taxa precisa passar de '.numero($a['minimo_pct'][$forma], 2).'%';
+                    .implode(', ', array_map(fn ($v) => 'R$ '.$v, $a['sem_sobra'][$forma])).'; para cobrir, o percentual desta taxa da plataforma teria de ser pelo menos '.numero($a['minimo_pct'][$forma], 2).'%';
             }
         }
 

@@ -164,7 +164,9 @@
 <section class="cartao" style="padding:20px;margin-top:18px" id="tarifas">
     <h2 style="margin-top:0">Tarifa do Mercado Pago abatida da comissão</h2>
     <p class="suave">Vale só para a empresa que vende pela conta conectada (configuração automática). A tarifa que o Mercado Pago cobra da empresa é
-        estimada por estas taxas, sobre o total pago, e descontada da comissão da BH Software — a empresa recebe o valor cheio. Em 0, nada é abatido.</p>
+        estimada por estas taxas, sobre o total pago, e descontada da comissão da BH Software — a empresa recebe o valor cheio. Em 0, nada é abatido.<br>
+        <b>Informe aqui o que o Mercado Pago cobra da empresa</b> (Pix medido: 0,99%; cartão: o percentual que aparece no detalhe de uma venda na conta dela). Não é a sua taxa:
+        a taxa da plataforma fica em <a href="{{ route('admin.taxas') }}">Taxas e isenções</a>, que mostra se ela cobre estes valores.</p>
     <form method="post" action="{{ route('admin.mercadopago.tarifas') }}" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin:12px 0">
         @csrf @method('PUT')
         <div class="campo" style="width:150px;margin:0"><label for="tarifa-pix">Pix (%)</label>

@@ -25,6 +25,13 @@
             </tbody>
         </table></div>
         <small class="suave">Conta do pior caso (taxa repassada ao comprador: a tarifa incide sobre ingresso + taxa). Valor negativo = a plataforma não retém nada e a empresa
-            recebe menos que o valor cheio. Para cobrir sempre o cartão, a taxa precisa passar de <b>{{ numero($mg['minimo_pct']['cartao'], 2) }}%</b> (Pix: {{ numero($mg['minimo_pct']['pix'], 2) }}%).</small>
+            recebe menos que o valor cheio.<br>
+            @if ((float) $percentual >= $mg['minimo_pct']['cartao'])
+                O percentual <b>desta regra</b> ({{ numero($percentual, 2) }}%) já está acima do mínimo que cobre o cartão ({{ numero($mg['minimo_pct']['cartao'], 2) }}%). Não precisa mudar nada.
+            @else
+                Para cobrir o cartão em qualquer valor de ingresso, o percentual <b>desta regra</b> (hoje {{ numero($percentual, 2) }}%) teria de ser pelo menos
+                <b>{{ numero($mg['minimo_pct']['cartao'], 2) }}%</b> (só Pix: {{ numero($mg['minimo_pct']['pix'], 2) }}%) — ou a taxa mínima/fixa compensa nos ingressos baratos, como mostra a tabela.
+            @endif
+            As taxas do Mercado Pago ({{ numero($mg['pct']['pix'], 2) }}% e {{ numero($mg['pct']['cartao'], 2) }}%) são as que ele cobra da empresa: não aumente esses números para "cobrir".</small>
     </details>
 @endif
