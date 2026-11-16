@@ -105,4 +105,5 @@ h1, h2, h3 { font-family: 'Space Grotesk', Inter, sans-serif; margin: 0; }
 .ck-legenda { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
 .ck-selo { font-size: .75rem; padding: 3px 9px; border-radius: 99px; background: var(--fundo); color: var(--suave); white-space: nowrap; }
 .ck-selo--a-venda { background: #ECFDF3; color: #027A48; } .ck-selo--esgotado { background: #FEF3F2; color: #B42318; }
+.ck-selo--editar { background: var(--laranja); color: #fff; text-decoration: none; cursor: pointer; font-size: .85rem; padding: 3px 8px; }
 .ck-botao-vender { display: block; text-align: center; margin: 18px 0 0; padding: 15px; border-radius: var(--raio); background: var(--amarelo); color: var(--tinta); font-weight: 700; text-decoration: none; }
