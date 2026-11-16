@@ -289,11 +289,11 @@ class MercadoPago
      * API de Payments (Checkout Transparente): usada na conta conectada por OAuth, porque é a que aceita
      * application_fee (comissão da plataforma retida na venda). Cria pelo SDK oficial.
      */
-    public static function criarPagamento(string $accessToken, array $dados): array
+    public static function criarPagamento(string $accessToken, array $dados, ?string $dispositivo = null): array
     {
         self::sdk($accessToken);
         $opcoes = new \MercadoPago\Client\Common\RequestOptions();
-        $opcoes->setCustomHeaders(['X-Idempotency-Key: '.\Illuminate\Support\Str::uuid()]);
+        $opcoes->setCustomHeaders(array_filter(['X-Idempotency-Key: '.\Illuminate\Support\Str::uuid(), $dispositivo ? 'X-meli-session-id: '.$dispositivo : null]));
         try {
             $pg = (new \MercadoPago\Client\Payment\PaymentClient())->create($dados, $opcoes);
         } catch (\MercadoPago\Exceptions\MPApiException $e) {

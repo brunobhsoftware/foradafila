@@ -43,7 +43,7 @@
         onError: (e) => { console.error(e); },
         onSubmit: (dados) => new Promise((ok, falha) => {
           erro.hidden = true;
-          fetch(box.dataset.url, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify(dados) })
+          fetch(box.dataset.url, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify(Object.assign({}, dados, { device_id: window.MP_DEVICE_SESSION_ID || null })) })
             .then((r) => r.json())
             .then((j) => {
               if (j.redirect) { ok(); location.href = j.redirect; return; }

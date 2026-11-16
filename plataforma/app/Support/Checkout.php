@@ -126,6 +126,9 @@ class Checkout
         return MercadoPago::credencial($teste ? 'teste_public_key' : 'public_key') ?: null;
     }
 
+    /** Verdadeiro depois que o Mercado Pago criou o pagamento (API de Payments) desta tentativa. */
+    private static bool $pagamentoCriado = false;
+
     /** Última order criada (para o cartão direto saber na hora se aprovou). */
     public static ?array $ultimaOrder = null;
 
@@ -280,6 +283,9 @@ class Checkout
             try {
                 return self::criarPagamentoDireto($pedido, $evento, $comprador, $conta, $cpf, $forma, $cartao, $itens);
             } catch (\Throwable $e) {
+                if (self::$pagamentoCriado) {
+                    throw $e; // o pagamento já existe no Mercado Pago: não cria outra cobrança pela order
+                }
                 // A venda não para: segue pela order (sem reter a comissão) e o motivo fica no Log de erros.
                 // Só as partes não secretas do token (APP_USR-<aplicação>-<data>-<segredo>-<conta>): de qual aplicação e de qual conta ele é.
                 $tk = explode('-', (string) rescue(fn () => self::token($conta), '', false));
@@ -341,7 +347,8 @@ class Checkout
                 'last_name' => $partes[1] ?? $partes[0],
                 'identification' => $cpf ? ['type' => 'CPF', 'number' => $cpf] : null,
             ]),
-            'additional_info' => ['items' => array_map(fn ($i) => [
+            'additional_info' => ['payer' => array_filter(['first_name' => $partes[0], 'last_name' => $partes[1] ?? $partes[0],
+                'registration_date' => \Illuminate\Support\Carbon::parse($comprador->criado_em ?? 'now')->toIso8601String()]), 'items' => array_map(fn ($i) => [
                 'id' => $i['external_code'], 'title' => $i['title'], 'description' => $i['description'], 'category_id' => 'tickets',
                 'quantity' => $i['quantity'], 'unit_price' => (float) $i['unit_price'],
             ], $itens)],
@@ -354,7 +361,11 @@ class Checkout
         } else {
             $dados += ['payment_method_id' => 'pix', 'date_of_expiration' => now()->addMinutes(self::RESERVA_MIN)->format('Y-m-d\TH:i:s.vP')];
         }
-        $pg = MercadoPago::criarPagamento(self::token($conta), $dados);
+        // Identificador do dispositivo (MercadoPago.JS / security.js na nossa página): pedido pela prevenção a fraudes.
+        $dispositivo = preg_replace('/[^A-Za-z0-9:_\-]/', '', mb_substr((string) request()->input('device_id', ''), 0, 200));
+        self::$pagamentoCriado = false;
+        $pg = MercadoPago::criarPagamento(self::token($conta), $dados, $dispositivo ?: null);
+        self::$pagamentoCriado = true;
         $status = (string) ($pg['status'] ?? '');
         // Mesmo formato da order, para o cartão saber na hora se aprovou.
         self::$ultimaOrder = ['id' => $pg['id'], 'status' => match ($status) { 'approved' => 'processed', 'rejected' => 'failed', default => $status },
