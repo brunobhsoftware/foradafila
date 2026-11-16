@@ -234,6 +234,9 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   Mercado Pago → "Tarifa do Mercado Pago abatida da comissão"; 0 = não abate; nunca negativa). `pagamento.resposta_gateway` guarda `tarifa_estimada`, `comissao_enviada`
   e, na aprovação, `tarifa_real`/`comissao_real`/`liquido_empresa`. Pix medido em produção: 0,99%. A aplicação do MP precisou virar Checkout Transparente + API Payments
   com a opção **Split** marcada (sem isso: erro 2059).
+- **A taxa cobre a tarifa do Mercado Pago?** (decisão do Bruno, 15/11/2026; `App\Support\MargemTaxas`, parcial `admin/_margem-taxa`): Administração → Taxas (cada regra
+  ativa de ingresso pago) e detalhe da empresa mostram quanto sobra para a plataforma por valor de ingresso (R$ 10 a 500) no Pix e no cartão, no pior caso (taxa repassada),
+  com selo "Cobre"/"Não cobre" e o percentual mínimo (`t / (1 − t)`); salvar uma taxa que não cobre mostra o aviso amarelo (`session('aviso')`). É aviso, não bloqueia.
 - **Log de erros** (V022, `App\Support\LogErro`, Administração → Log de erros): todo erro 500 (`bootstrap/app.php`, contexto `erro.500`) e os erros do checkout.
 - Sem cron ainda: lote `agendado` abre quando chega `venda_inicio`; lote com `lote_anterior_id` só abre quando o
   anterior esgota, encerra ou passa do fim (`EventoPublicoController::loteAVenda`).

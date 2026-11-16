@@ -72,6 +72,9 @@
     <h2 style="margin-top:0">Taxas e isenções desta empresa</h2>
     <p class="suave">Sobrepõem as <a href="{{ route('admin.taxas') }}">taxas padrão</a> no período informado. Campo em branco usa o valor padrão.
         Hoje, um ingresso de R$ 100 pagaria <b>{{ moeda($simulacao['taxa']) }}</b> ({{ $simulacao['origem'] }}).</p>
+    @if (! $simulacao['isento'])
+        @include('admin._margem-taxa', ['percentual' => $simulacao['percentual'], 'fixo' => $simulacao['valor_fixo'], 'minimo' => $simulacao['valor_minimo']])
+    @endif
     @if ($taxas->isNotEmpty())
     <div class="tabela-rolagem"><table class="tabela">
         <thead><tr><th>Operação</th><th>Condição</th><th>Período</th><th>Observação</th><th class="num"></th></tr></thead>

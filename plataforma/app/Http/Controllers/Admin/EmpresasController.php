@@ -154,12 +154,21 @@ class EmpresasController extends Controller implements \Illuminate\Routing\Contr
             DB::table('taxa_organizador')->where('id', $taxa)->update($valores);
             Auditoria::registrar('plataforma.taxa_empresa_editar', $organizador, (array) $antes, ['taxa_organizador_id' => $taxa] + $valores);
 
-            return redirect()->to(route('admin.empresas.show', $organizador).'#taxas')->with('ok', 'Taxa da empresa atualizada.');
+            return redirect()->to(route('admin.empresas.show', $organizador).'#taxas')->with('ok', 'Taxa da empresa atualizada.')->with('aviso', $this->avisoMargem($organizador));
         }
         $id = DB::table('taxa_organizador')->insertGetId($valores + ['organizador_id' => $organizador->id, 'criado_por' => $request->user()->id]);
         Auditoria::registrar('plataforma.taxa_empresa_criar', $organizador, null, ['taxa_organizador_id' => $id] + $d);
 
-        return redirect()->to(route('admin.empresas.show', $organizador).'#taxas')->with('ok', $isento ? 'Isenção registrada.' : 'Taxa específica registrada.');
+        return redirect()->to(route('admin.empresas.show', $organizador).'#taxas')->with('ok', $isento ? 'Isenção registrada.' : 'Taxa específica registrada.')
+            ->with('aviso', $this->avisoMargem($organizador));
+    }
+
+    /** Aviso quando a taxa que vale hoje para a empresa não cobre a tarifa do Mercado Pago. */
+    private function avisoMargem(Organizador $organizador): ?string
+    {
+        $t = MotorTaxas::calcular($organizador, 'ingresso_pago', 100);
+
+        return $t['isento'] ? null : \App\Support\MargemTaxas::aviso($t['percentual'], $t['valor_fixo'], $t['valor_minimo']);
     }
 
     public function encerrarTaxa(Request $request, Organizador $organizador, int $taxa)

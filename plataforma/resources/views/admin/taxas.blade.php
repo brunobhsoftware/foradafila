@@ -24,6 +24,9 @@
                     <td>@if ($r->ativo)<span class="selo selo--verde">Ativa</span>@else<span class="selo selo--cinza">Inativa</span>@endif</td>
                     <td class="num"><button type="button" class="botao botao--contorno botao--pequeno" data-alternar="regra-{{ $r->id }}">Editar</button></td>
                 </tr>
+                @if ($operacao === 'ingresso_pago' && $r->ativo)
+                    <tr><td colspan="8" style="border-top:0;padding-top:0">@include('admin._margem-taxa', ['percentual' => $r->percentual, 'fixo' => $r->valor_fixo, 'minimo' => $r->valor_minimo])</td></tr>
+                @endif
                 <tr class="linha-acoes" id="regra-{{ $r->id }}" @unless (old('_regra') == $r->id) hidden @endunless><td colspan="8">@include('admin._regra-form', ['r' => $r])</td></tr>
             @endforeach
             </tbody>
