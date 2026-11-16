@@ -3,7 +3,7 @@
 
 @section('conteudo')
 <div class="cabecalho"><div><h1>E-mails enviados</h1>
-    <p>Os 100 últimos e-mails da plataforma: se saíram ou por que falharam. O conteúdo não aparece aqui.</p></div></div>
+    <p>Os 100 últimos e-mails da plataforma: se saíram ou por que falharam. O conteúdo não aparece aqui. Os mais antigos são apagados ao abrir esta página.</p></div></div>
 
 <form method="get" class="filtros" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
     <input name="busca" value="{{ $busca }}" placeholder="E-mail do destinatário" style="max-width:320px">

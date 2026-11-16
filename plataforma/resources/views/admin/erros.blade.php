@@ -3,7 +3,7 @@
 
 @section('conteudo')
 <div class="cabecalho"><div><h1>Log de erros</h1>
-    <p>Os 200 últimos erros registrados pela plataforma.</p></div></div>
+    <p>Os 100 últimos erros registrados pela plataforma (os mais antigos são apagados ao abrir esta página).</p></div></div>
 
 <form method="get" class="filtros" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
     <input name="busca" value="{{ $busca }}" placeholder="Contexto ou mensagem" style="max-width:320px">

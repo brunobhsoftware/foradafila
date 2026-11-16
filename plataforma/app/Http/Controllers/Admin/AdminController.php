@@ -185,13 +185,27 @@ class AdminController extends Controller
         return back()->with('ok', 'Taxas salvas. Valem para as próximas vendas da configuração automática.');
     }
 
+    /** Mantém só os 100 registros mais novos (decisão do Bruno, 16/11/2026): apaga o resto ao abrir a página. */
+    public const MANTER_REGISTROS = 100;
+
+    private static function manterUltimos(\Illuminate\Database\Query\Builder $q): void
+    {
+        $corte = (clone $q)->orderByDesc('id')->skip(self::MANTER_REGISTROS)->value('id');
+        if ($corte) {
+            (clone $q)->where('id', '<=', $corte)->delete();
+        }
+    }
+
     public function erros(Request $request)
     {
+        if (\Illuminate\Support\Facades\Schema::hasTable('log_erro')) {
+            self::manterUltimos(DB::table('log_erro'));
+        }
         $busca = trim((string) $request->query('busca'));
         $erros = \Illuminate\Support\Facades\Schema::hasTable('log_erro')
             ? DB::table('log_erro')
                 ->when($busca !== '', fn ($q) => $q->where(fn ($q2) => $q2->where('contexto', 'like', '%'.$busca.'%')->orWhere('mensagem', 'like', '%'.$busca.'%')))
-                ->orderByDesc('id')->limit(200)->get()
+                ->orderByDesc('id')->limit(self::MANTER_REGISTROS)->get()
             : collect();
 
         return view('admin.erros', compact('erros', 'busca'));
@@ -199,6 +213,7 @@ class AdminController extends Controller
 
     public function emails(Request $request)
     {
+        self::manterUltimos(DB::table('mensagem_envio')->where('canal', 'email')->whereNull('campanha_id'));
         $busca = trim((string) $request->query('busca'));
         $envios = DB::table('mensagem_envio')->where('canal', 'email')->whereNull('campanha_id')
             ->when($busca !== '', fn ($q) => $q->where('destinatario', 'like', '%'.$busca.'%'))
