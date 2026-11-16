@@ -119,6 +119,7 @@
           <span><b>Cartão de crédito</b><small>Os dados do cartão são digitados na próxima tela, aqui mesmo, sem cadastro no Mercado Pago.</small></span></label>
       </div>
       @error('forma_pagamento')<small class="erro">{{ $message }}</small>@enderror
+      <input type="hidden" name="device_id" id="mp-device-id">
       @endif
 
       <h2 style="font-size:1.15rem;margin-top:24px">{{ $pago ? 4 : 3 }}. Termos</h2>
@@ -155,3 +156,17 @@
   </div>
 </section>
 @endsection
+
+@if ($pago)
+@push('scripts')
+{{-- Identificador do dispositivo do Mercado Pago (prevenção a fraudes): segue junto com o pagamento. --}}
+<script src="https://www.mercadopago.com/v2/security.js" view="checkout"></script>
+<script>
+  (function () {
+    var campo = document.getElementById('mp-device-id');
+    if (!campo) return;
+    campo.form.addEventListener('submit', function () { campo.value = window.MP_DEVICE_SESSION_ID || ''; });
+  })();
+</script>
+@endpush
+@endif
