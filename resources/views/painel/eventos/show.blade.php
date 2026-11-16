@@ -58,14 +58,15 @@
 @endif
 
 <div class="grade grade-4">
-    <div class="cartao kpi"><small>Ingressos vendidos</small><b>{{ numero($indicadores->ingressos_vendidos) }}</b><small>{{ numero($indicadores->ingressos_reservados) }} reservados agora</small></div>
-    <div class="cartao kpi"><small>Ofertados nos lotes</small><b>{{ numero($indicadores->ingressos_ofertados) }}</b><small>capacidade {{ $evento->capacidadeTexto() }}</small></div>
+    <div class="cartao kpi"><small>Ingressos vendidos</small><b>{{ numero($numeros->ingressos) }}</b><small>de {{ numero($numeros->ofertados) }} ofertados · {{ numero($numeros->reservados) }} reservados agora</small></div>
     @can('financeiro.ver')
-        <div class="cartao kpi"><small>Receita bruta</small><b>{{ moeda($indicadores->receita_bruta) }}</b><small>{{ numero($indicadores->pedidos_pagos) }} pedidos pagos</small></div>
+        <div class="cartao kpi"><small>Total vendido</small><b>{{ moeda($numeros->total) }}</b><small>{{ numero($numeros->pedidos) }} {{ $numeros->pedidos == 1 ? 'pedido' : 'pedidos' }}</small></div>
+        <div class="cartao kpi"><small>Líquido a receber</small><b>{{ moeda($numeros->liquido) }}</b><small>taxa {{ moeda($numeros->taxa) }} · devolvido {{ moeda($numeros->devolvido) }}</small></div>
     @else
-        <div class="cartao kpi"><small>Pedidos pagos</small><b>{{ numero($indicadores->pedidos_pagos) }}</b><small>&nbsp;</small></div>
+        <div class="cartao kpi"><small>Pedidos</small><b>{{ numero($numeros->pedidos) }}</b><small>&nbsp;</small></div>
+        <div class="cartao kpi"><small>Cancelados</small><b>{{ numero($numeros->cancelados) }}</b><small>ingressos</small></div>
     @endcan
-    <div class="cartao kpi"><small>Check-ins</small><b>{{ numero($indicadores->checkins_realizados) }}</b><small>entradas</small></div>
+    <div class="cartao kpi"><small>Check-ins</small><b>{{ numero($numeros->checkins) }}</b><small>entradas</small></div>
 </div>
 
 <section class="cartao" style="margin-top:18px" id="ingressos">

@@ -103,6 +103,7 @@ return array(
     'App\\Support\\ModeloMensagem' => $baseDir . '/app/Support/ModeloMensagem.php',
     'App\\Support\\MotorTaxas' => $baseDir . '/app/Support/MotorTaxas.php',
     'App\\Support\\Notificacoes' => $baseDir . '/app/Support/Notificacoes.php',
+    'App\\Support\\NumerosEvento' => $baseDir . '/app/Support/NumerosEvento.php',
     'App\\Support\\PoliticaCancelamento' => $baseDir . '/app/Support/PoliticaCancelamento.php',
     'App\\Support\\QrCode' => $baseDir . '/app/Support/QrCode.php',
     'App\\Support\\Recebimento' => $baseDir . '/app/Support/Recebimento.php',

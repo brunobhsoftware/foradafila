@@ -583,6 +583,7 @@ class ComposerStaticInit19cf629833914b10fb54311306124002
         'App\\Support\\ModeloMensagem' => __DIR__ . '/../..' . '/app/Support/ModeloMensagem.php',
         'App\\Support\\MotorTaxas' => __DIR__ . '/../..' . '/app/Support/MotorTaxas.php',
         'App\\Support\\Notificacoes' => __DIR__ . '/../..' . '/app/Support/Notificacoes.php',
+        'App\\Support\\NumerosEvento' => __DIR__ . '/../..' . '/app/Support/NumerosEvento.php',
         'App\\Support\\PoliticaCancelamento' => __DIR__ . '/../..' . '/app/Support/PoliticaCancelamento.php',
         'App\\Support\\QrCode' => __DIR__ . '/../..' . '/app/Support/QrCode.php',
         'App\\Support\\Recebimento' => __DIR__ . '/../..' . '/app/Support/Recebimento.php',

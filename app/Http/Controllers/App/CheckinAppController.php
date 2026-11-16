@@ -88,54 +88,7 @@ class CheckinAppController extends Controller
     /** Painel de vendas do app (decisão do Bruno, 09/11/2026): totais, hoje, taxa, devoluções, líquido, por ingresso (gráfico) e lotes à venda. */
     private function vendas(Evento $evento): array
     {
-        $inicioHoje = now()->setTimezone(JanelaCheckin::FUSO)->startOfDay()->utc();
-        $pedidos = DB::table('pedido')->where('evento_id', $evento->id)->whereIn('status', ['pago', 'reembolso_parcial', 'reembolsado']);
-        $validos = DB::table('ingresso as i')->leftJoin('pedido_item as pi', 'pi.id', '=', 'i.pedido_item_id')
-            ->where('i.evento_id', $evento->id)->whereIn('i.status', ['valido', 'utilizado']);
-        $porLote = (clone $validos)->join('lote as l', 'l.id', '=', 'i.lote_id')->join('ingresso_tipo as t', 't.id', '=', 'l.ingresso_tipo_id')
-            ->groupBy('l.id', 'l.nome', 't.nome')->orderByDesc(DB::raw('COUNT(*)'))
-            ->get(['l.id as lote_id', 't.nome as tipo', 'l.nome as lote', DB::raw('COUNT(*) as qtd'), DB::raw('SUM(i.valor_pago) as valor')]);
-        $canceladosPorLote = DB::table('ingresso')->where('evento_id', $evento->id)
-            ->whereIn('status', ['cancelado', 'reembolsado'])->groupBy('lote_id')
-            ->pluck(DB::raw('COUNT(*)'), 'lote_id');
-        $total = (float) (clone $pedidos)->sum('valor_total');
-        $taxa = (float) (clone $validos)->sum('pi.taxa_unitaria');
-        $devolvido = (float) DB::table('reembolso as r')->join('pedido as p', 'p.id', '=', 'r.pedido_id')
-            ->where('p.evento_id', $evento->id)->whereIn('r.status', ['aprovado', 'concluido'])->sum('r.valor');
-        $ingressos = (int) $porLote->sum('qtd');
-        // Só o que continua vendido: pedidos que ainda têm ingresso válido e o valor já sem as devoluções.
-        $qtdPedidos = (int) (clone $validos)->distinct()->count('i.pedido_id');
-        $vendido = round($total - $devolvido, 2);
-        $cancelados = (int) DB::table('ingresso')->where('evento_id', $evento->id)->whereIn('status', ['cancelado', 'reembolsado'])->count();
-        $pagosHoje = (clone $pedidos)->where('pago_em', '>=', $inicioHoje);
-        $hoje = (float) (clone $pagosHoje)->sum('valor_total') - (float) DB::table('reembolso')->whereIn('pedido_id', (clone $pagosHoje)->select('id'))
-            ->whereIn('status', ['aprovado', 'concluido'])->sum('valor');
-        $lotes = $evento->lotes()->with('tipo')->orderBy('id')->get()->map(fn ($l) => (object) [
-            'nome' => ($l->tipo?->nome ? $l->tipo->nome.' — ' : '').$l->nome, 'preco' => (float) $l->preco,
-            'vendidos' => (int) $l->vendido, 'quantidade' => (int) $l->quantidade,
-            'cancelados' => (int) ($canceladosPorLote[$l->id] ?? 0),
-            'uuid' => $l->uuid,
-            'situacao' => $l->vendido >= $l->quantidade ? 'Esgotado'
-                : (EventoPublicoController::loteAVenda($evento, $l) ? 'À venda' : ($l->status === 'pausado' ? 'Desativado' : ($l->venda_fim && $l->venda_fim < now() ? 'Encerrado' : 'Ainda não abriu'))),
-        ]);
-
-        return [
-            'total' => $vendido,
-            'pedidos' => $qtdPedidos,
-            'ingressos' => $ingressos,
-            'ofertados' => (int) $evento->lotes()->sum('quantidade'),
-            'cortesias' => (int) (clone $validos)->where('i.valor_pago', 0)->count(),
-            'hoje' => round(max($hoje, 0), 2),
-            'ingressos_hoje' => (int) (clone $validos)->where('i.criado_em', '>=', $inicioHoje)->count(),
-            'taxa' => $taxa,
-            'devolvido' => $devolvido,
-            'cancelados' => $cancelados,
-            'liquido' => round($total - $taxa - $devolvido, 2),
-            'ticket' => $qtdPedidos ? $vendido / $qtdPedidos : 0,
-            'cancelados_por_lote' => $canceladosPorLote,
-            'por_lote' => $porLote,
-            'lotes' => $lotes,
-        ];
+        return (array) \App\Support\NumerosEvento::detalhado($evento);
     }
 
     private function acesso(Evento $evento): void
