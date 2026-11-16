@@ -66,7 +66,7 @@ class InscricaoController extends Controller
         $regras = [
             'chave' => ['required', 'uuid'],
             'participantes' => ['required', 'array', 'size:'.$total],
-            'participantes.*.nome' => ['required', 'string', 'max:150'],
+            'participantes.*.nome' => ['required', 'string', 'max:150', new \App\Rules\NomeCompleto],
             'participantes.*.cpf' => $evento->exige_cpf_participante ? ['required', new DocumentoValido('PF')] : ['nullable', new DocumentoValido('PF')],
         ];
         // Formulário de inscrição do evento (V015): as regras de cada campo vêm dele.
@@ -86,7 +86,7 @@ class InscricaoController extends Controller
         // Pré-cadastro do cartão: CPF inválido volta para a mesma tela (não para a de antes, que perderia a compra).
         if ($request->boolean('etapa_dados')) {
             $v = \Illuminate\Support\Facades\Validator::make($request->all(), [
-                'nome' => ['required', 'string', 'max:150'], 'email' => ['required', 'email:filter', 'max:150'],
+                'nome' => ['required', 'string', 'max:150', new \App\Rules\NomeCompleto], 'email' => ['required', 'email:filter', 'max:150'],
                 'cpf' => ['required', new DocumentoValido('PF')], 'telefone' => ['nullable', 'string', 'max:20'],
             ], ['cpf.required' => 'Para pagar com cartão, informe o CPF do titular.'], ['nome' => 'nome completo', 'email' => 'e-mail', 'cpf' => 'CPF']);
             if ($v->fails()) {
@@ -109,7 +109,7 @@ class InscricaoController extends Controller
             $conhecido = self::dadosDoEmail($request->input('email'));
             $regras += [
                 'email' => ['required', 'email:filter', 'max:150'],
-                'nome' => [$conhecido ? 'nullable' : 'required', 'string', 'max:150'],
+                'nome' => [$conhecido ? 'nullable' : 'required', 'string', 'max:150', new \App\Rules\NomeCompleto],
                 'cpf' => [$conhecido && $conhecido['cpf'] ? 'nullable' : 'required', new DocumentoValido('PF')],
             ];
         }

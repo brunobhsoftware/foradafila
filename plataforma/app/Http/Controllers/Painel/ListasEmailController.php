@@ -188,18 +188,9 @@ class ListasEmailController extends Controller
      */
     public static function padronizarNome(?string $nome): ?string
     {
-        $nome = trim(preg_replace('/\s+/u', ' ', (string) $nome));
-        if ($nome === '') {
-            return null;
-        }
-        $palavras = explode(' ', mb_convert_case(mb_strtolower($nome), MB_CASE_TITLE));
-        foreach ($palavras as $i => $p) {
-            if ($i > 0 && in_array(mb_strtolower($p), ['de', 'da', 'do', 'das', 'dos', 'e', 'di', 'du'], true)) {
-                $palavras[$i] = mb_strtolower($p);
-            }
-        }
+        $nome = \App\Support\NomePessoa::padronizar($nome);
 
-        return mb_substr(implode(' ', $palavras), 0, 150);
+        return $nome === null || $nome === '' ? null : mb_substr($nome, 0, 150);
     }
 
     public static function emailValido(string $email): bool

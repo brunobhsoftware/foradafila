@@ -59,7 +59,7 @@ class CadastroCompradorController extends Controller
         $request->merge(['email' => mb_strtolower(trim((string) $request->input('email')))]);
         $dados = $request->validate([
             'codigo' => ['required', 'string'],
-            'nome' => ['required', 'string', 'max:150'],
+            'nome' => ['required', 'string', 'max:150', new \App\Rules\NomeCompleto],
             'email' => ['required', 'email:filter', 'max:150', Rule::unique('comprador', 'email')->ignore($comprador->id)],
             'telefone' => ['nullable', 'string', 'max:20'],
             'senha' => ['nullable', 'confirmed', Password::min(8)->letters()->numbers()],

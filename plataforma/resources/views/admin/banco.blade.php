@@ -25,5 +25,13 @@
     </table></div>
     @endif
 </section>
+<section class="cartao" style="margin-top:18px;padding:20px 24px">
+    <h2 style="margin-top:0">Padronizar nomes de pessoas</h2>
+    <p class="suave">Corrige os nomes já gravados de usuários da equipe, compradores, participantes dos ingressos, cadastro único, convidados, listas de e-mail
+        e representantes legais: primeira letra de cada palavra maiúscula e o resto minúsculo, com “de, da, do, das, dos, e” minúsculos
+        (ex.: “BRUNO DE MAGALHÃES” → “Bruno de Magalhães”). Só altera o que estiver diferente; pode rodar de novo.</p>
+    <form method="post" action="{{ route('admin.banco.nomes') }}" data-confirmar="Padronizar os nomes de pessoas em todo o banco de produção?">@csrf
+        <button class="botao botao--primario botao--pequeno">Padronizar nomes</button></form>
+</section>
 <p class="suave" style="margin-top:12px"><small>Scripts com gatilhos (triggers) continuam indo pelo phpMyAdmin. Cada aplicação fica registrada na auditoria.</small></p>
 @endsection

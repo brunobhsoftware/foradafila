@@ -500,6 +500,11 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - **Financeiro enxuto** (decisão do Bruno, 16/11/2026): saíram o "Extrato do recebimento pela plataforma" (o extrato será por evento, a definir) e o cartão "Em breve".
   Em "Mercado Pago da empresa" ficam só as opções Configuração automática/manual + botões **Exibir** e **Salvar preferência**; os detalhes (`#mp-detalhes`)
   só aparecem ao clicar em Exibir — sem nada configurado, escolher uma opção já abre.
+- **Nomes de pessoas padronizados** (decisão do Bruno, 16/11/2026): `App\Support\NomePessoa::padronizar()` (1ª letra maiúscula, resto minúsculo; de/da/do/das/dos/e/di/du
+  minúsculos no meio; também após hífen/apóstrofo) aplicado sozinho pelos models `Usuario`, `Comprador`, `Participante` (trait `NomePadronizado`), `Organizador.representante_nome`,
+  cadastro único, convidados e listas de e-mail. Regra `App\Rules\NomeCompleto` (nome e sobrenome) em cadastro do produtor, equipe/convite, comprador, compra
+  (comprador e participantes pelo formulário), convidados, representante legal e pagamentos de teste. Os já gravados: Administração → Atualizações do banco →
+  **Padronizar nomes** (`App\Support\PadronizarNomes`, auditoria `plataforma.padronizar_nomes`; pode rodar de novo).
 - **E-mail sem acento** (08/11/2026: o login da Estação Slod foi gravado como "estaçãoslod@gmail.com" e nenhum e-mail chegava):
   toda validação de e-mail usa `email:filter` (recusa acento, cedilha e espaço). Administração → Empresas → detalhe avisa e-mail
   inválido e tem "Corrigir e-mail de login" (sugere a versão sem acento; `admin.empresas.email`, auditoria `admin.email_login_corrigido`).

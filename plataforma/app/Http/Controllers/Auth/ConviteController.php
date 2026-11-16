@@ -51,7 +51,7 @@ class ConviteController extends Controller
             }
         } else {
             $dados = $request->validate([
-                'nome' => ['required', 'string', 'max:150'],
+                'nome' => ['required', 'string', 'max:150', new \App\Rules\NomeCompleto],
                 'telefone' => ['nullable', 'string', 'max:20'],
                 'senha' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
             ]);

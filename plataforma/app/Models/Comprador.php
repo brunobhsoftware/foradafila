@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 /** Quem compra. Conta própria ("Meus ingressos"), separada do usuário produtor. */
 class Comprador extends Authenticatable
 {
+    use \App\Models\Concerns\NomePadronizado;
     use TemUuid;
 
     protected $table = 'comprador';

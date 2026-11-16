@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 /** Titular do ingresso. Só as colunas que o fluxo atual preenche estão liberadas. */
 class Participante extends Model
 {
+    use \App\Models\Concerns\NomePadronizado;
     use PertenceAoOrganizador;
 
     protected $table = 'participante';

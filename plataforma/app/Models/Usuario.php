@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class Usuario extends Authenticatable
 {
+    use \App\Models\Concerns\NomePadronizado;
     use TemUuid;
 
     protected $table = 'usuario';

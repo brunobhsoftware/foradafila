@@ -87,11 +87,12 @@ class ConvidadosController extends Controller
                     continue;
                 }
                 $partes = array_map('trim', preg_split('/[;,\t]/', $linha));
-                $linhas[] = ['nome' => $partes[0] ?? '', 'email' => $partes[1] ?? null, 'acompanhantes' => (int) ($partes[2] ?? 0), 'linha' => $n + 1];
+                $linhas[] = ['nome' => \App\Support\NomePessoa::padronizar($partes[0] ?? ''), 'email' => $partes[1] ?? null, 'acompanhantes' => (int) ($partes[2] ?? 0), 'linha' => $n + 1];
             }
         } else {
-            $d = $request->validate(['nome' => ['required', 'string', 'max:150'], 'email' => ['nullable', 'email:filter', 'max:150'],
+            $d = $request->validate(['nome' => ['required', 'string', 'max:150', new \App\Rules\NomeCompleto], 'email' => ['nullable', 'email:filter', 'max:150'],
                 'telefone' => ['nullable', 'string', 'max:20'], 'acompanhantes' => ['nullable', 'integer', 'min:0']]);
+            $d['nome'] = \App\Support\NomePessoa::padronizar($d['nome']);
             $linhas[] = $d + ['linha' => null];
         }
         $erros = [];
@@ -99,6 +100,8 @@ class ConvidadosController extends Controller
             $rotulo = $x['linha'] ? "Linha {$x['linha']}: " : '';
             if (mb_strlen($x['nome']) < 2) {
                 $erros[] = $rotulo.'nome obrigatório.';
+            } elseif (! \App\Support\NomePessoa::completo($x['nome'])) {
+                $erros[] = $rotulo."informe nome e sobrenome ({$x['nome']}).";
             } elseif ($x['email'] && ! filter_var($x['email'], FILTER_VALIDATE_EMAIL)) {
                 $erros[] = $rotulo."e-mail inválido ({$x['email']}).";
             } elseif (($x['acompanhantes'] ?? 0) > $l->max_acompanhantes) {

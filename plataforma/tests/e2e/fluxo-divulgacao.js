@@ -108,7 +108,7 @@ const nav = (p, a) => Promise.all([p.waitForNavigation(), a]);
   const X = await (await b.newContext()).newPage();
   await X.goto(link); await X.selectOption('select[name^="q["]', '1');
   await nav(X, X.click('button:has-text("Garantir ingresso")'));
-  await X.fill('[name=email]', 'dani@publico.test'); await X.fill('[name=nome]', 'Dani'); await X.click('[data-continuar]'); await X.waitForSelector('[name=cpf]:visible'); await X.fill('[name=cpf]', '25276018987');
+  await X.fill('[name=email]', 'dani@publico.test'); await X.fill('[name=nome]', 'Dani Souza'); await X.click('[data-continuar]'); await X.waitForSelector('[name=cpf]:visible'); await X.fill('[name=cpf]', '25276018987');
   await X.fill('[name="participantes[0][nome]"]', 'Dani');
   await X.check('[name=aceite_termos]');
   await nav(X, X.click('button:has-text("Confirmar inscrição")'));
