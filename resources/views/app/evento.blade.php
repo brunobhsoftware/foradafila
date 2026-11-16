@@ -40,15 +40,16 @@
       <div><small>Vendidos hoje</small><b>{{ number_format($vendas['ingressos_hoje'], 0, ',', '.') }}</b><em>{{ moeda($vendas['hoje']) }}</em></div>
       <div><small>Pedidos</small><b>{{ number_format($vendas['pedidos'], 0, ',', '.') }}</b><em>ticket médio {{ moeda($vendas['ticket']) }}</em></div>
       <div><small>Taxa da plataforma</small><b>{{ moeda($vendas['taxa']) }}</b><em>dos ingressos pagos</em></div>
-      <div><small>Devolvido</small><b>{{ moeda($vendas['devolvido']) }}</b><em>cancelamentos</em></div>
-      <div><small>Líquido</small><b class="ck-verde">{{ moeda($vendas['liquido']) }}</b><em>vendido − taxa − devoluções</em></div>
+      <div><small>Devolvido</small><b>{{ moeda($vendas['devolvido']) }}</b><em>{{ number_format($vendas['cancelados'], 0, ',', '.') }} {{ $vendas['cancelados'] == 1 ? 'cancelamento' : 'cancelamentos' }}</em></div>
+      <div><small>Líquido</small><b class="ck-verde">{{ moeda($vendas['liquido']) }}</b><em>Valor a receber</em></div>
     </div>
 
     @if ($vendas['por_lote']->isNotEmpty())
       <div class="ck-secao">Por ingresso</div>
       <div class="ck-cartao">
         @foreach ($vendas['por_lote'] as $k => $l)
-          <div class="ck-item"><span><b><i class="ck-legenda" style="background:{{ $cores[$k % 7] }}"></i>{{ $l->tipo }}</b><small>{{ $l->lote }}</small></span>
+          @php $canc = $vendas['cancelados_por_lote'][$l->lote_id] ?? 0; @endphp
+          <div class="ck-item"><span><b><i class="ck-legenda" style="background:{{ $cores[$k % 7] }}"></i>{{ $l->tipo }}</b><small>{{ $l->lote }}@if ($canc) · {{ $canc }} {{ $canc == 1 ? 'cancelado' : 'cancelados' }}@endif</small></span>
             <span style="text-align:right"><b>{{ $l->qtd }}</b><small>{{ moeda($l->valor) }}</small></span></div>
         @endforeach
       </div>
@@ -57,8 +58,13 @@
     <div class="ck-secao">Ingressos para venda</div>
     <div class="ck-cartao">
       @forelse ($vendas['lotes'] as $l)
-        <div class="ck-item"><span><b>{{ $l->nome }}</b><small>{{ $l->preco > 0 ? moeda($l->preco) : 'Gratuito' }} · {{ $l->vendidos }} de {{ $l->quantidade }}</small></span>
-          <span class="ck-selo ck-selo--{{ \Illuminate\Support\Str::slug($l->situacao) }}">{{ $l->situacao }}</span></div>
+        <div class="ck-item">
+          <span><b>{{ $l->nome }}</b><small>{{ $l->preco > 0 ? moeda($l->preco) : 'Gratuito' }} · {{ $l->vendidos }} de {{ $l->quantidade }}@if ($l->cancelados) · {{ $l->cancelados }} {{ $l->cancelados == 1 ? 'cancelado' : 'cancelados' }}@endif</small></span>
+          <span style="display:flex;align-items:center;gap:8px">
+            <span class="ck-selo ck-selo--{{ \Illuminate\Support\Str::slug($l->situacao) }}">{{ $l->situacao }}</span>
+            @if ($evento->data_fim > now()) @can('evento.criar')<a href="{{ route('eventos.edit', $evento->uuid) }}#lote-{{ $l->uuid }}" class="ck-selo ck-selo--editar" title="Editar lote">✎</a>@endcan @endif
+          </span>
+        </div>
       @empty
         <div class="ck-item"><span><small>Nenhum ingresso cadastrado.</small></span></div>
       @endforelse

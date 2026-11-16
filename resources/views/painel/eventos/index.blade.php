@@ -51,7 +51,7 @@
                     <div><small>Descontos (cupons)</small><b>{{ moeda($v->descontos) }}</b></div>
                     <div><small>Taxa da plataforma</small><b>{{ moeda($v->taxa) }}</b></div>
                     <div><small>Devolvido</small><b>{{ moeda($v->devolvido) }}</b></div>
-                    <div class="destaque"><small>Valor líquido</small><b>{{ moeda($v->liquido) }}</b><small>vendido − taxa − devoluções</small></div>
+                    <div class="destaque"><small>Valor líquido</small><b>{{ moeda($v->liquido) }}</b><small>Valor a receber</small></div>
                 </div>
                 <div class="evento-painel__link">
                     <div class="copiar"><input id="link-ev-{{ $evento->id }}" value="{{ $link }}" readonly aria-label="Link do evento">
