@@ -39,6 +39,7 @@ return array(
     'App\\Http\\Controllers\\Painel\\PedidosController' => $baseDir . '/app/Http/Controllers/Painel/PedidosController.php',
     'App\\Http\\Controllers\\Painel\\PerfilController' => $baseDir . '/app/Http/Controllers/Painel/PerfilController.php',
     'App\\Http\\Controllers\\Painel\\PreferenciasController' => $baseDir . '/app/Http/Controllers/Painel/PreferenciasController.php',
+    'App\\Http\\Controllers\\Painel\\SimuladorController' => $baseDir . '/app/Http/Controllers/Painel/SimuladorController.php',
     'App\\Http\\Controllers\\Publico\\AcessoCompradorController' => $baseDir . '/app/Http/Controllers/Publico/AcessoCompradorController.php',
     'App\\Http\\Controllers\\Publico\\CadastroCompradorController' => $baseDir . '/app/Http/Controllers/Publico/CadastroCompradorController.php',
     'App\\Http\\Controllers\\Publico\\CompradorAuthController' => $baseDir . '/app/Http/Controllers/Publico/CompradorAuthController.php',
