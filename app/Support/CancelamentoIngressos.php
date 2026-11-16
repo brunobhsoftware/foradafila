@@ -8,7 +8,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Cancelamento de ingressos pela organização (painel). O estoque do lote NÃO é devolvido (15/11/2026). Marca os ingressos,
+ * Cancelamento de ingressos (painel e comprador). O estoque só volta se o lote ainda estiver à venda (16/11/2026). Marca os ingressos,
  * atualiza o pedido e, se houve valor pago, registra a devolução em `reembolso` (a devolução do dinheiro é
  * responsabilidade do produtor; com a integração de pagamento, sai pela API da operadora).
  */
@@ -45,8 +45,10 @@ class CancelamentoIngressos
         }
 
         DB::transaction(function () use ($pedido, $alvos, $motivo, $observacao, $devolvido, $valor, $devolverDe, $solicitadoPor) {
-            // O ingresso cancelado NÃO volta ao estoque (decisão do Bruno, 15/11/2026): lote.vendido não diminui, para não reabrir
-            // lote esgotado nem mexer na fila dos lotes seguintes ("Por lote").
+            // Estoque (decisão do Bruno, 16/11/2026; ajusta a de 15/11): o ingresso cancelado só volta ao estoque se o lote dele
+            // ainda estiver À VENDA na página agora (EventoPublicoController::loteAVenda). Lote encerrado, esgotado, pausado ou
+            // anterior ao que está vendendo não recebe de volta — não reabre lote velho nem mexe na fila "Por lote".
+            self::devolverEstoque($pedido, $alvos);
             $novoStatus = $valor > 0 ? 'reembolsado' : 'cancelado'; // ingresso pago e devolvido (inteiro ou sem a taxa) → reembolsado
             Ingresso::withoutGlobalScope('organizador')->whereIn('id', $alvos->pluck('id'))->update(['status' => $novoStatus, 'cancelado_em' => now('UTC')]);
 
@@ -76,5 +78,26 @@ class CancelamentoIngressos
         });
 
         return ['cancelados' => $alvos->count(), 'valor' => $valor];
+    }
+
+    /** Devolve ao estoque só os ingressos cujo lote ainda está à venda na página. @return int quantos voltaram */
+    public static function devolverEstoque(Pedido $pedido, Collection $alvos): int
+    {
+        $evento = \App\Models\Evento::withoutGlobalScope('organizador')->find($pedido->evento_id);
+        if (! $evento) {
+            return 0;
+        }
+        // Sem o escopo da organização: o cancelamento também é feito pelo comprador (sem organização na sessão).
+        $evento->setRelation('lotes', \App\Models\Lote::withoutGlobalScope('organizador')->where('evento_id', $evento->id)->get());
+        $voltaram = 0;
+        foreach ($alvos->groupBy('lote_id') as $loteId => $doLote) {
+            $lote = $evento->lotes->firstWhere('id', (int) $loteId);
+            if ($lote && \App\Http\Controllers\Publico\EventoPublicoController::loteAVenda($evento, $lote)) {
+                DB::update('UPDATE lote SET vendido = GREATEST(vendido - ?, 0) WHERE id = ?', [$doLote->count(), $lote->id]);
+                $voltaram += $doLote->count();
+            }
+        }
+
+        return $voltaram;
     }
 }
