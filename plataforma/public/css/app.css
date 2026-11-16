@@ -105,7 +105,6 @@ small, .suave { color: var(--suave); }
 .tabela-rolagem { overflow-x: auto; }
 .celula-quebra { overflow-wrap: anywhere; min-width: 150px; }
 .so-estreito { display: none; }
-}
 table.tabela { width: 100%; border-collapse: collapse; font-size: .92rem; }
 .tabela th { text-align: left; font-weight: 600; color: var(--suave); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; padding: 11px 16px; background: #FCFCFD; border-bottom: 1px solid var(--borda); white-space: nowrap; }
 .tabela td { padding: 13px 16px; border-bottom: 1px solid var(--borda); vertical-align: middle; }
@@ -478,9 +477,22 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
   .celula-quebra { min-width: 0; }
   .linha-acoes td { overflow-wrap: anywhere; }
   .linha-acoes .acoes-linha { flex-wrap: wrap; }
+}
 
 /* Conferência "a taxa cobre a tarifa do Mercado Pago?" (Administração → Taxas) */
 .margem-taxa { margin-top: 8px; }
 .margem-taxa summary { cursor: pointer; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .margem-taxa .tabela-rolagem { margin: 8px 0 6px; max-width: 640px; }
 .tabela--compacta th, .tabela--compacta td { padding: 6px 12px; }
+
+/* Simulador de vendas (Gestão) */
+.simulador-cartao { padding: 18px 20px; }
+.simulador-cartao h2 { margin: 0 0 10px; font-size: 1.1rem; }
+.simulador-cartao dl { margin: 0; }
+.simulador-cartao dl > div { display: flex; justify-content: space-between; gap: 14px; padding: 9px 0; border-bottom: 1px solid var(--borda); }
+.simulador-cartao dt { color: var(--tinta-3); }
+.simulador-cartao dd { margin: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.simulador-coberta dt, .simulador-coberta dd { color: var(--suave); }
+.simulador-cartao .simulador-total { border-bottom: 0; padding-top: 12px; }
+.simulador-total dt { color: var(--tinta); font-weight: 600; }
+.simulador-total dd { font: 700 1.35rem/1.2 var(--fonte-titulo); color: var(--tinta); }

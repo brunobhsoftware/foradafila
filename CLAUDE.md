@@ -237,6 +237,10 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - **A taxa cobre a tarifa do Mercado Pago?** (decisão do Bruno, 15/11/2026; `App\Support\MargemTaxas`, parcial `admin/_margem-taxa`): Administração → Taxas (cada regra
   ativa de ingresso pago) e detalhe da empresa mostram quanto sobra para a plataforma por valor de ingresso (R$ 10 a 500) no Pix e no cartão, no pior caso (taxa repassada),
   com selo "Cobre"/"Não cobre" e o percentual mínimo (`t / (1 − t)`); salvar uma taxa que não cobre mostra o aviso amarelo (`session('aviso')`). É aviso, não bloqueia.
+- **Gestão → Simulador de vendas** (decisão do Bruno, 16/11/2026; `/painel/simulador`, `SimuladorController`, permissão `financeiro.ver`, abaixo de Financeiro): valor do
+  ingresso + embutida/repassada → cartões Pix e Cartão (comprador paga, taxa da plataforma, tarifa do Mercado Pago paga pela plataforma, **sua empresa recebe**) e tabela
+  de R$ 20 a 500. A conta segue a conta de recebimento atual (`Recebimento::contaAtual`): `direta` = plataforma cobre a tarifa até as taxas da Administração (o que o
+  Mercado Pago cobrar a mais é da empresa); `propria` = tarifa da empresa e taxa em fatura; `plataforma` = repasse.
 - **Log de erros** (V022, `App\Support\LogErro`, Administração → Log de erros): todo erro 500 (`bootstrap/app.php`, contexto `erro.500`) e os erros do checkout.
 - Sem cron ainda: lote `agendado` abre quando chega `venda_inicio`; lote com `lote_anterior_id` só abre quando o
   anterior esgota, encerra ou passa do fim (`EventoPublicoController::loteAVenda`).
