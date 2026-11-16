@@ -34,6 +34,39 @@ class WebhookController extends Controller
         return $this->registrar($request, fn ($a, $r, $d) => MercadoPago::origemAssinatura($a, $r, $d));
     }
 
+    /**
+     * IPN (notificação antiga do Mercado Pago: ?topic=payment&id=123, sem assinatura). Vale para todas as aplicações da conta,
+     * então pode trazer avisos de outros sistemas: tudo é registrado, e só o que for pagamento nosso é conferido na API.
+     */
+    public function ipn(Request $request)
+    {
+        $corpo = $request->json()->all() ?: $request->all();
+        $topico = mb_substr((string) ($request->query('topic') ?? data_get($corpo, 'topic') ?? data_get($corpo, 'type') ?? ''), 0, 50);
+        $id = (string) ($request->query('id') ?? $request->query('data_id') ?? data_get($corpo, 'data.id') ?? data_get($corpo, 'id') ?? '');
+        if ($id === '' && preg_match('~/(\d+)$~', (string) data_get($corpo, 'resource', ''), $m)) {
+            $id = $m[1];
+        }
+        // Sem número de evento no IPN: um registro por recurso, tópico e minuto (as repetições do mesmo aviso não duplicam).
+        $idExterno = mb_substr('ipn-'.($topico ?: 'sem-topico').'-'.($id ?: sha1($request->getContent())).'-'.now('UTC')->format('YmdHi'), 0, 150);
+        DB::table('webhook_evento')->insertOrIgnore([
+            'gateway_id' => DB::table('gateway')->where('codigo', 'mercadopago')->value('id'),
+            'id_evento_externo' => $idExterno,
+            'tipo' => mb_substr('ipn:'.$topico, 0, 60),
+            'recurso_id' => $id !== '' ? mb_substr($id, 0, 100) : null,
+            'cabecalhos' => json_encode(collect($request->headers->all())->only(['user-agent', 'content-type'])->map(fn ($v) => $v[0] ?? null)),
+            'corpo' => json_encode(($corpo ?: []) + ['_consulta' => $request->query()]),
+            'assinatura_valida' => 0,
+            'status' => 'ignorado',
+            'erro' => 'IPN (sem assinatura): só registrado',
+        ]);
+        // O conteúdo do IPN não é confiável: serve só de gatilho para consultar o pagamento na API do Mercado Pago.
+        if ($id !== '' && in_array($topico, ['payment', 'merchant_order', 'order'], true)) {
+            $this->processar($id, $topico, $idExterno);
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
     private function registrar(Request $request, callable $conferir, ?int $contaId = null)
     {
         $corpo = $request->json()->all() ?: $request->all();

@@ -241,6 +241,9 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   ingresso + embutida/repassada → cartões Pix e Cartão (comprador paga, taxa da plataforma, tarifa do Mercado Pago paga pela plataforma, **sua empresa recebe**) e tabela
   de R$ 20 a 500. A conta segue a conta de recebimento atual (`Recebimento::contaAtual`): `direta` = plataforma cobre a tarifa até as taxas da Administração (o que o
   Mercado Pago cobrar a mais é da empresa); `propria` = tarifa da empresa e taxa em fatura; `plataforma` = repasse.
+- **IPN do Mercado Pago** (decisão do Bruno, 16/11/2026): `GET/POST /webhooks/mercadopago/ipn` (`WebhookController::ipn`, sem assinatura, throttle `webhook-mp-ipn`) grava em
+  `webhook_evento` com `tipo = ipn:<tópico>` (status `ignorado`; vale para todas as aplicações da conta da BH, então chegam avisos de outros sistemas) e, em
+  `payment`/`merchant_order`/`order`, só dispara `Checkout::sincronizar` (consulta a API; não confia no corpo). URL cadastrada no painel: `https://foradafila.com.br/webhooks/mercadopago/ipn`.
 - **Log de erros** (V022, `App\Support\LogErro`, Administração → Log de erros): todo erro 500 (`bootstrap/app.php`, contexto `erro.500`) e os erros do checkout.
 - Sem cron ainda: lote `agendado` abre quando chega `venda_inicio`; lote com `lote_anterior_id` só abre quando o
   anterior esgota, encerra ou passa do fim (`EventoPublicoController::loteAVenda`).

@@ -121,6 +121,8 @@ Route::post('/webhooks/mercadopago/{conta}', [WebhookController::class, 'mercado
     ->middleware('throttle:120,1,webhook-mp-empresa');
 Route::get('/descadastro/{org}', [\App\Http\Controllers\Publico\DescadastroController::class, 'mostrar'])->name('descadastro')->whereNumber('org');
 Route::post('/descadastro/{org}', [\App\Http\Controllers\Publico\DescadastroController::class, 'confirmar'])->whereNumber('org')->middleware('throttle:30,1,descadastro');
+// IPN do Mercado Pago (aviso antigo, sem assinatura): só registra e confere o pagamento na API.
+Route::match(['get', 'post'], '/webhooks/mercadopago/ipn', [WebhookController::class, 'ipn'])->name('webhook.mercadopago.ipn')->middleware('throttle:120,1,webhook-mp-ipn');
 Route::post('/webhooks/mercadopago', [WebhookController::class, 'mercadoPago'])->name('webhook.mercadopago')
     ->middleware('throttle:120,1,webhook-mp');
 
