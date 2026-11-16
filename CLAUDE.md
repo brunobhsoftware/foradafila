@@ -101,6 +101,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - **Cancelamento não devolve estoque** (decisão do Bruno, 15/11/2026): ingresso cancelado (painel, comprador, convidado removido) **não** diminui
   `lote.vendido` — o lote não reabre e a fila dos lotes "Por lote" não muda. `lote.vendido` passa a ser "já saíram do estoque" (inclui cancelados);
   os números de vendas vêm dos ingressos válidos/utilizados. Reserva não paga (`lote.reservado`) continua voltando. Não foi corrigido para trás.
+  **Ajuste (16/11/2026):** o ingresso cancelado **volta** ao estoque só se o lote dele ainda estiver **à venda na página** (`loteAVenda`); lote encerrado,
+  esgotado, pausado ou anterior ao que está vendendo não recebe de volta (`CancelamentoIngressos::devolverEstoque`).
 - **"🔥 Corra! Últimos ingressos"** (15/11/2026; `Lote::ultimosIngressos()`: restam ≤ 15% do lote, mínimo 5; `.pub-ultimos`): selo no lote da página do
   evento e no alto da tela de compra, sem dizer quantos nem de qual lote.
 - **Ocultar evento publicado** (decisão do Bruno, 09/11/2026): interruptor **"Evento visível" / "Evento oculto"** (`painel/eventos/_visibilidade`) ao lado de "Editar ingressos" no editar e na página do evento (publicado ou pausado →
