@@ -75,26 +75,6 @@
 </section>
 @endif
 
-@if ($v012 && $saldo)
-<section class="cartao" style="padding:22px 24px;margin-top:18px">
-    <h2 style="margin-top:0">Extrato do recebimento pela plataforma</h2>
-    <div class="grade grade-4" style="gap:12px">
-        <div class="cartao kpi"><small>Vendas pagas a repassar</small><b>{{ moeda($saldo['vendas']) }}</b></div>
-        <div class="cartao kpi"><small>Taxa da plataforma</small><b>{{ moeda($saldo['comissao']) }}</b></div>
-        <div class="cartao kpi"><small>Liberado para repasse</small><b>{{ moeda($saldo['liberado']) }}</b><small>já pode ser transferido</small></div>
-        <div class="cartao kpi"><small>Aguardando o fim do evento</small><b>{{ moeda($saldo['aguardando']) }}</b><small>+ {{ \App\Support\Recebimento::PRAZO_DIAS_UTEIS }} dias úteis</small></div>
-    </div>
-    <h3 style="margin:18px 0 8px;font-size:1rem">Repasses recebidos</h3>
-    @if ($repasses->isEmpty())<p class="suave" style="margin:0">Nenhum repasse ainda.</p>
-    @else
-    <div class="tabela-rolagem"><table class="tabela">
-        <thead><tr><th>Data</th><th>Destino</th><th class="num">Vendas</th><th class="num">Taxa</th><th class="num">Recebido</th><th>Comprovante</th></tr></thead>
-        <tbody>@foreach ($repasses as $r)
-            <tr><td>{{ data_local($r->pago_em, 'd/m/Y') }}</td><td><small>{{ $r->destino }}</small></td><td class="num">{{ moeda($r->valor_vendas) }}</td>
-                <td class="num">{{ moeda($r->valor_comissao) }}</td><td class="num"><b>{{ moeda($r->valor_repasse) }}</b></td><td><small>{{ $r->comprovante }}</small></td></tr>
-        @endforeach</tbody>
-    </table></div>
-    @endif
 </section>
 @endif
 
@@ -111,9 +91,11 @@
 @else
 @php
     $temManual = $propria && ($propria->client_id || $propria->access_token_cript || $propria->teste_access_token_cript);
+    $mpConfigurado = $conectada || $propriaAtiva || $temManual;
+    $mpAbrirDetalhes = request('mp') || $verificacao || $errors->hasAny(['client_id','client_secret','access_token','public_key','webhook_secret']);
     $modoMpInicial = request('mp') || $verificacao || $errors->hasAny(['client_id','client_secret','access_token','public_key','webhook_secret']) ? 'manual' : $mpConfigModo;
 @endphp
-<details class="cartao" style="padding:18px 24px;margin-top:18px" @if (request('mp') || $verificacao || $conectada || $propriaAtiva || $errors->hasAny(['client_id','client_secret','access_token','public_key','webhook_secret'])) open @endif>
+<details class="cartao" style="padding:18px 24px;margin-top:18px" open>
     <summary style="cursor:pointer"><b style="font-size:1.1rem">Mercado Pago da empresa</b>
         @if ($contaAtiva)<span class="selo selo--verde" style="margin-left:8px">Ativa{{ $conta->email_conta ? ' — '.$conta->email_conta : '' }}</span>
         @elseif ($conectada)<span class="selo" style="margin-left:8px">Conectada{{ $conta->email_conta ? ' — '.$conta->email_conta : '' }}</span>
@@ -130,9 +112,14 @@
         <label class="opcao-cartao"><input type="radio" name="mp_config_modo" value="manual" data-mp-config @checked($modoMpInicial === 'manual')>
             <span><b>Configuração manual</b><small>Crie a aplicação no painel de desenvolvedores do Mercado Pago e cole as chaves aqui. Para quem quer controle total.</small></span></label>
     </div>
-    @can('financeiro.contas')<div style="margin-bottom:16px"><button class="botao botao--escuro botao--pequeno">Salvar preferência</button>
-        <small class="suave" style="margin-left:6px">Salva qual configuração é usada nas vendas. As duas continuam salvas.</small></div>@endcan
+    <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button type="button" class="botao botao--contorno botao--pequeno" data-alternar="mp-detalhes" aria-expanded="{{ $mpAbrirDetalhes ? 'true' : 'false' }}">Exibir</button>
+        @can('financeiro.contas')<button class="botao botao--escuro botao--pequeno">Salvar preferência</button>@endcan
+    </div>
     </form>
+
+    {{-- Detalhes só ao clicar em Exibir; sem nada configurado, escolher uma opção já abre (decisão do Bruno, 16/11/2026) --}}
+    <div id="mp-detalhes" @unless ($mpAbrirDetalhes) hidden @endunless @unless ($mpConfigurado) data-mp-abrir-ao-escolher @endunless>
 
     {{-- === AUTOMÁTICA: OAuth === --}}
     <div id="mp-config-automatica" @if ($modoMpInicial !== 'automatica') hidden @endif>
@@ -294,6 +281,7 @@
         @endif
         @endcan
     </div>
+    </div>
 </details>
 @endif
 
@@ -337,8 +325,4 @@
 @endif
 
 
-<section class="cartao" style="margin-top:18px;padding:20px">
-    <h2 style="margin-top:0">Em breve</h2>
-    <p class="suave">Pagamentos recebidos por evento, reembolsos, comissão do Fora da Fila e faturas. PagBank e PayPal também estão previstos.</p>
-</section>
 @endsection

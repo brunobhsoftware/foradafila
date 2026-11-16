@@ -156,10 +156,7 @@ const webhook = async (P, id) => {
   await C.goto(BASE + '/e/' + codEv('show-pago'));
   ok(sql("SELECT reservado FROM lote") === '0' && sql("SELECT status FROM pedido ORDER BY id DESC LIMIT 1") === 'expirado', 'reserva vencida e não paga volta ao estoque ao abrir o evento');
 
-  // ---- extrato e repasse ----
-  await P.goto(BASE + '/painel/financeiro');
-  t = (await P.locator('section:has(h2:text("Extrato do recebimento"))').innerText()).replace(/\s+/g, ' ');
-  ok(t.includes('Vendas pagas a repassar R$ 210,00') && t.includes('Taxa da plataforma R$ 10,00') && t.includes('Aguardando o fim do evento R$ 200,00'), 'extrato da produtora: R$ 210 de vendas, R$ 10 de taxa, R$ 200 aguardando o evento');
+  // ---- repasse (o extrato saiu do Financeiro da produtora, decisão do Bruno 16/11/2026) ----
   sql("UPDATE evento SET data_inicio = DATE_SUB(UTC_TIMESTAMP(), INTERVAL 11 DAY), data_fim = DATE_SUB(UTC_TIMESTAMP(), INTERVAL 10 DAY)");
   sql("UPDATE usuario SET admin_plataforma=1 WHERE email='bruno@checkout.test'");
   await P.goto(BASE + '/admin/repasses');

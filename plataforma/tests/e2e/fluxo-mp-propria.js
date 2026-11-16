@@ -41,7 +41,7 @@ let ordem = null;
 
   await P.goto(BASE + '/painel/financeiro');
   ok(await P.isDisabled('input[name=recebimento_modo][value=propria]'), 'sem aplicação ativa: "direto na conta da empresa" desativado');
-  await P.click('summary:has-text("Mercado Pago da empresa")');
+  await P.click('#form-mp-config button:has-text("Exibir")');
   const prod = P.locator('form:has(button:has-text("Salvar chaves de produção"))');
   const teste = P.locator('form:has(button:has-text("Salvar chaves de teste"))');
   await prod.locator('[name=access_token]').fill('token-errado');
