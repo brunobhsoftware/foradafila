@@ -192,6 +192,34 @@
     b.setAttribute('aria-expanded', String(!alvo.hidden));
   }));
 
+  // Tabelas no celular viram cartões: cada célula ganha o rótulo da coluna e a célula de ações
+  // (coluna sem título) vai para baixo, com os botões em largura total (decisão do Bruno, 16/11/2026)
+  $$('table.tabela').forEach((t) => {
+    if (!t.tHead || t.hasAttribute('data-sem-cartoes')) return;
+    const rotulos = [];
+    Array.from(t.tHead.rows[0] ? t.tHead.rows[0].cells : []).forEach((th) => {
+      for (let i = 0; i < (th.colSpan || 1); i++) rotulos.push(th.textContent.trim());
+    });
+    if (rotulos.length < 3) return;
+    t.classList.add('tabela--cartoes');
+    Array.from(t.tBodies).forEach((tb) => Array.from(tb.rows).forEach((tr) => {
+      let col = 0, primeira = true;
+      Array.from(tr.cells).forEach((td) => {
+        const span = td.colSpan || 1;
+        if (span > 1 || td.tagName !== 'TD') { td.classList.add('celula-inteira'); col += span; return; }
+        const rot = rotulos[col] || '';
+        col += span;
+        if (!rot) {
+          td.classList.add(td.textContent.trim() || td.querySelector('button, a, form, input, select') ? 'celula-acoes' : 'celula-vazia');
+        } else if (primeira) {
+          td.classList.add('celula-titulo'); primeira = false;
+        } else {
+          td.setAttribute('data-rotulo', rot);
+        }
+      });
+    }));
+  });
+
   // Financeiro: alternar entre configuração automática e manual do Mercado Pago
   $$('[data-mp-config]').forEach((r) => r.addEventListener('change', () => {
     const auto = document.getElementById('mp-config-automatica');

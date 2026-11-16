@@ -114,8 +114,8 @@
                         <thead><tr><th>Lote</th><th>Modalidade</th><th class="num">Preço</th><th>Vendas</th><th>Período</th><th>Status</th><th></th></tr></thead>
                         <tbody>
                         @foreach ($tipo->lotes as $lote)
-                            @php $pct = $lote->quantidade ? 100 * $lote->vendido / $lote->quantidade : 0; @endphp
-                            <tr>
+                            @php $pct = $lote->quantidade ? 100 * $lote->vendido / $lote->quantidade : 0; $abrirLote = old('_form') === 'lote-'.$lote->id || request('lote') === $lote->uuid; @endphp
+                            <tr id="lote-{{ $lote->uuid }}">
                                 <td><b>{{ $lote->nome }}</b>@if ($lote->visibilidade !== 'publico')<br><small>{{ \App\Models\Lote::VISIBILIDADES[$lote->visibilidade] }}</small>@endif</td>
                                 <td>{{ \App\Models\Lote::MODALIDADES[$lote->modalidade] }}</td>
                                 <td class="num">@if ($lote->preco > 0)@php($tx = \App\Support\TaxaServico::paraPreco($evento, (float) $lote->preco)){{ moeda($lote->preco) }}
@@ -130,12 +130,12 @@
                                         <form method="post" action="{{ route('lotes.alternar', $lote) }}" style="display:inline">@csrf
                                             <button class="botao botao--contorno botao--pequeno" title="{{ $lote->status === 'pausado' ? 'Volta a aparecer e a ser vendido' : 'Deixa de aparecer e de ser vendido' }}">{{ $lote->status === 'pausado' ? 'Ativar' : 'Desativar' }}</button>
                                         </form>
-                                        <button type="button" class="botao botao--contorno botao--pequeno" data-alternar="editar-lote-{{ $lote->id }}" aria-expanded="false">Editar</button>
+                                        <button type="button" class="botao botao--contorno botao--pequeno" data-alternar="editar-lote-{{ $lote->id }}" aria-expanded="{{ $abrirLote ? 'true' : 'false' }}">Editar</button>
                                     @endif
                                 </td>
                             </tr>
                             @if ($podeLotes)
-                            <tr class="linha-acoes" id="editar-lote-{{ $lote->id }}" @unless (old('_form') === 'lote-'.$lote->id) hidden @endunless>
+                            <tr class="linha-acoes" id="editar-lote-{{ $lote->id }}" @unless ($abrirLote) hidden @endunless>
                                 <td colspan="7">
                                     <p class="bloco-edicao__titulo">Editar lote “{{ $lote->nome }}”</p>
                                     @include('painel.eventos.lote-form', ['lote' => $lote, 'acao' => route('lotes.update', $lote), 'metodo' => 'PUT'])
