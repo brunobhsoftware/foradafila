@@ -292,7 +292,13 @@ class Checkout
                 LogErro::registrar('checkout.application_fee', $e, $pedido->organizador_id, ['pedido' => $pedido->codigo, 'forma' => $forma,
                     'token_aplicacao' => $tk[1] ?? null, 'token_conta' => count($tk) >= 5 ? end($tk) : null, 'token_partes' => count($tk),
                     'aplicacao_bh' => MercadoPago::credencial('client_id'), 'conta_bh' => MercadoPago::collectorId(),
-                    'conta_conectada_em' => (string) ($conta->conectada_em ?? $conta->atualizado_em ?? ''), 'pagador' => $comprador->email]);
+                    'conta_conectada_em' => (string) ($conta->conectada_em ?? $conta->atualizado_em ?? ''),
+                    // O Mercado Pago recusa a comissão quando quem paga é a própria conta da plataforma ou a da empresa: confere pelo e-mail.
+                    'pagador' => $pagador = mb_strtolower((string) (($cartao['email'] ?? null) ?: $comprador->email)),
+                    'pagador_e_conta_bh' => $pagador === mb_strtolower((string) rescue(fn () => MercadoPago::usuario(MercadoPago::tokenAplicacao())['email'] ?? '', '', false)),
+                    'pagador_e_conta_empresa' => $pagador === mb_strtolower((string) $conta->email_conta),
+                    'meio' => $cartao['id'] ?? 'pix', 'parcelas' => $cartao['installments'] ?? null, 'emissor' => $cartao['issuer_id'] ?? null,
+                    'cpf_final' => $cpf ? substr($cpf, -3) : null]);
             }
         }
         $order = MercadoPago::criarOrder(self::token($conta), $dados);
