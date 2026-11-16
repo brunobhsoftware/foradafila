@@ -325,7 +325,10 @@ class Checkout
             'status_gateway' => mb_substr((string) ($order['status'] ?? ''), 0, 60), 'valor' => $pedido->valor_total,
             'comissao_retida' => self::comissao($pedido), 'valor_liquido_org' => round((float) $pedido->valor_total - self::comissao($pedido), 2),
             'link_pagamento' => mb_substr($link, 0, 500), 'expira_em' => $pedido->expira_em,
-            'resposta_gateway' => json_encode(['ambiente' => self::modoTeste($pedido->organizador_id) ? 'teste' : 'producao', 'order' => $order['id']] + ($pix ? ['pix' => $pix] : [])),
+            'resposta_gateway' => json_encode(['ambiente' => self::modoTeste($pedido->organizador_id) ? 'teste' : 'producao', 'order' => $order['id']]
+                // Conta conectada com comissão que o Mercado Pago não reteve nesta venda: fica marcada para cobrança depois.
+                + ($conta->modo === 'direta' && self::comissao($pedido) > 0 ? ['split' => false, 'comissao_pendente' => self::comissao($pedido)] : [])
+                + ($pix ? ['pix' => $pix] : [])),
         ]);
 
         return $link;
