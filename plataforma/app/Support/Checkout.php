@@ -403,12 +403,6 @@ class Checkout
             'resposta_gateway' => json_encode(['ambiente' => self::modoTeste($pedido->organizador_id) ? 'teste' : 'producao', 'api' => 'payments',
                 'payment' => $pg['id'], 'split' => true, 'tarifa_estimada' => $tarifa, 'comissao_enviada' => $retida] + ($pix ? ['pix' => $pix] : [])),
         ]);
-        // Diagnóstico temporário do split (não é erro): o que o Mercado Pago devolveu sobre a comissão.
-        LogErro::registrar('checkout.split_diagnostico', new RuntimeException('Diagnóstico do split (Payments): comissão '.$comissao.', tarifa estimada '.$tarifa.', enviada '.$retida.', situação '.$status
-            .', tarifas: '.json_encode($pg['fee_details'] ?? null)), $pedido->organizador_id, ['pedido' => $pedido->codigo, 'pagamento' => $pg['id'],
-            'forma' => $cartao ? 'cartao' : 'pix', 'status_detail' => $pg['status_detail'] ?? null, 'application_fee' => $pg['application_fee'] ?? null,
-            'collector_id' => $pg['collector_id'] ?? null, 'transaction_details' => $pg['transaction_details'] ?? null]);
-
         return $link;
     }
 

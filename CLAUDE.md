@@ -228,7 +228,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   Pix e cartão são criados pela **API de Payments** com `application_fee` (`Checkout::criarPagamentoDireto`, `MercadoPago::criarPagamento`); `pagamento.gateway_pagamento_id`
   = id do pagamento, `resposta_gateway.api = payments`; conferência em `sincronizarPagamento`, devolução em `MercadoPago::reembolsarPagamento`. Se o MP recusar, a venda
   segue pela order sem reter (Log de erros `checkout.application_fee`). A API de Orders **não** retém: recusa `marketplace_fee` em `config` e ignora na raiz (testado).
-  Modos `plataforma` e `propria` continuam só com Orders. `checkout.split_diagnostico` no Log de erros é temporário.
+  Modos `plataforma` e `propria` continuam só com Orders. **Validado em produção em 15/11/2026** (Pix e cartão; Qualidade da integração do MP: 100 pontos,
+  Payment ID 189886104290). Em aberto: um cartão do Bruno recebeu 2059 numa tentativa (causa não confirmada; a venda seguiu sem reter, `comissao_pendente`).
 - **Tarifa do Mercado Pago abatida da comissão** (decisão do Bruno, 15/11/2026): na venda da conta conectada, a empresa recebe o valor cheio — `application_fee`
   = comissão − tarifa estimada (`MercadoPago::tarifaEstimada`, % sobre o total; `parametro_sistema` `mp_tarifa_pix_pct`/`mp_tarifa_cartao_pct`, Administração →
   Mercado Pago → "Tarifa do Mercado Pago abatida da comissão"; 0 = não abate; nunca negativa). `pagamento.resposta_gateway` guarda `tarifa_estimada`, `comissao_enviada`
@@ -580,7 +581,7 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - [ ] Confirmação de e-mail no cadastro e acesso por link para o comprador (o envio já existe)
 - [ ] Lembrete do evento (`lembrete_evento`) depende do cron do agendador
 - [ ] Cancelamento/reembolso de pedido pago: tabela `reembolso` exige `valor > 0`; entra com a integração de pagamento
-- [ ] Confirmar com o Mercado Pago se dá para reter a comissão na venda (split / marketplace)
+- [x] Reter a comissão na venda (split): funciona pela API de Payments com `application_fee` na conta conectada (15/11/2026)
 - [ ] Redigir com advogado os 4 termos (uso, responsabilidade do organizador, compra, privacidade)
 - [ ] Validar a política de cancelamento, o direito de arrependimento e a cota de meia-entrada
 - [ ] Criar um banco de homologação
