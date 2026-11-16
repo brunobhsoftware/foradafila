@@ -39,9 +39,9 @@
       <div><small>Ingressos vendidos</small><b>{{ number_format($vendas['ingressos'], 0, ',', '.') }}</b>@if ($vendas['cortesias'])<em>{{ $vendas['cortesias'] }} gratuitos/cortesia</em>@endif</div>
       <div><small>Vendidos hoje</small><b>{{ number_format($vendas['ingressos_hoje'], 0, ',', '.') }}</b><em>{{ moeda($vendas['hoje']) }}</em></div>
       <div><small>Pedidos</small><b>{{ number_format($vendas['pedidos'], 0, ',', '.') }}</b><em>ticket médio {{ moeda($vendas['ticket']) }}</em></div>
-      <div><small>Taxa da plataforma</small><b>{{ moeda($vendas['taxa']) }}</b><em>dos ingressos pagos</em></div>
+      <div><small>Taxa da plataforma</small><b>{{ moeda($vendas['taxa']) }}</b><em>comissão de serviço</em></div>
       <div><small>Devolvido</small><b>{{ moeda($vendas['devolvido']) }}</b><em>{{ number_format($vendas['cancelados'], 0, ',', '.') }} {{ $vendas['cancelados'] == 1 ? 'cancelamento' : 'cancelamentos' }}</em></div>
-      <div><small>Descontos (cupons)</small><b>{{ moeda($vendas['descontos']) }}</b><em>dos pedidos pagos</em></div>
+      <div><small>Descontos (cupons)</small><b>{{ moeda($vendas['descontos']) }}</b><em>{{ $vendas['cupons'] }} {{ $vendas['cupons'] == 1 ? 'cupom' : 'cupons' }}</em></div>
       <div><small>Líquido a receber</small><b class="ck-verde">{{ moeda($vendas['liquido']) }}</b><em>total − taxa − devolvido</em></div>
     </div>
 
