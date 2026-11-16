@@ -161,6 +161,25 @@
     <div class="acoes-form"><button class="botao botao--escuro botao--pequeno">Salvar opção</button></div>
 </form>
 
+<section class="cartao" style="padding:20px;margin-top:18px" id="tarifas">
+    <h2 style="margin-top:0">Tarifa do Mercado Pago abatida da comissão</h2>
+    <p class="suave">Vale só para a empresa que vende pela conta conectada (configuração automática). A tarifa que o Mercado Pago cobra da empresa é
+        estimada por estas taxas, sobre o total pago, e descontada da comissão da BH Software — a empresa recebe o valor cheio. Em 0, nada é abatido.</p>
+    <form method="post" action="{{ route('admin.mercadopago.tarifas') }}" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin:12px 0">
+        @csrf @method('PUT')
+        <div class="campo" style="width:150px;margin:0"><label for="tarifa-pix">Pix (%)</label>
+            <input id="tarifa-pix" name="pix" type="number" step="0.01" min="0" max="30" value="{{ old('pix', $tarifaPix) }}" required>
+            @error('pix')<small class="erro">{{ $message }}</small>@enderror</div>
+        <div class="campo" style="width:150px;margin:0"><label for="tarifa-cartao">Cartão (%)</label>
+            <input id="tarifa-cartao" name="cartao" type="number" step="0.01" min="0" max="30" value="{{ old('cartao', $tarifaCartao) }}" required>
+            @error('cartao')<small class="erro">{{ $message }}</small>@enderror</div>
+        <button class="botao botao--primario">Salvar taxas</button>
+    </form>
+    <p class="suave" style="margin-bottom:0">Exemplo com R$ 22,50 e comissão de R$ 2,50: Pix a {{ numero($tarifaPix, 2) }}% → tarifa {{ moeda(22.5 * $tarifaPix / 100) }},
+        a BH retém {{ moeda(max(2.5 - round(22.5 * $tarifaPix / 100, 2), 0)) }}; cartão a {{ numero($tarifaCartao, 2) }}% → tarifa {{ moeda(22.5 * $tarifaCartao / 100) }},
+        a BH retém {{ moeda(max(2.5 - round(22.5 * $tarifaCartao / 100, 2), 0)) }}.</p>
+</section>
+
 <section class="cartao" style="padding:20px;margin-top:18px">
     <h2 style="margin-top:0">Últimos avisos recebidos (webhooks)</h2>
     @if ($avisos->isEmpty())

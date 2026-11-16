@@ -332,6 +332,9 @@ class Checkout
     private static function criarPagamentoDireto(Pedido $pedido, Evento $evento, Comprador $comprador, ContaPagamento $conta, ?string $cpf, ?string $forma, ?array $cartao, array $itens): string
     {
         $comissao = self::comissao($pedido);
+        // A empresa recebe o valor cheio: a tarifa do Mercado Pago (estimada pela taxa da Administração) sai da comissão da BH.
+        $tarifa = MercadoPago::tarifaEstimada($cartao ? 'cartao' : 'pix', (float) $pedido->valor_total);
+        $retida = max(round($comissao - $tarifa, 2), 0);
         $partes = preg_split('/\s+/', trim($comprador->nome), 2);
         $aviso = route('webhook.mercadopago');
         $dados = array_filter([
@@ -339,7 +342,7 @@ class Checkout
             'description' => mb_substr('Ingressos — '.$evento->titulo, 0, 150),
             'external_reference' => $pedido->codigo,
             'statement_descriptor' => 'FORADAFILA',
-            'application_fee' => $comissao,
+            'application_fee' => $retida,
             'notification_url' => str_starts_with($aviso, 'https://') ? $aviso : null,
             'payer' => array_filter([
                 'email' => ($cartao['email'] ?? null) ?: $comprador->email,
@@ -389,10 +392,10 @@ class Checkout
             'comissao_retida' => $comissao, 'valor_liquido_org' => round((float) $pedido->valor_total - $comissao, 2),
             'link_pagamento' => mb_substr($link, 0, 500), 'expira_em' => $pedido->expira_em,
             'resposta_gateway' => json_encode(['ambiente' => self::modoTeste($pedido->organizador_id) ? 'teste' : 'producao', 'api' => 'payments',
-                'payment' => $pg['id'], 'split' => true] + ($pix ? ['pix' => $pix] : [])),
+                'payment' => $pg['id'], 'split' => true, 'tarifa_estimada' => $tarifa, 'comissao_enviada' => $retida] + ($pix ? ['pix' => $pix] : [])),
         ]);
         // Diagnóstico temporário do split (não é erro): o que o Mercado Pago devolveu sobre a comissão.
-        LogErro::registrar('checkout.split_diagnostico', new RuntimeException('Diagnóstico do split (Payments): comissão '.$comissao.', situação '.$status
+        LogErro::registrar('checkout.split_diagnostico', new RuntimeException('Diagnóstico do split (Payments): comissão '.$comissao.', tarifa estimada '.$tarifa.', enviada '.$retida.', situação '.$status
             .', tarifas: '.json_encode($pg['fee_details'] ?? null)), $pedido->organizador_id, ['pedido' => $pedido->codigo, 'pagamento' => $pg['id'],
             'forma' => $cartao ? 'cartao' : 'pix', 'status_detail' => $pg['status_detail'] ?? null, 'application_fee' => $pg['application_fee'] ?? null,
             'collector_id' => $pg['collector_id'] ?? null, 'transaction_details' => $pg['transaction_details'] ?? null]);
@@ -491,6 +494,14 @@ class Checkout
             'metodo' => $metodo, 'parcelas' => (int) (($p['installments'] ?? null) ?: 1),
         ]);
         if ($status === 'approved') {
+            // Tarifa que o Mercado Pago cobrou de verdade e comissão creditada à BH, para conferir a estimativa.
+            $tarifas = collect((array) ($p['fee_details'] ?? []));
+            $resposta = (json_decode((string) $pg->resposta_gateway, true) ?: []) + [
+                'tarifa_real' => round((float) $tarifas->where('type', 'mercadopago_fee')->sum('amount'), 2),
+                'comissao_real' => round((float) $tarifas->where('type', 'application_fee')->sum('amount'), 2),
+                'liquido_empresa' => data_get($p, 'transaction_details.net_received_amount'),
+            ];
+            DB::table('pagamento')->where('id', $pg->id)->update(['resposta_gateway' => json_encode($resposta)]);
             self::aprovar($pedido->fresh(), $pg->id, $metodo);
 
             return 'aprovado';

@@ -99,6 +99,20 @@ class MercadoPago
     }
 
     /** Collector ID da BH Software (user_id no MP): destino do split de comissão. Gravado em parametro_sistema. */
+    /** Taxas do Mercado Pago (% sobre o total pago) abatidas da comissão na venda da conta conectada. 0 = não abate. */
+    public static function tarifaPct(string $forma): float
+    {
+        $v = \Illuminate\Support\Facades\DB::table('parametro_sistema')->where('chave', $forma === 'cartao' ? 'mp_tarifa_cartao_pct' : 'mp_tarifa_pix_pct')->value('valor');
+
+        return max(0, min(30, (float) $v));
+    }
+
+    /** Tarifa estimada do Mercado Pago na venda (o valor real só existe depois da aprovação). */
+    public static function tarifaEstimada(string $forma, float $total): float
+    {
+        return round($total * self::tarifaPct($forma) / 100, 2);
+    }
+
     public static function collectorId(): ?int
     {
         $v = \Illuminate\Support\Facades\DB::table('parametro_sistema')->where('chave', 'mp_collector_id')->value('valor');

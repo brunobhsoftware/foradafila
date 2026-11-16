@@ -172,6 +172,19 @@ class AdminController extends Controller
 
     /** Atualizações do banco aplicadas pela Administração (sem phpMyAdmin). */
     /** Últimos e-mails (mensagem_envio): para conferir se saiu ou por que falhou. Sem o corpo (pode ter dados pessoais). */
+    /** Taxas do Mercado Pago abatidas da comissão nas vendas da conta conectada (a empresa recebe o valor cheio). */
+    public function salvarTarifas(Request $request)
+    {
+        $d = $request->validate(['pix' => ['required', 'numeric', 'min:0', 'max:30'], 'cartao' => ['required', 'numeric', 'min:0', 'max:30']]);
+        foreach (['pix' => 'mp_tarifa_pix_pct', 'cartao' => 'mp_tarifa_cartao_pct'] as $campo => $chave) {
+            DB::table('parametro_sistema')->updateOrInsert(['chave' => $chave],
+                ['valor' => (string) round((float) $d[$campo], 2), 'descricao' => 'Mercado Pago: taxa (%) abatida da comissão na venda da conta conectada ('.$campo.')']);
+        }
+        Auditoria::registrar('plataforma.mp_tarifas', $request->user(), null, $d);
+
+        return back()->with('ok', 'Taxas salvas. Valem para as próximas vendas da configuração automática.');
+    }
+
     public function erros(Request $request)
     {
         $busca = trim((string) $request->query('busca'));
@@ -221,7 +234,7 @@ class AdminController extends Controller
     public function mercadoPago()
     {
         return view('admin.mercadopago', ['credenciais' => MercadoPago::situacaoCredenciais(), 'configurado' => MercadoPago::configurado(), 'pkce' => MercadoPago::usaPkce(),
-            'collectorId' => MercadoPago::collectorId(), 'avisos' => DB::table('webhook_evento')->orderByDesc('id')->limit(10)->get()]);
+            'collectorId' => MercadoPago::collectorId(), 'tarifaPix' => MercadoPago::tarifaPct('pix'), 'tarifaCartao' => MercadoPago::tarifaPct('cartao'), 'avisos' => DB::table('webhook_evento')->orderByDesc('id')->limit(10)->get()]);
     }
 
     public function salvarMercadoPago(Request $request)
