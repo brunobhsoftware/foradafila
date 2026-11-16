@@ -185,7 +185,7 @@ const webhook = async (P, id) => {
   ok(sql("SELECT status FROM pagamento WHERE gateway_pedido_id='ORD1'") === 'estorno_parcial' && sql("SELECT status FROM reembolso") === 'concluido', 'pagamento com estorno parcial e devolução concluída');
   await P.goto(BASE + '/painel/eventos');
   t = (await P.locator('.evento-painel').first().innerText()).replace(/\s+/g, ' ');
-  ok(t.includes('Valor vendido R$ 210,00') && t.includes('Taxa da plataforma R$ 5,00') && t.includes('Devolvido R$ 105,00') && t.includes('Valor líquido R$ 100,00')
+  ok(t.includes('Total vendido R$ 105,00') && t.includes('Taxa da plataforma R$ 5,00') && t.includes('Devolvido R$ 105,00') && t.includes('Líquido a receber R$ 100,00')
     && (await P.locator('.evento-painel [data-compartilhar]').count()) === 1, 'Meus eventos: vendido, taxa dos válidos, devolvido, líquido e botão de compartilhar');
   const linkCodigo = await P.inputValue('.evento-painel input[id^=link-ev-]');
   ok(/\/e\/[0-9a-f]{10}$/.test(linkCodigo), 'link para compartilhar usa código fixo: ' + linkCodigo);

@@ -41,7 +41,8 @@
       <div><small>Pedidos</small><b>{{ number_format($vendas['pedidos'], 0, ',', '.') }}</b><em>ticket médio {{ moeda($vendas['ticket']) }}</em></div>
       <div><small>Taxa da plataforma</small><b>{{ moeda($vendas['taxa']) }}</b><em>dos ingressos pagos</em></div>
       <div><small>Devolvido</small><b>{{ moeda($vendas['devolvido']) }}</b><em>{{ number_format($vendas['cancelados'], 0, ',', '.') }} {{ $vendas['cancelados'] == 1 ? 'cancelamento' : 'cancelamentos' }}</em></div>
-      <div><small>Líquido</small><b class="ck-verde">{{ moeda($vendas['liquido']) }}</b><em>Valor a receber</em></div>
+      <div><small>Descontos (cupons)</small><b>{{ moeda($vendas['descontos']) }}</b><em>dos pedidos pagos</em></div>
+      <div><small>Líquido a receber</small><b class="ck-verde">{{ moeda($vendas['liquido']) }}</b><em>total − taxa − devolvido</em></div>
     </div>
 
     @if ($vendas['por_lote']->isNotEmpty())

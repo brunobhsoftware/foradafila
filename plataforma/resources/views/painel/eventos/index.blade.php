@@ -26,10 +26,9 @@
         <div class="lista-eventos">
         @foreach ($eventos as $evento)
             @php
-                $ind = $indicadores[$evento->id] ?? null; $v = $valores[$evento->id];
                 $link = $evento->linkPublico();
                 $noAr = in_array($evento->status, ['publicado', 'pausado'], true);
-                $vendidos = (int) ($ind->ingressos_vendidos ?? 0); $ofertados = (int) ($ind->ingressos_ofertados ?? 0);
+                $v = $valores[$evento->id];
             @endphp
             <article class="evento-painel">
                 <div class="evento-painel__topo">
@@ -46,12 +45,12 @@
                     </div>
                 </div>
                 <div class="evento-painel__numeros">
-                    <div><small>Ingressos vendidos</small><b>{{ numero($vendidos) }}</b><small>de {{ numero($ofertados) }}</small></div>
-                    <div><small>Valor vendido</small><b>{{ moeda($v->vendido) }}</b><small>{{ $v->pedidos }} pedido(s)</small></div>
+                    <div><small>Ingressos vendidos</small><b>{{ numero($v->ingressos) }}</b><small>de {{ numero($v->ofertados) }} ofertados</small></div>
+                    <div><small>Total vendido</small><b>{{ moeda($v->total) }}</b><small>{{ numero($v->pedidos) }} {{ $v->pedidos == 1 ? 'pedido' : 'pedidos' }}</small></div>
                     <div><small>Descontos (cupons)</small><b>{{ moeda($v->descontos) }}</b></div>
                     <div><small>Taxa da plataforma</small><b>{{ moeda($v->taxa) }}</b></div>
-                    <div><small>Devolvido</small><b>{{ moeda($v->devolvido) }}</b></div>
-                    <div class="destaque"><small>Valor líquido</small><b>{{ moeda($v->liquido) }}</b><small>Valor a receber</small></div>
+                    <div><small>Devolvido</small><b>{{ moeda($v->devolvido) }}</b><small>{{ numero($v->cancelados) }} {{ $v->cancelados == 1 ? 'cancelamento' : 'cancelamentos' }}</small></div>
+                    <div class="destaque"><small>Líquido a receber</small><b>{{ moeda($v->liquido) }}</b><small>total − taxa − devolvido</small></div>
                 </div>
                 <div class="evento-painel__link">
                     <div class="copiar"><input id="link-ev-{{ $evento->id }}" value="{{ $link }}" readonly aria-label="Link do evento">

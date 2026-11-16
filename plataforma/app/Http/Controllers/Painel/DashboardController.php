@@ -34,12 +34,28 @@ class DashboardController extends Controller
             COALESCE(SUM(comissao_plataforma), 0) AS comissao
         ")->first();
 
+        // Ingressos, valores e check-ins pela mesma fonte do app e de Meus eventos (App\Support\NumerosEvento).
+        $numeros = \App\Support\NumerosEvento::resumos((clone $base)->pluck('evento_id'));
+        $soma = \App\Support\NumerosEvento::somar($numeros);
+        $totais->vendidos = $soma->ingressos;
+        $totais->ofertados = $soma->ofertados;
+        $totais->receita = $soma->total;
+        $totais->comissao = $soma->taxa;
+        $totais->liquido = $soma->liquido;
+        $totais->checkins = $soma->checkins;
+
         $proximos = (clone $base)->whereIn('status', ['rascunho', 'publicado', 'pausado'])
             ->where('data_inicio', '>=', now()->subDay())
             ->orderBy('data_inicio')->limit(6)->get();
         // A view não traz o uuid (usado nas rotas): busca para os links "Abrir" e "Editar".
         $uuids = DB::table('evento')->whereIn('id', $proximos->pluck('evento_id'))->pluck('uuid', 'id');
-        $proximos->each(fn ($e) => $e->uuid = $uuids[$e->evento_id] ?? null);
+        $proximos->each(function ($e) use ($uuids, $numeros) {
+            $e->uuid = $uuids[$e->evento_id] ?? null;
+            $n = $numeros[$e->evento_id] ?? null;
+            $e->ingressos_vendidos = $n->ingressos ?? 0;
+            $e->ingressos_ofertados = $n->ofertados ?? 0;
+            $e->receita_bruta = $n->total ?? 0;
+        });
 
         $org = $tenant->organizador();
         $passos = [

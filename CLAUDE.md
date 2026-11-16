@@ -493,6 +493,10 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   `.tabela--cartoes`; opt-out `data-sem-cartoes`) mostra cada linha como cartão: 1ª coluna como título, demais com o rótulo da coluna e a
   coluna sem título (ações) embaixo, botões em largura total. O lápis "Editar lote" do app abre `eventos.show?lote=<uuid>#lote-<uuid>`
   já com a edição daquele lote aberta (permissão `lote.gerenciar`).
+- **Números iguais em todo lugar** (decisão do Bruno, 16/11/2026): `App\Support\NumerosEvento` é a fonte única dos números de vendas do app (/app → Vendas),
+  Meus eventos, página do evento e Dashboard (`resumos(ids)`, `somar()`, `detalhado(evento)`). Mesmos nomes: Ingressos vendidos (válidos, "de N ofertados"),
+  Total vendido (pago − devolvido), Descontos (cupons), Taxa da plataforma, Devolvido, Líquido a receber (pago − taxa − devolvido), Pedidos, Check-ins.
+  `vw_dashboard_evento` não é mais usada para esses números (contava `lote.vendido`, que inclui cancelados).
 - **E-mail sem acento** (08/11/2026: o login da Estação Slod foi gravado como "estaçãoslod@gmail.com" e nenhum e-mail chegava):
   toda validação de e-mail usa `email:filter` (recusa acento, cedilha e espaço). Administração → Empresas → detalhe avisa e-mail
   inválido e tem "Corrigir e-mail de login" (sugere a versão sem acento; `admin.empresas.email`, auditoria `admin.email_login_corrigido`).

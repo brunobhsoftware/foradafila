@@ -38,7 +38,7 @@
     <div class="cartao kpi"><x-icone nome="evento" /><small>Eventos publicados</small><b>{{ numero($totais->publicados) }}</b><small>de {{ numero($totais->eventos) }} cadastrados</small></div>
     <div class="cartao kpi"><x-icone nome="ingresso" /><small>Ingressos vendidos</small><b>{{ numero($totais->vendidos) }}</b><small>de {{ numero($totais->ofertados) }} ofertados</small></div>
     @can('financeiro.ver')
-        <div class="cartao kpi"><x-icone nome="dinheiro" /><small>Receita bruta</small><b>{{ moeda($totais->receita) }}</b><small>Comissão: {{ moeda($totais->comissao) }}</small></div>
+        <div class="cartao kpi"><x-icone nome="dinheiro" /><small>Total vendido</small><b>{{ moeda($totais->receita) }}</b><small>Líquido a receber: {{ moeda($totais->liquido) }}</small></div>
     @else
         <div class="cartao kpi"><x-icone nome="grafico" /><small>Ocupação</small><b>{{ $totais->ofertados ? numero(100 * $totais->vendidos / $totais->ofertados, 1) : 0 }}%</b><small>dos ingressos ofertados</small></div>
     @endcan
