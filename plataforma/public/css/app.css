@@ -482,6 +482,29 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
   .linha-acoes .acoes-linha { flex-wrap: wrap; }
 }
 
+/* Tabelas no celular viram cartões (app.js marca .tabela--cartoes, os rótulos e a célula de ações).
+   Botões de ação sempre embaixo, em largura total (decisão do Bruno, 16/11/2026). */
+#ingressos tr[id^="lote-"] { scroll-margin-top: 80px; }
+@media (max-width: 640px) {
+  .tabela-rolagem:has(> .tabela--cartoes) { overflow: visible; }
+  table.tabela--cartoes, .tabela--cartoes tbody, .tabela--cartoes tr, .tabela--cartoes td { display: block; width: 100%; }
+  .tabela--cartoes thead { display: none; }
+  .tabela--cartoes tbody tr { border: 1px solid var(--borda); border-radius: var(--raio); background: #fff; padding: 12px 14px; margin: 0 0 10px; }
+  .tabela--cartoes tbody tr:hover { background: #fff; }
+  .tabela--cartoes td, .tabela--cartoes td.num { border: 0; padding: 5px 0; text-align: right; white-space: normal; font-size: .9rem; }
+  .tabela--cartoes td[data-rotulo] { position: relative; padding-left: 42%; min-height: 1.6em; }
+  .tabela--cartoes td[data-rotulo]::before { content: attr(data-rotulo); position: absolute; left: 0; top: 6px; width: 40%; text-align: left;
+    color: var(--suave); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .tabela--cartoes td.celula-titulo { text-align: left; font-size: 1rem; padding: 0 0 8px; margin-bottom: 4px; border-bottom: 1px solid var(--borda); }
+  .tabela--cartoes td.celula-vazia { display: none; }
+  .tabela--cartoes td.celula-acoes { display: flex; flex-wrap: wrap; gap: 8px; text-align: left; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--borda); }
+  .tabela--cartoes td.celula-acoes > *, .tabela--cartoes td.celula-acoes form { flex: 1 1 calc(50% - 8px); display: flex !important; margin: 0; }
+  .tabela--cartoes td.celula-acoes .botao, .tabela--cartoes td.celula-acoes button, .tabela--cartoes td.celula-acoes > a { width: 100%; justify-content: center; text-align: center; }
+  .tabela--cartoes td.celula-inteira { text-align: left; padding: 0; }
+  .tabela--cartoes tr.linha-acoes { padding: 0; border-left: 3px solid var(--laranja); margin-top: -4px; }
+  .tabela--cartoes tr.linha-acoes > td { box-shadow: none; border-left: 0; padding: 14px; border-radius: var(--raio); }
+}
+
 /* Conferência "a taxa cobre a tarifa do Mercado Pago?" (Administração → Taxas) */
 .margem-taxa { margin-top: 8px; }
 .margem-taxa summary { cursor: pointer; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }

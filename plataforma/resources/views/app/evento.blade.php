@@ -62,7 +62,7 @@
           <span><b>{{ $l->nome }}</b><small>{{ $l->preco > 0 ? moeda($l->preco) : 'Gratuito' }} · {{ $l->vendidos }} de {{ $l->quantidade }}@if ($l->cancelados) · {{ $l->cancelados }} {{ $l->cancelados == 1 ? 'cancelado' : 'cancelados' }}@endif</small></span>
           <span style="display:flex;align-items:center;gap:8px">
             <span class="ck-selo ck-selo--{{ \Illuminate\Support\Str::slug($l->situacao) }}">{{ $l->situacao }}</span>
-            @if ($evento->data_fim > now()) @can('evento.criar')<a href="{{ route('eventos.edit', $evento->uuid) }}#lote-{{ $l->uuid }}" class="ck-selo ck-selo--editar" title="Editar lote">✎</a>@endcan @endif
+            @if ($evento->data_fim > now()) @can('lote.gerenciar')<a href="{{ route('eventos.show', ['evento' => $evento->uuid, 'lote' => $l->uuid]) }}#lote-{{ $l->uuid }}" class="ck-selo ck-selo--editar" title="Editar lote">✎</a>@endcan @endif
           </span>
         </div>
       @empty

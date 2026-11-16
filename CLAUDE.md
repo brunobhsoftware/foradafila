@@ -489,6 +489,10 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - **Regra de tela (decisão do Bruno, 08/11/2026): toda edição de item de lista abre ABAIXO da linha, em largura total, nunca ao
   lado.** Padrão: botão com `data-alternar="<id>"` + `<tr class="linha-acoes" id="<id>" hidden><td colspan="N">` (moldura cinza
   clara com borda laranja à esquerda, `public/css/app.css`). Usado em lotes, cupons, participantes, equipe e taxas da Administração.
+- **Tabelas no celular viram cartões** (decisão do Bruno, 16/11/2026): até 640 px, toda `table.tabela` com 3+ colunas (`app.js` marca
+  `.tabela--cartoes`; opt-out `data-sem-cartoes`) mostra cada linha como cartão: 1ª coluna como título, demais com o rótulo da coluna e a
+  coluna sem título (ações) embaixo, botões em largura total. O lápis "Editar lote" do app abre `eventos.show?lote=<uuid>#lote-<uuid>`
+  já com a edição daquele lote aberta (permissão `lote.gerenciar`).
 - **E-mail sem acento** (08/11/2026: o login da Estação Slod foi gravado como "estaçãoslod@gmail.com" e nenhum e-mail chegava):
   toda validação de e-mail usa `email:filter` (recusa acento, cedilha e espaço). Administração → Empresas → detalhe avisa e-mail
   inválido e tem "Corrigir e-mail de login" (sugere a versão sem acento; `admin.empresas.email`, auditoria `admin.email_login_corrigido`).
