@@ -41,6 +41,7 @@ let ordem = null;
 
   await P.goto(BASE + '/painel/financeiro');
   ok(await P.isDisabled('input[name=recebimento_modo][value=propria]'), 'sem aplicação ativa: "direto na conta da empresa" desativado');
+  await nav(P, P.click('button:has-text("Sim, já tenho conta")'));
   await P.click('#form-mp-config button:has-text("Exibir")');
   const prod = P.locator('form:has(button:has-text("Salvar chaves de produção"))');
   const teste = P.locator('form:has(button:has-text("Salvar chaves de teste"))');

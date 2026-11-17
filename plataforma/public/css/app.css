@@ -533,3 +533,6 @@ a.mp-ajuda__opcao:hover { border-color: #00B1EA; }
 .mp-passos li::before { content: counter(passo); position: absolute; left: 16px; top: 14px; width: 28px; height: 28px; border-radius: 50%; background: #00B1EA; color: #fff;
   font-weight: 700; display: grid; place-items: center; }
 .mp-passos li b { display: block; color: var(--tinta); margin-bottom: 2px; }
+button.mp-ajuda__opcao { font: inherit; text-align: left; background: #fff; width: 100%; }
+.mp-ajuda__opcao--ativa { border-color: #00B1EA !important; box-shadow: 0 0 0 2px rgba(0,177,234,.25); }
+@media (max-width: 900px) { #mp-escolha .grade-3 { grid-template-columns: 1fr; } }
