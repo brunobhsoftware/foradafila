@@ -522,3 +522,14 @@ details.painel-recolhivel[open] > summary { margin-bottom: 14px; }
 .simulador-cartao .simulador-total { border-bottom: 0; padding-top: 12px; }
 .simulador-total dt { color: var(--tinta); font-weight: 600; }
 .simulador-total dd { font: 700 1.35rem/1.2 var(--fonte-titulo); color: var(--tinta); }
+
+/* Financeiro: autoajuda "Você já tem conta no Mercado Pago?" (17/11/2026) */
+.mp-ajuda__topo { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.mp-ajuda__topo img { height: auto; flex: none; }
+a.mp-ajuda__opcao { text-decoration: none; color: inherit; cursor: pointer; }
+a.mp-ajuda__opcao:hover { border-color: #00B1EA; }
+.mp-passos { counter-reset: passo; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.mp-passos li { counter-increment: passo; position: relative; padding: 14px 16px 14px 56px; border: 1px solid var(--borda); border-radius: var(--raio); background: #fff; }
+.mp-passos li::before { content: counter(passo); position: absolute; left: 16px; top: 14px; width: 28px; height: 28px; border-radius: 50%; background: #00B1EA; color: #fff;
+  font-weight: 700; display: grid; place-items: center; }
+.mp-passos li b { display: block; color: var(--tinta); margin-bottom: 2px; }
