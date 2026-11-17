@@ -45,7 +45,9 @@
     <div class="cartao kpi"><x-icone nome="checkin" /><small>Check-ins</small><b>{{ numero($totais->checkins) }}</b><small>entradas registradas</small></div>
 </div>
 
-<div class="grade grade-lateral" style="margin-top:18px">
+{{-- "Primeiros passos" some quando todas as etapas estão feitas (decisão do Bruno, 17/11/2026). --}}
+@php $passosPendentes = collect($passos)->contains(fn ($p) => ! $p['ok']); @endphp
+<div class="grade {{ $passosPendentes ? 'grade-lateral' : '' }}" style="margin-top:18px">
     <section class="cartao">
         <div class="cartao__titulo"><h2>Próximos eventos</h2><a href="{{ route('eventos.index') }}">Ver todos</a></div>
         @if ($proximos->isEmpty())
@@ -77,6 +79,7 @@
         @endif
     </section>
 
+    @if ($passosPendentes)
     <aside class="cartao">
         <div class="cartao__titulo"><h2>Primeiros passos</h2></div>
         <div class="cartao__corpo">
@@ -89,5 +92,6 @@
             </ul>
         </div>
     </aside>
+    @endif
 </div>
 @endsection

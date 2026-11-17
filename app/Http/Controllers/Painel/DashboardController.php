@@ -64,7 +64,9 @@ class DashboardController extends Controller
             ['ok' => Evento::exists(), 'texto' => 'Criar o primeiro evento', 'rota' => 'eventos.create'],
             ['ok' => Evento::whereHas('lotes')->exists(), 'texto' => 'Cadastrar tipos de ingresso e lotes', 'rota' => 'eventos.index'],
             ['ok' => OrganizadorUsuario::where('status', '<>', 'removido')->count() > 1, 'texto' => 'Convidar a equipe (portaria, gerente, financeiro)', 'rota' => 'equipe.index'],
-            ['ok' => false, 'texto' => 'Conectar a conta do Mercado Pago (próxima fase)', 'rota' => null],
+            // Recebimento pronto: conta do Mercado Pago da empresa ou Pix/conta para o repasse (Financeiro → Dados para o repasse).
+            ['ok' => \App\Models\ContaPagamento::withoutGlobalScopes()->where('organizador_id', $tenant->id())->where('status', 'ativa')->exists(),
+                'texto' => 'Definir como receber as vendas (Mercado Pago ou Pix/conta)', 'rota' => 'financeiro'],
         ];
 
         return view('painel.dashboard', compact('totais', 'proximos', 'passos'));
