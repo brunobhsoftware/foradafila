@@ -42,7 +42,7 @@
                         <a href="{{ route('eventos.show', $evento) }}" class="botao botao--contorno botao--pequeno">Abrir</a>
                         <a href="{{ route('eventos.show', $evento) }}#ingressos" class="botao botao--contorno botao--pequeno">Ingressos</a>
                         @can('evento.criar')@unless (in_array($evento->status, ['encerrado', 'cancelado']))<a href="{{ route('eventos.edit', $evento) }}" class="botao botao--primario botao--pequeno">Editar</a>@endunless
-                        <form method="post" action="{{ route('eventos.duplicar', $evento) }}" style="display:inline" data-confirmar="Duplicar o evento “{{ $evento->titulo }}”? A cópia é criada como rascunho, com os mesmos dados, ingressos e lotes (sem vendas).">@csrf<button class="botao botao--contorno botao--pequeno">Duplicar</button></form>@endcan
+                        <form method="post" action="{{ route('eventos.duplicar', $evento) }}" style="display:inline" data-confirmar="Você está tentando duplicar o evento “{{ $evento->titulo }}”. Tem certeza? Ao duplicar, todas as configurações e ingressos serão copiados e o evento não poderá ser excluído. Deseja continuar?">@csrf<button class="botao botao--contorno botao--pequeno">Duplicar</button></form>@endcan
                     </div>
                 </div>
                 <div class="evento-painel__numeros">
