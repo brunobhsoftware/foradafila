@@ -41,7 +41,7 @@
     <p class="suave" style="margin:0"><small>Escolha embutida ou repassada em Organização → Taxa da plataforma (ou em cada evento). Tarifas do meio de pagamento e devoluções aos compradores são descontadas no repasse e aparecem no extrato.</small></p>
 </section>
 
-<section class="cartao" style="padding:22px 24px;margin-top:18px">
+<section class="cartao" id="repasse" style="padding:22px 24px;margin-top:18px;scroll-margin-top:80px">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
         <h2 style="margin:0">Dados para o repasse</h2>
         @if ($recebimento && $recebimento->status === 'ativa')<span class="selo selo--verde">Pronto para vender ingressos pagos</span>
@@ -92,20 +92,32 @@
     $mpAbrirDetalhes = request('mp') || $verificacao || $errors->hasAny(['client_id','client_secret','access_token','public_key','webhook_secret']);
     $modoMpInicial = request('mp') || $verificacao || $errors->hasAny(['client_id','client_secret','access_token','public_key','webhook_secret']) ? 'manual' : $mpConfigModo;
 @endphp
-{{-- Autoajuda antes da conexão (decisão do Bruno, 17/11/2026): já tem conta no Mercado Pago? --}}
-<section class="cartao mp-ajuda" style="padding:18px 24px;margin-top:18px">
+{{-- "Você já tem conta no Mercado Pago?" (decisão do Bruno, 17/11/2026): some quando a conta já está configurada. --}}
+@php $mostrarConfigMp = $mpConfigurado || in_array($mpEscolha, ['tenho', 'criar'], true); @endphp
+@if (! $mpConfigurado && $mpEscolha !== 'plataforma')
+<section class="cartao mp-ajuda" id="mp-escolha" style="padding:18px 24px;margin-top:18px;scroll-margin-top:80px">
     <div class="mp-ajuda__topo">
         <img src="{{ asset('img/mercadopago-marca.svg') }}" alt="Mercado Pago" width="160" height="41">
         <div><b style="font-size:1.05rem">Você já tem conta no Mercado Pago?</b>
-            <small class="suave" style="display:block">É nela que o dinheiro dos ingressos vai cair. A conta é gratuita.</small></div>
+            <small class="suave" style="display:block">Com a sua conta, o dinheiro cai na hora. Sem ela, recebemos por você e repassamos depois do evento.</small></div>
     </div>
-    <div class="grade grade-2" style="gap:12px;margin-top:14px">
-        <a class="opcao-cartao mp-ajuda__opcao" href="#mp-config" data-mp-ja-tenho>
-            <span><b>✔ Sim, já tenho conta</b><small>Siga para a configuração logo abaixo e conecte a conta da empresa.</small></span></a>
-        <a class="opcao-cartao mp-ajuda__opcao" href="{{ route('financeiro.mp.ajuda') }}">
-            <span><b>Ainda não tenho — quero abrir</b><small>Veja o passo a passo e o link direto para abrir a conta em poucos minutos.</small></span></a>
-    </div>
+    <form method="post" action="{{ route('financeiro.mp.escolha') }}" class="grade grade-3" style="gap:12px;margin-top:14px">@csrf
+        <button name="escolha" value="tenho" class="opcao-cartao mp-ajuda__opcao {{ $mpEscolha === 'tenho' ? 'mp-ajuda__opcao--ativa' : '' }}">
+            <span><b>✔ Sim, já tenho conta</b><small>Libera a configuração logo abaixo para conectar a conta da empresa.</small></span></button>
+        <button name="escolha" value="criar" class="opcao-cartao mp-ajuda__opcao {{ $mpEscolha === 'criar' ? 'mp-ajuda__opcao--ativa' : '' }}">
+            <span><b>Ainda não tenho — quero abrir</b><small>Passo a passo e link direto para abrir a conta; depois é só conectar.</small></span></button>
+        <button name="escolha" value="plataforma" class="opcao-cartao mp-ajuda__opcao">
+            <span><b>Não quero — usar a conta do Fora da Fila</b><small>Recebemos as vendas por você e repassamos por Pix ou conta bancária em até {{ \App\Support\Recebimento::PRAZO_DIAS_UTEIS }} dias úteis após o evento.</small></span></button>
+    </form>
 </section>
+@elseif (! $mpConfigurado && $mpEscolha === 'plataforma')
+<section class="cartao" style="padding:16px 24px;margin-top:18px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+    <span><b>Você recebe pela conta do Fora da Fila</b><br><small class="suave">As vendas são repassadas para o Pix ou a conta bancária de “Dados para o repasse”.</small></span>
+    <form method="post" action="{{ route('financeiro.mp.escolha') }}">@csrf
+        <button name="escolha" value="refazer" class="botao botao--contorno botao--pequeno">Quero usar minha conta do Mercado Pago</button></form>
+</section>
+@endif
+@if ($mostrarConfigMp)
 <details class="cartao" id="mp-config" style="padding:18px 24px;margin-top:18px;scroll-margin-top:80px" open>
     <summary style="cursor:pointer"><b style="font-size:1.1rem">Mercado Pago da empresa</b>
         @if ($contaAtiva)<span class="selo selo--verde" style="margin-left:8px">Ativa{{ $conta->email_conta ? ' — '.$conta->email_conta : '' }}</span>
@@ -294,6 +306,7 @@
     </div>
     </div>
 </details>
+@endif
 @endif
 
 @php $mpAtiva = $propriaAtiva || $conectada; $ocultarPorOauth = $contaAtiva && $mpConfigModo === 'automatica'; @endphp

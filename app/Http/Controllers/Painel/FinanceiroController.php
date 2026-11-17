@@ -37,6 +37,7 @@ class FinanceiroController extends Controller
             'conta' => $conta,
             'configurado' => MercadoPago::configurado(),
             'ambiente' => config('pagamentos.mercadopago.ambiente'),
+            'mpEscolha' => DB::table('parametro_sistema')->where('chave', 'mp_escolha_org_'.$org->id)->value('valor'),
             'mpConfigModo' => DB::table('parametro_sistema')->where('chave', 'mp_config_org_'.$org->id)->value('valor') ?: 'automatica',
         ]);
     }
@@ -400,5 +401,33 @@ class FinanceiroController extends Controller
     private function contaMercadoPago(): ?ContaPagamento
     {
         return ContaPagamento::where('gateway_id', $this->gatewayId())->when(\App\Support\Esquema::temV012(), fn ($q) => $q->where('modo', 'direta'))->orderByDesc('padrao')->orderByDesc('id')->first();
+    }
+
+    /**
+     * "Você já tem conta no Mercado Pago?" (decisão do Bruno, 17/11/2026): tenho = mostra a configuração; criar = mostra a configuração
+     * e abre o passo a passo; plataforma = não quer conta própria, recebe pela conta do Fora da Fila com repasse (Pix/conta acima).
+     */
+    public function escolhaMercadoPago(Request $request)
+    {
+        Gate::authorize('financeiro.ver');
+        $escolha = $request->validate(['escolha' => ['required', 'in:tenho,criar,plataforma,refazer']])['escolha'];
+        $org = \App\Models\Organizador::findOrFail(app(Tenant::class)->id());
+        $chave = 'mp_escolha_org_'.$org->id;
+        if ($escolha === 'refazer') {
+            DB::table('parametro_sistema')->where('chave', $chave)->delete();
+        } else {
+            DB::table('parametro_sistema')->updateOrInsert(['chave' => $chave], ['valor' => $escolha, 'descricao' => 'Financeiro: escolha "já tem conta no Mercado Pago?"']);
+        }
+        if ($escolha === 'plataforma' && $org->recebimento_modo === 'propria') {
+            $org->forceFill(['recebimento_modo' => 'plataforma'])->save();
+        }
+        Auditoria::registrar('financeiro.mp_escolha', $org, null, ['escolha' => $escolha]);
+
+        return match ($escolha) {
+            'criar' => redirect()->route('financeiro.mp.ajuda'),
+            'tenho' => redirect()->to(route('financeiro').'#mp-config'),
+            'plataforma' => redirect()->to(route('financeiro').'#repasse')->with('ok', 'Pronto: as vendas serão recebidas pela conta do Fora da Fila e repassadas para o Pix ou a conta cadastrada.'),
+            default => redirect()->to(route('financeiro').'#mp-escolha'),
+        };
     }
 }
