@@ -49,17 +49,26 @@
         @if ($recebimento && $recebimento->status === 'ativa')<span class="selo selo--verde">Pronto para vender ingressos pagos</span>
         @else<span class="selo selo--amarelo">Preencha para vender ingressos pagos</span>@endif
     </div>
-    <p class="suave" style="margin:6px 0 14px">Informe a chave Pix ou a conta bancária da organização (pode cadastrar as duas e escolher a preferida). Use uma conta em nome da organização ou do representante legal.</p>
+    <p class="suave" style="margin:6px 0 14px">Receba direto na conta do Mercado Pago da empresa ou, sem ela, pelo Fora da Fila com repasse por Pix ou conta bancária (em nome da organização ou do representante legal).</p>
     @can('financeiro.contas')
     <form method="post" action="{{ route('financeiro.recebimento') }}" class="form-grade">
         @csrf @method('PUT')
         <div class="campo col-12"><label>Como prefere receber</label>
-            <div class="grade grade-2" style="gap:12px">
+            <div class="grade grade-3" style="gap:12px" data-forma-recebimento>
+                <label class="opcao-cartao"><input type="radio" name="recebimento_preferido" value="mercadopago" @checked($pref === 'mercadopago')>
+                    <span><b>Direto em minha conta</b><small>Cada venda cai na hora na conta do Mercado Pago da empresa. Configure a conexão logo abaixo.</small></span></label>
                 <label class="opcao-cartao"><input type="radio" name="recebimento_preferido" value="pix" @checked($pref === 'pix')>
                     <span><b>Pix</b><small>O repasse cai na hora, na chave Pix cadastrada abaixo. É a forma mais rápida.</small></span></label>
                 <label class="opcao-cartao"><input type="radio" name="recebimento_preferido" value="conta" @checked($pref === 'conta')>
                     <span><b>Transferência para conta bancária</b><small>TED para a conta da organização (banco, agência, conta e favorecido abaixo).</small></span></label>
             </div></div>
+        <div class="col-12" data-mp-direto @unless ($pref === 'mercadopago') hidden @endunless>
+            <div class="mp-ajuda__topo" style="padding:12px 14px;background:#F0FAFE;border-radius:var(--raio)">
+                <img src="{{ asset('img/mercadopago-marca.svg') }}" alt="Mercado Pago" width="140" height="36">
+                <small>Ainda não tem conta? <a href="{{ route('financeiro.mp.ajuda') }}"><b>Veja como abrir a sua em poucos minutos</b></a>. A conexão fica no quadro “Mercado Pago da empresa”, logo abaixo.</small>
+            </div>
+        </div>
+        <div class="col-12 form-grade" data-dados-repasse style="padding:0" @if ($pref === 'mercadopago') hidden @endif>
         <h3 class="col-12" style="margin:8px 0 0;font-size:1rem">Chave Pix</h3>
         <x-campo nome="pix_tipo" rotulo="Tipo da chave" tipo="select" :opcoes="['' => 'Selecione'] + \App\Support\Recebimento::PIX_TIPOS" :valor="$org->pix_tipo" classe="col-4" />
         <x-campo nome="pix_chave" rotulo="Chave Pix" :valor="$org->pix_chave" classe="col-8" autocomplete="off" />
@@ -69,7 +78,8 @@
         <x-campo nome="conta" rotulo="Conta" :valor="$org->conta" classe="col-4" placeholder="12345-6" ajuda="Com o dígito." />
         <x-campo nome="favorecido" rotulo="Favorecido" :valor="$org->favorecido" classe="col-12" ajuda="Titular da conta, como está no banco." />
         <datalist id="lista-bancos">@foreach (\App\Http\Controllers\Painel\OrganizacaoController::BANCOS as $b)<option value="{{ $b }}">@endforeach</datalist>
-        <div class="col-12 acoes-form"><button class="botao botao--primario">Salvar dados de recebimento</button></div>
+        </div>
+        <div class="col-12 acoes-form"><button class="botao botao--primario">Salvar forma de recebimento</button></div>
     </form>
     @else
         <p>Destino dos repasses: <b>{{ \App\Support\Recebimento::destino($org) ?? 'não cadastrado' }}</b></p>
