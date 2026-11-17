@@ -26,6 +26,8 @@
                 <a href="{{ route('eventos.edit', $evento) }}" class="botao botao--contorno"><x-icone nome="editar" /> Editar</a>
                 <a href="#ingressos" class="botao botao--contorno"><x-icone nome="ingresso" /> Editar ingressos</a>
             @endunless
+            <form method="post" action="{{ route('eventos.duplicar', $evento) }}" style="display:inline" data-confirmar="Duplicar este evento? A cópia é criada como rascunho, com os mesmos dados, ingressos e lotes (sem vendas).">@csrf
+                <button class="botao botao--contorno">Duplicar</button></form>
         @endcan
         @include('painel.eventos._visibilidade')
         @foreach (['publicado' => $evento->status === 'pausado' ? 'Retomar vendas' : 'Publicar evento', 'pausado' => 'Pausar vendas', 'encerrado' => 'Encerrar'] as $novo => $rotulo)

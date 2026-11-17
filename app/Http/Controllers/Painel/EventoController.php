@@ -192,6 +192,72 @@ class EventoController extends Controller
         .'devolver todos os valores pagos aos clientes, sob as penas das leis de defesa do consumidor.';
 
     /** Prova da declaração: quem marcou, quando, de qual IP e o texto exato (tabela auditoria). */
+    /**
+     * Duplicar evento (decisão do Bruno, 17/11/2026): cópia idêntica como RASCUNHO — dados, local, imagem, tipos de ingresso e lotes
+     * (sem vendas, reservas nem ingressos). Título ganha " (cópia)" e abre direto na edição.
+     */
+    public function duplicar(Evento $evento)
+    {
+        Gate::authorize('evento.criar');
+        $this->garantirAcesso($evento);
+        $evento->load(['local', 'tipos.lotes']);
+
+        $novo = RegraDoBanco::executar(fn () => DB::transaction(function () use ($evento) {
+            $local = $evento->local ? $evento->local->replicate() : null;
+            $local?->save();
+
+            $novo = $evento->replicate(['uuid', 'slug', 'status', 'publicado_em', 'cancelado_em', 'cancelamento_motivo', 'ultimo_numero_ingresso', 'conta_pagamento_id']);
+            $novo->titulo = mb_substr($evento->titulo, 0, 141).' (cópia)';
+            $novo->slug = Evento::slugDisponivel($novo->titulo);
+            $novo->local_id = $local?->id;
+            $novo->criado_por = auth()->id();
+            $novo->imagem_capa_url = null;
+            $novo->save();
+
+            // Imagem: copia o arquivo com o nome do novo evento (apagar a de um não apaga a do outro).
+            if ($evento->imagem_capa_url && preg_match('#/midia/eventos/([^?]+)#', $evento->imagem_capa_url, $m)) {
+                $ext = pathinfo($m[1], PATHINFO_EXTENSION);
+                $destino = $novo->id.'_'.$novo->uuid.'.'.$ext;
+                $disco = \Illuminate\Support\Facades\Storage::disk('midia');
+                if ($disco->exists('eventos/'.$m[1]) && $disco->copy('eventos/'.$m[1], 'eventos/'.$destino)) {
+                    $novo->forceFill(['imagem_capa_url' => '/midia/eventos/'.$destino.'?v='.now()->timestamp])->save();
+                }
+            }
+
+            $mapaLotes = [];
+            $pendentes = [];
+            foreach ($evento->tipos as $tipo) {
+                $novoTipo = $tipo->replicate(['uuid']);
+                $novoTipo->evento_id = $novo->id;
+                $novoTipo->save();
+                foreach ($tipo->lotes as $lote) {
+                    $novoLote = $lote->replicate(['uuid', 'vendido', 'reservado', 'exibir', 'lote_anterior_id']);
+                    $novoLote->evento_id = $novo->id;
+                    $novoLote->ingresso_tipo_id = $novoTipo->id;
+                    $novoLote->status = $lote->status === 'pausado' ? 'pausado' : 'ativo';
+                    $novoLote->save();
+                    $mapaLotes[$lote->id] = $novoLote->id;
+                    if ($lote->lote_anterior_id) {
+                        $pendentes[$novoLote->id] = $lote->lote_anterior_id;
+                    }
+                }
+            }
+            // "Por lote": liga ao lote anterior correspondente da cópia.
+            foreach ($pendentes as $novoId => $anteriorAntigo) {
+                if (isset($mapaLotes[$anteriorAntigo])) {
+                    DB::table('lote')->where('id', $novoId)->update(['lote_anterior_id' => $mapaLotes[$anteriorAntigo]]);
+                }
+            }
+
+            Auditoria::registrar('evento.duplicar', $novo, null, ['origem' => $evento->uuid]);
+
+            return $novo;
+        }), 'titulo');
+
+        return redirect()->route('eventos.edit', $novo)
+            ->with('ok', "Evento duplicado como rascunho: “{$novo->titulo}”. Ajuste o nome e as datas e publique quando quiser.");
+    }
+
     private static function registrarDeclaracao(Evento $evento): void
     {
         \App\Models\Auditoria::create([
