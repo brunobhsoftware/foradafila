@@ -26,7 +26,7 @@
                 <a href="{{ route('eventos.edit', $evento) }}" class="botao botao--contorno"><x-icone nome="editar" /> Editar</a>
                 <a href="#ingressos" class="botao botao--contorno"><x-icone nome="ingresso" /> Editar ingressos</a>
             @endunless
-            <form method="post" action="{{ route('eventos.duplicar', $evento) }}" style="display:inline" data-confirmar="Duplicar este evento? A cópia é criada como rascunho, com os mesmos dados, ingressos e lotes (sem vendas).">@csrf
+            <form method="post" action="{{ route('eventos.duplicar', $evento) }}" style="display:inline" data-confirmar="Você está tentando duplicar o evento “{{ $evento->titulo }}”. Tem certeza? Ao duplicar, todas as configurações e ingressos serão copiados e o evento não poderá ser excluído. Deseja continuar?">@csrf
                 <button class="botao botao--contorno">Duplicar</button></form>
         @endcan
         @include('painel.eventos._visibilidade')

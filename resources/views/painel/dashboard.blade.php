@@ -72,7 +72,8 @@
                     </div>
                     <div class="dash-evento__acoes">
                         <a href="{{ route('eventos.show', $e->uuid) }}" class="botao botao--contorno botao--pequeno">Abrir</a>
-                        @can('evento.criar')<a href="{{ route('eventos.edit', $e->uuid) }}" class="botao botao--primario botao--pequeno">Editar</a>@endcan
+                        @can('evento.criar')<a href="{{ route('eventos.edit', $e->uuid) }}" class="botao botao--primario botao--pequeno">Editar</a>
+                        <form method="post" action="{{ route('eventos.duplicar', $e->uuid) }}" style="display:inline" data-confirmar="Você está tentando duplicar o evento “{{ $e->titulo }}”. Tem certeza? Ao duplicar, todas as configurações e ingressos serão copiados e o evento não poderá ser excluído. Deseja continuar?">@csrf<button class="botao botao--contorno botao--pequeno">Duplicar</button></form>@endcan
                     </div>
                 </div>
             @endforeach
