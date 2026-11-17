@@ -58,9 +58,9 @@
                 <label class="opcao-cartao"><input type="radio" name="recebimento_preferido" value="mercadopago" @checked($pref === 'mercadopago')>
                     <span><b>Direto em minha conta</b><small>Cada venda cai na hora na conta do Mercado Pago da empresa. Configure a conexão logo abaixo.</small></span></label>
                 <label class="opcao-cartao"><input type="radio" name="recebimento_preferido" value="pix" @checked($pref === 'pix')>
-                    <span><b>Pix</b><small>O repasse cai na hora, na chave Pix cadastrada abaixo. É a forma mais rápida.</small></span></label>
+                    <span><b>Pix</b><small>Recebemos as vendas por você e, após o término do evento, fazemos o repasse por Pix na chave cadastrada abaixo em até {{ $prazo }} dias úteis.</small></span></label>
                 <label class="opcao-cartao"><input type="radio" name="recebimento_preferido" value="conta" @checked($pref === 'conta')>
-                    <span><b>Transferência para conta bancária</b><small>TED para a conta da organização (banco, agência, conta e favorecido abaixo).</small></span></label>
+                    <span><b>Transferência para conta bancária</b><small>Recebemos as vendas por você e, após o término do evento, transferimos para a conta da organização cadastrada abaixo em até {{ $prazo }} dias úteis.</small></span></label>
             </div></div>
         <div class="col-12" data-mp-direto @unless ($pref === 'mercadopago') hidden @endunless>
             <div class="mp-ajuda__topo" style="padding:12px 14px;background:#F0FAFE;border-radius:var(--raio)">
