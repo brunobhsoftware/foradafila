@@ -205,6 +205,7 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::post('/formularios/{id}/padrao', [\App\Http\Controllers\Painel\FormulariosController::class, 'padrao'])->name('formularios.padrao')->whereNumber('id');
     Route::delete('/formularios/{id}', [\App\Http\Controllers\Painel\FormulariosController::class, 'excluir'])->name('formularios.excluir')->whereNumber('id');
     Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro');
+    Route::get('/financeiro/mercado-pago', fn () => view('painel.financeiro.mercado-pago'))->name('financeiro.mp.ajuda')->middleware('can:financeiro.ver');
     Route::get('/simulador', [\App\Http\Controllers\Painel\SimuladorController::class, 'index'])->name('simulador');
     Route::put('/financeiro/mercadopago/propria/{ambiente}', [FinanceiroController::class, 'salvarPropria'])->name('financeiro.mp.propria')->whereIn('ambiente', ['aplicacao', 'teste', 'producao']);
     Route::post('/financeiro/mercadopago/propria/verificar', [FinanceiroController::class, 'verificarPropria'])->name('financeiro.mp.propria.verificar')->middleware('throttle:10,1,mp-propria-verificar');

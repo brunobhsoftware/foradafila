@@ -92,7 +92,21 @@
     $mpAbrirDetalhes = request('mp') || $verificacao || $errors->hasAny(['client_id','client_secret','access_token','public_key','webhook_secret']);
     $modoMpInicial = request('mp') || $verificacao || $errors->hasAny(['client_id','client_secret','access_token','public_key','webhook_secret']) ? 'manual' : $mpConfigModo;
 @endphp
-<details class="cartao" style="padding:18px 24px;margin-top:18px" open>
+{{-- Autoajuda antes da conexão (decisão do Bruno, 17/11/2026): já tem conta no Mercado Pago? --}}
+<section class="cartao mp-ajuda" style="padding:18px 24px;margin-top:18px">
+    <div class="mp-ajuda__topo">
+        <img src="{{ asset('img/mercadopago-marca.svg') }}" alt="Mercado Pago" width="160" height="41">
+        <div><b style="font-size:1.05rem">Você já tem conta no Mercado Pago?</b>
+            <small class="suave" style="display:block">É nela que o dinheiro dos ingressos vai cair. A conta é gratuita.</small></div>
+    </div>
+    <div class="grade grade-2" style="gap:12px;margin-top:14px">
+        <a class="opcao-cartao mp-ajuda__opcao" href="#mp-config" data-mp-ja-tenho>
+            <span><b>✔ Sim, já tenho conta</b><small>Siga para a configuração logo abaixo e conecte a conta da empresa.</small></span></a>
+        <a class="opcao-cartao mp-ajuda__opcao" href="{{ route('financeiro.mp.ajuda') }}">
+            <span><b>Ainda não tenho — quero abrir</b><small>Veja o passo a passo e o link direto para abrir a conta em poucos minutos.</small></span></a>
+    </div>
+</section>
+<details class="cartao" id="mp-config" style="padding:18px 24px;margin-top:18px;scroll-margin-top:80px" open>
     <summary style="cursor:pointer"><b style="font-size:1.1rem">Mercado Pago da empresa</b>
         @if ($contaAtiva)<span class="selo selo--verde" style="margin-left:8px">Ativa{{ $conta->email_conta ? ' — '.$conta->email_conta : '' }}</span>
         @elseif ($conectada)<span class="selo" style="margin-left:8px">Conectada{{ $conta->email_conta ? ' — '.$conta->email_conta : '' }}</span>
