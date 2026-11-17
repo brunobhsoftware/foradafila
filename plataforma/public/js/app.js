@@ -220,6 +220,14 @@
     }));
   });
 
+  // Financeiro → Dados para o repasse: "Direto em minha conta" esconde Pix/banco e mostra o Mercado Pago da empresa
+  $$('[data-forma-recebimento] input[name=recebimento_preferido]').forEach((r) => r.addEventListener('change', () => {
+    const direto = r.value === 'mercadopago';
+    $$('[data-mp-direto]').forEach((el) => { el.hidden = !direto; });
+    $$('[data-dados-repasse]').forEach((el) => { el.hidden = direto; });
+    $$('[data-mp-config-bloco]').forEach((el) => { el.hidden = !direto; });
+  }));
+
   // Financeiro: alternar entre configuração automática e manual do Mercado Pago
   $$('[data-mp-config]').forEach((r) => r.addEventListener('change', () => {
     const auto = document.getElementById('mp-config-automatica');

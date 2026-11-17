@@ -506,10 +506,10 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - **Autoajuda do Mercado Pago** (decisão do Bruno, 17/11/2026): no Financeiro, acima de "Mercado Pago da empresa" (`#mp-config`), o cartão "Você já tem conta no Mercado Pago?"
   — "Sim, já tenho" desce para a configuração; "Ainda não tenho" abre `/painel/financeiro/mercado-pago` (`financeiro.mp.ajuda`, `painel/financeiro/mercado-pago`): por quê, 4 passos,
   link para https://www.mercadopago.com.br/ e "Já criei minha conta — conectar". Marca em `public/img/mercadopago-marca.svg` (provisória; trocar pela oficial do kit de marca do MP).
-- **3 opções do Mercado Pago** (decisão do Bruno, 17/11/2026; substitui as 2 da autoajuda): "Sim, já tenho" (mostra a configuração), "Ainda não tenho" (mostra a configuração
-  e abre o passo a passo) e "Não quero — usar a conta do Fora da Fila" (recebimento `plataforma` com repasse por Pix/conta; esconde a configuração e mostra "Quero usar minha
-  conta do Mercado Pago" para refazer). Escolha em `parametro_sistema` `mp_escolha_org_<id>` (`FinanceiroController::escolhaMercadoPago`, `financeiro.mp.escolha`, auditoria
-  `financeiro.mp_escolha`). Com conta do MP já configurada, a pergunta some. Sem escolha, a configuração fica oculta.
+- **Forma de recebimento em "Dados para o repasse"** (decisão do Bruno, 17/11/2026; substitui o cartão "Você já tem conta no Mercado Pago?"): 3 opções —
+  **Direto em minha conta** (esconde Pix/banco, mostra o link "como abrir a conta" e o quadro "Mercado Pago da empresa" `[data-mp-config-bloco]`), **Pix** e **Transferência**.
+  "Direto" não grava `recebimento_preferido` (enum pix/conta): `salvarRecebimento` grava `parametro_sistema` `mp_escolha_org_<id>` = `tenho`; salvar Pix/conta grava `plataforma`
+  e volta `recebimento_modo` para `plataforma`. Sem escolha, vale "direto" se a conta do MP já estiver configurada. `?direto=1` abre direto (link da página de ajuda).
 - **Nomes de pessoas padronizados** (decisão do Bruno, 16/11/2026): `App\Support\NomePessoa::padronizar()` (1ª letra maiúscula, resto minúsculo; de/da/do/das/dos/e/di/du
   minúsculos no meio; também após hífen/apóstrofo) aplicado sozinho pelos models `Usuario`, `Comprador`, `Participante` (trait `NomePadronizado`), `Organizador.representante_nome`,
   cadastro único, convidados e listas de e-mail. Regra `App\Rules\NomeCompleto` (nome e sobrenome) em cadastro do produtor, equipe/convite, comprador, compra
