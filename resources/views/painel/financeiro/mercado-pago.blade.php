@@ -34,13 +34,13 @@
         <li><b>Confirme seus dados</b>
             Informe e-mail e celular, crie a senha e confirme a identidade pelo app do Mercado Pago (foto do documento e selfie). Normalmente leva poucos minutos.</li>
         <li><b>Volte aqui e conecte</b>
-            Com a conta pronta, volte ao Financeiro, escolha <b>Configuração automática</b> e conecte a conta. Pronto: os ingressos pagos já podem ser vendidos.</li>
+            Com a conta pronta, volte ao Financeiro → Dados para o repasse, marque <b>Direto em minha conta</b> e conecte pela <b>Configuração automática</b>. Pronto: os ingressos pagos já podem ser vendidos.</li>
     </ol>
     <div class="alerta" style="margin-top:16px"><p style="margin:0"><b>Dica:</b> use um e-mail da empresa que você acessa sempre — o Mercado Pago avisa por ele cada pagamento recebido.
         O Fora da Fila nunca pede a senha da sua conta do Mercado Pago.</p></div>
     <div class="acoes-linha" style="justify-content:flex-start;margin-top:16px;gap:8px;flex-wrap:wrap">
         <a href="https://www.mercadopago.com.br/" target="_blank" rel="noopener" class="botao botao--primario">Abrir minha conta no Mercado Pago ↗</a>
-        <a href="{{ route('financeiro') }}#mp-config" class="botao botao--contorno">Já criei minha conta — conectar</a>
+        <a href="{{ route('financeiro', ['direto' => 1]) }}#mp-config" class="botao botao--contorno">Já criei minha conta — conectar</a>
     </div>
 </section>
 @endsection

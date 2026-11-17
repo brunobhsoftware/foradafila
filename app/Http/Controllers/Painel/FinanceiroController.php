@@ -48,6 +48,13 @@ class FinanceiroController extends Controller
         Gate::authorize('financeiro.contas');
         abort_unless(\App\Support\Esquema::temV012(), 404);
         $org = \App\Models\Organizador::findOrFail(app(Tenant::class)->id());
+        // "Direto em minha conta" (decisão do Bruno, 17/11/2026): não pede Pix/banco; libera a configuração do Mercado Pago abaixo.
+        if ($request->input('recebimento_preferido') === 'mercadopago') {
+            self::gravarEscolha($org->id, 'tenho');
+            Auditoria::registrar('financeiro.mp_escolha', $org, null, ['escolha' => 'tenho']);
+
+            return redirect()->to(route('financeiro').'#mp-config')->with('ok', 'Agora conecte a conta do Mercado Pago da empresa logo abaixo.');
+        }
         foreach (['agencia', 'conta'] as $k) {
             $request->merge([$k => $request->filled($k) ? strtoupper(trim((string) $request->input($k))) : null]);
         }
@@ -86,6 +93,10 @@ class FinanceiroController extends Controller
         $antes = $org->getAttributes();
         $org->forceFill($dados + ['recebimento_atualizado_em' => now()])->save();
         \App\Support\Recebimento::sincronizar($org);
+        self::gravarEscolha($org->id, 'plataforma');
+        if ($org->recebimento_modo === 'propria') {
+            $org->forceFill(['recebimento_modo' => 'plataforma'])->save();
+        }
         Auditoria::registrar('financeiro.recebimento', $org, $antes, $org->fresh()->getAttributes());
 
         return redirect()->route('financeiro')->with('ok', 'Dados de recebimento salvos. Os repasses vão para: '.\App\Support\Recebimento::destino($org->fresh()).'.');
@@ -412,12 +423,7 @@ class FinanceiroController extends Controller
         Gate::authorize('financeiro.ver');
         $escolha = $request->validate(['escolha' => ['required', 'in:tenho,criar,plataforma,refazer']])['escolha'];
         $org = \App\Models\Organizador::findOrFail(app(Tenant::class)->id());
-        $chave = 'mp_escolha_org_'.$org->id;
-        if ($escolha === 'refazer') {
-            DB::table('parametro_sistema')->where('chave', $chave)->delete();
-        } else {
-            DB::table('parametro_sistema')->updateOrInsert(['chave' => $chave], ['valor' => $escolha, 'descricao' => 'Financeiro: escolha "já tem conta no Mercado Pago?"']);
-        }
+        self::gravarEscolha($org->id, $escolha === 'refazer' ? null : $escolha);
         if ($escolha === 'plataforma' && $org->recebimento_modo === 'propria') {
             $org->forceFill(['recebimento_modo' => 'plataforma'])->save();
         }
@@ -429,5 +435,14 @@ class FinanceiroController extends Controller
             'plataforma' => redirect()->to(route('financeiro').'#repasse')->with('ok', 'Pronto: as vendas serão recebidas pela conta do Fora da Fila e repassadas para o Pix ou a conta cadastrada.'),
             default => redirect()->to(route('financeiro').'#mp-escolha'),
         };
+    }
+
+    /** Escolha de recebimento: tenho/criar = conta do Mercado Pago da empresa; plataforma = Pix/conta com repasse; null = apaga. */
+    private static function gravarEscolha(int $orgId, ?string $escolha): void
+    {
+        $chave = 'mp_escolha_org_'.$orgId;
+        $escolha === null
+            ? DB::table('parametro_sistema')->where('chave', $chave)->delete()
+            : DB::table('parametro_sistema')->updateOrInsert(['chave' => $chave], ['valor' => $escolha, 'descricao' => 'Financeiro: como a empresa recebe (Mercado Pago próprio ou repasse)']);
     }
 }
