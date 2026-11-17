@@ -513,6 +513,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
 - **Duplicar evento** (decisão do Bruno, 17/11/2026): botão **Duplicar** em Meus eventos e na página do evento (`evento.criar`, confirma antes; `POST /painel/eventos/{uuid}/duplicar`,
   `EventoController::duplicar`, throttle `duplicar-evento`): cópia idêntica em **rascunho** — dados, local (novo registro), imagem (arquivo copiado), tipos e lotes (sem vendas/reservas,
   `lote_anterior_id` remapeado; pausado continua pausado, os demais `ativo`); título + " (cópia)"; abre a edição. Auditoria `evento.duplicar`. Teste `fluxo-duplicar.js` (9).
+- **Primeiros passos do Dashboard** (decisão do Bruno, 17/11/2026): o último passo virou "Definir como receber as vendas (Mercado Pago ou Pix/conta)" (feito quando há
+  `conta_pagamento` ativa em qualquer modo; link para o Financeiro); o cartão some quando todos os passos estão feitos (o grid deixa de ser `grade-lateral`).
 - **Nomes de pessoas padronizados** (decisão do Bruno, 16/11/2026): `App\Support\NomePessoa::padronizar()` (1ª letra maiúscula, resto minúsculo; de/da/do/das/dos/e/di/du
   minúsculos no meio; também após hífen/apóstrofo) aplicado sozinho pelos models `Usuario`, `Comprador`, `Participante` (trait `NomePadronizado`), `Organizador.representante_nome`,
   cadastro único, convidados e listas de e-mail. Regra `App\Rules\NomeCompleto` (nome e sobrenome) em cadastro do produtor, equipe/convite, comprador, compra
