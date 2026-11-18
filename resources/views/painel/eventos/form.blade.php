@@ -15,13 +15,17 @@
     @endif
 </div>
 
-<form method="post" action="{{ $editando ? route('eventos.update', $evento) : route('eventos.store') }}" class="cartao" enctype="multipart/form-data">
+<form method="post" action="{{ $editando ? route('eventos.update', $evento) : route('eventos.store') }}" class="form-blocos" enctype="multipart/form-data">
     @csrf
     @if ($editando) @method('PUT') @endif
 
-    <section class="secao-form">
-        <h2>Informações do evento</h2>
-        <p>O que aparece para o público.</p>
+    <section class="cartao bloco-form" data-bloco>
+        <div class="bloco-form__topo">
+            <div><h2>Informações do evento</h2><p>O que aparece para o público.</p>
+                @if ($editando)<small class="bloco-form__resumo" data-bloco-resumo>{{ $evento->titulo }}{{ $evento->categoria?->nome ? ' · '.$evento->categoria->nome : '' }} · {{ \App\Models\Evento::VISIBILIDADES[$evento->visibilidade] ?? '' }}</small>@endif</div>
+            @if ($editando)<button type="button" class="botao botao--contorno botao--pequeno" data-bloco-editar>Editar</button>@endif
+        </div>
+        <div class="bloco-form__corpo" @if ($editando && ! $errors->hasAny(['titulo', 'categoria_id', 'resumo', 'descricao', 'imagem', 'classificacao', 'capacidade', 'visibilidade'])) hidden @endif>
         <div class="form-grade">
             <x-campo nome="titulo" rotulo="Nome do evento" :valor="$evento->titulo" obrigatorio classe="col-8" maxlength="150" />
             <x-campo nome="categoria_id" rotulo="Categoria" tipo="select" :opcoes="$categorias" :valor="$evento->categoria_id" vazio="Escolha" classe="col-4" />
@@ -38,20 +42,31 @@
             @endif
             <x-campo nome="visibilidade" rotulo="Visibilidade" tipo="select" :opcoes="\App\Models\Evento::VISIBILIDADES" :valor="$evento->visibilidade" obrigatorio classe="col-4" />
         </div>
+        </div>
     </section>
 
-    <section class="secao-form">
-        <h2>Data e horário</h2>
-        <p>Horário de Brasília.</p>
+    <section class="cartao bloco-form" data-bloco>
+        <div class="bloco-form__topo">
+            <div><h2>Data e horário</h2><p>Horário de Brasília.</p>
+                @if ($editando)<small class="bloco-form__resumo" data-bloco-resumo>{{ data_local($evento->data_inicio, 'd/m/Y H:i') }} até {{ data_local($evento->data_fim, 'd/m/Y H:i') }}{{ $evento->abertura_portoes ? ' · portões '.data_local($evento->abertura_portoes, 'H:i') : '' }}</small>@endif</div>
+            @if ($editando)<button type="button" class="botao botao--contorno botao--pequeno" data-bloco-editar>Editar</button>@endif
+        </div>
+        <div class="bloco-form__corpo" @if ($editando && ! $errors->hasAny(['data_inicio', 'data_fim', 'abertura_portoes'])) hidden @endif>
         <div class="form-grade">
             <x-campo nome="data_inicio" rotulo="Início" tipo="datetime-local" :valor="para_input_data($evento->data_inicio)" obrigatorio classe="col-4" />
             <x-campo nome="data_fim" rotulo="Término" tipo="datetime-local" :valor="para_input_data($evento->data_fim)" obrigatorio classe="col-4" />
             <x-campo nome="abertura_portoes" rotulo="Abertura dos portões" tipo="datetime-local" :valor="para_input_data($evento->abertura_portoes)" classe="col-4" ajuda="Início do check-in: no mesmo dia do evento (pode ser 1 ou 2 horas antes do início)." />
         </div>
+        </div>
     </section>
 
-    <section class="secao-form">
-        <h2>Onde vai ser</h2>
+    <section class="cartao bloco-form" data-bloco>
+        <div class="bloco-form__topo">
+            <div><h2>Onde vai ser</h2>
+                @if ($editando)<small class="bloco-form__resumo" data-bloco-resumo>{{ $evento->formato === 'online' ? 'Online' : ($local?->enderecoCurto() ?? '—') }}</small>@endif</div>
+            @if ($editando)<button type="button" class="botao botao--contorno botao--pequeno" data-bloco-editar>Editar</button>@endif
+        </div>
+        <div class="bloco-form__corpo" @if ($editando && ! $errors->hasAny(['formato', 'link_online', 'local.nome', 'local.cep', 'local.logradouro', 'local.numero', 'local.cidade', 'local.uf'])) hidden @endif>
         <div class="form-grade">
             @php
                 // Endereço da organização (tela Organização) para preencher o local com um clique.
@@ -95,10 +110,16 @@
             <x-campo nome="local[cidade]" rotulo="Cidade" :valor="$local?->cidade" classe="col-6" />
             <x-campo nome="local[uf]" rotulo="UF" :valor="$local?->uf" classe="col-2" maxlength="2" />
         </div>
+        </div>
     </section>
 
-    <section class="secao-form">
-        <h2>Regras da venda e do ingresso</h2>
+    <section class="cartao bloco-form" data-bloco>
+        <div class="bloco-form__topo">
+            <div><h2>Regras da venda e do ingresso</h2>
+                @if ($editando)<small class="bloco-form__resumo" data-bloco-resumo>Até {{ $evento->max_ingressos_pedido }} por pedido{{ $evento->max_ingressos_cpf ? ' · até '.$evento->max_ingressos_cpf.' por CPF' : '' }}{{ $evento->permite_transferencia ? ' · transferível' : '' }}{{ $evento->permite_reentrada ? ' · com reentrada' : '' }}</small>@endif</div>
+            @if ($editando)<button type="button" class="botao botao--contorno botao--pequeno" data-bloco-editar>Editar</button>@endif
+        </div>
+        <div class="bloco-form__corpo" @if ($editando && ! $errors->hasAny(['max_ingressos_pedido', 'max_ingressos_cpf', 'transferencia_ate_h', 'formulario_id', 'taxa_comprador'])) hidden @endif>
         <div class="form-grade">
             <x-campo nome="max_ingressos_pedido" rotulo="Máximo de ingressos por pedido" tipo="number" min="1" :valor="$evento->max_ingressos_pedido" obrigatorio classe="col-4" />
             <x-campo nome="max_ingressos_cpf" rotulo="Máximo por CPF" tipo="number" min="1" :valor="$evento->max_ingressos_cpf" classe="col-4" ajuda="Em branco = sem limite." />
@@ -151,12 +172,30 @@
                     <small class="suave">@if ($ilustrativo)Valores ilustrativos (taxa de 5%); a taxa real aparece no painel de ingressos. @endif O padrão fica em Organização → Taxa da plataforma. Ingressos gratuitos não têm taxa. Mudar aqui atualiza na hora todos os ingressos deste evento.</small>
                 </div>
             @endif
+        </div>
+        </div>
+    </section>
+
+    <section class="cartao bloco-form" data-bloco>
+        <div class="bloco-form__topo">
+            <div><h2>Política de cancelamento</h2><p>Aparece na página do evento.</p>
+                @if ($editando)<small class="bloco-form__resumo" data-bloco-resumo>{{ \Illuminate\Support\Str::limit(preg_replace('/\s+/', ' ', (string) $evento->politica_cancelamento), 140) ?: 'Sem texto' }}</small>@endif</div>
+            @if ($editando)<button type="button" class="botao botao--contorno botao--pequeno" data-bloco-editar>Editar</button>@endif
+        </div>
+        <div class="bloco-form__corpo" @if ($editando && ! $errors->hasAny(['politica_cancelamento'])) hidden @endif>
+        <div class="form-grade">
             <div class="col-12" style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:-8px">
                 <span class="campo" style="margin:0"><label for="c_politica_cancelamento" style="margin:0">Política de cancelamento e reembolso</label></span>
                 <button type="button" class="botao botao--contorno botao--pequeno" data-modelo-politica="{{ $modeloPolitica }}">Usar texto padrão</button>
             </div>
             <x-campo nome="politica_cancelamento" tipo="textarea" :valor="$evento->politica_cancelamento" rows="12"
                 ajuda="Modelo sugerido com base no Código de Defesa do Consumidor e nos dados da sua organização. Revise e ajuste antes de publicar: não substitui orientação jurídica. Aparece na página do evento." />
+        </div>
+        </div>
+    </section>
+
+    <section class="cartao bloco-form">
+        <div class="form-grade" style="padding:18px 22px">
             <div class="col-12 alerta alerta--info" style="margin:0">
                 <div>
                     <b>Política de cancelamento de eventos</b>
@@ -168,11 +207,6 @@
                     @if ($errAceite)<span class="erro" style="display:block;margin-top:6px;color:var(--vermelho)">{{ $errAceite }}</span>@endif
                 </div>
             </div>
-            @if ($contas->isNotEmpty())
-                <x-campo nome="conta_pagamento_id" rotulo="Conta que recebe as vendas" tipo="select" :opcoes="$contas" :valor="$evento->conta_pagamento_id" vazio="Escolha" classe="col-6" />
-            @else
-                <div class="col-12 alerta alerta--info" style="margin:0"><p><b>Ingressos pagos:</b> para vender, a conta do Mercado Pago precisa estar conectada e homologada (módulo Financeiro, próxima fase). Eventos com ingressos gratuitos ou cortesias já podem ser publicados.</p></div>
-            @endif
         </div>
     </section>
 
