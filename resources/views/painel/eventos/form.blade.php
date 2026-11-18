@@ -57,6 +57,7 @@
             <x-campo nome="data_inicio" rotulo="Início" tipo="datetime-local" :valor="para_input_data($evento->data_inicio)" obrigatorio classe="col-4" />
             <x-campo nome="data_fim" rotulo="Término" tipo="datetime-local" :valor="para_input_data($evento->data_fim)" obrigatorio classe="col-4" />
             <x-campo nome="abertura_portoes" rotulo="Abertura dos portões" tipo="datetime-local" :valor="para_input_data($evento->abertura_portoes)" classe="col-4" ajuda="Início do check-in: no mesmo dia do evento (pode ser 1 ou 2 horas antes do início)." />
+            <p class="col-12 duracao-evento" data-duracao-evento style="margin:0" hidden></p>
         </div>
         </div>
     </section>
@@ -117,7 +118,7 @@
     <section class="cartao bloco-form" data-bloco>
         <div class="bloco-form__topo">
             <div><h2>Regras da venda e do ingresso</h2>
-                @if ($editando)<small class="bloco-form__resumo" data-bloco-resumo>Até {{ $evento->max_ingressos_pedido }} por pedido{{ $evento->max_ingressos_cpf ? ' · até '.$evento->max_ingressos_cpf.' por CPF' : '' }}{{ $evento->permite_transferencia ? ' · transferível' : '' }}{{ $evento->permite_reentrada ? ' · com reentrada' : '' }}</small>@endif</div>
+                @if ($editando)<small class="bloco-form__resumo" data-bloco-resumo>Até {{ $evento->max_ingressos_pedido }} por pedido{{ $evento->max_ingressos_cpf ? ' · até '.$evento->max_ingressos_cpf.' por CPF' : '' }}{{ $evento->permite_transferencia ? ' · transferível' : '' }}</small>@endif</div>
             @if ($editando)<button type="button" class="botao botao--contorno botao--pequeno" data-bloco-editar>Editar</button>@endif
         </div>
         <div class="bloco-form__corpo" @if ($editando && ! $errors->hasAny(['max_ingressos_pedido', 'max_ingressos_cpf', 'transferencia_ate_h', 'formulario_id', 'taxa_comprador'])) hidden @endif>
@@ -127,7 +128,7 @@
             <x-campo nome="transferencia_ate_h" rotulo="Transferência até (horas antes)" tipo="number" min="0" :valor="$evento->transferencia_ate_h" obrigatorio classe="col-4" />
             <div class="campo col-12">
                 <div class="opcoes-linha">
-                    @foreach ((\App\Support\Formularios::ativo() ? [] : ['nominal' => 'Ingresso nominal (cada ingresso tem um titular)', 'exige_cpf_participante' => 'Exigir CPF do participante']) + ['permite_transferencia' => 'Permitir transferência de titularidade', 'permite_reentrada' => 'Permitir reentrada (sair e voltar)'] as $campo => $texto)
+                    @foreach ((\App\Support\Formularios::ativo() ? [] : ['nominal' => 'Ingresso nominal (cada ingresso tem um titular)', 'exige_cpf_participante' => 'Exigir CPF do participante']) + ['permite_transferencia' => 'Permitir transferência de titularidade (o comprador transfere em Meus ingressos)'] as $campo => $texto)
                         <input type="hidden" name="{{ $campo }}" value="0">
                         <label class="opcao"><input type="checkbox" name="{{ $campo }}" value="1" @checked(old($campo, $evento->{$campo}))> {{ $texto }}</label>
                     @endforeach

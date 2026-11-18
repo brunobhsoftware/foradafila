@@ -30,7 +30,7 @@
     <section class="cartao checkin__leitura">
         <div class="segmentado" role="radiogroup" aria-label="Sentido">
             <label><input type="radio" name="sentido" value="entrada" checked><span>Entrada</span></label>
-            @if ($evento->permite_reentrada)<label><input type="radio" name="sentido" value="saida"><span>Saída</span></label>@endif
+            
         </div>
         <form class="checkin__form" data-checkin-form autocomplete="off">
             <label for="checkin-codigo">QR Code ou número do ingresso</label>
@@ -49,7 +49,6 @@
         <div><small>Entraram</small><b data-n="entraram">{{ numero($numeros['entraram']) }}</b></div>
         <div><small>Ingressos válidos</small><b data-n="total">{{ numero($numeros['total']) }}</b></div>
         <div><small>Comparecimento</small><b><span data-n="pct">{{ $numeros['pct'] }}</span>%</b></div>
-        @if ($evento->permite_reentrada)<div><small>Dentro agora</small><b data-n="dentro">{{ numero($numeros['dentro']) }}</b></div>@endif
         <div class="barra" style="grid-column:1/-1"><span data-barra style="width:{{ $numeros['pct'] }}%"></span></div>
         @if ($evento->abertura_portoes)<p class="suave" style="grid-column:1/-1;margin:0"><small>Portões abrem {{ data_local($evento->abertura_portoes, 'd/m H:i') }}.</small></p>@endif
     </section>

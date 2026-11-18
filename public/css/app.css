@@ -547,3 +547,5 @@ button.mp-ajuda__opcao { font: inherit; text-align: left; background: #fff; widt
 .bloco-form__corpo { margin-top: 16px; }
 .bloco-form--aberto .bloco-form__resumo { display: none; }
 .form-blocos > .acoes-form { padding: 4px 0 0; }
+.duracao-evento { padding: 10px 14px; background: #F4F5F7; border-left: 3px solid var(--laranja); border-radius: 6px; font-weight: 600; color: var(--tinta); }
+.duracao-evento--erro { border-left-color: var(--vermelho); color: var(--vermelho); }

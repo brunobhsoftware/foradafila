@@ -355,9 +355,10 @@ class EventoController extends Controller
         foreach (['data_inicio', 'data_fim', 'abertura_portoes'] as $campo) {
             $dadosEvento[$campo] = utc_de_local($dadosEvento[$campo] ?? null);
         }
-        foreach (['exige_cpf_participante', 'nominal', 'permite_transferencia', 'permite_reentrada'] as $campo) {
+        foreach (['exige_cpf_participante', 'nominal', 'permite_transferencia'] as $campo) {
             $dadosEvento[$campo] = $request->boolean($campo);
         }
+        $dadosEvento['permite_reentrada'] = false; // reentrada saiu do sistema (decisão do Bruno, 18/11/2026)
         // Formulário de inscrição (V015): os campos pedidos vêm dele; "exigir CPF" passa a ser "o formulário pede CPF obrigatório".
         if (\App\Support\Formularios::ativo()) {
             $org = app(\App\Support\Tenant::class)->id();

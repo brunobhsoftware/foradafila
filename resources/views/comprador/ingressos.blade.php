@@ -52,13 +52,31 @@
                 @if ($ingresso->status === 'valido')
                   <form method="post" action="{{ route('comprador.ingresso.enviar', $ingresso->uuid) }}" style="margin:0">@csrf
                     <button class="botao botao--contorno botao--pequeno">Enviar para meu e-mail</button></form>
-                  @php $regra = \App\Http\Controllers\Publico\MeusIngressosController::regraCancelamento($ingresso, $pedido); @endphp
+                  @php $regra = \App\Http\Controllers\Publico\MeusIngressosController::regraCancelamento($ingresso, $pedido);
+                       $transf = \App\Http\Controllers\Publico\MeusIngressosController::regraTransferencia($ingresso, $pedido); @endphp
+                  @if ($transf['pode'])
+                    <button type="button" class="botao botao--contorno botao--pequeno" data-alternar="transf-{{ $ingresso->uuid }}" aria-expanded="false">Transferir</button>
+                  @endif
                   @if ($regra['pode'])
                     <button type="button" class="botao botao--perigo botao--pequeno" data-alternar="canc-{{ $ingresso->uuid }}" aria-expanded="false">Cancelar ingresso</button>
                   @endif
                 @endif
               </span>
             </div>
+            @if ($ingresso->status === 'valido' && ($transf['pode'] ?? false))
+              <div id="transf-{{ $ingresso->uuid }}" class="pub-cancelar" hidden>
+                <b>Transferir o ingresso {{ $ingresso->numeroExibicao() }} para outra pessoa</b>
+                <p>O novo titular recebe o ingresso por e-mail e o QR Code atual deixa de valer. Cada ingresso pode ser transferido uma vez,
+                  até {{ data_local($transf['ate'], 'd/m/Y \à\s H:i') }}.</p>
+                <form method="post" action="{{ route('comprador.ingresso.transferir', $ingresso->uuid) }}" data-confirmar="Transferir o ingresso {{ $ingresso->numeroExibicao() }}? Ele deixará de valer para você.">@csrf
+                  <div style="display:grid;gap:8px;max-width:520px">
+                    <label>Nome completo do novo titular<input name="para_nome" required maxlength="150" value="{{ old('para_nome') }}"></label>
+                    <label>E-mail do novo titular<input name="para_email" type="email" required maxlength="150" value="{{ old('para_email') }}"></label>
+                    <label class="opcao"><input type="checkbox" name="confirmo" value="1" required> Entendo que o ingresso deixará de valer para mim.</label>
+                  </div>
+                  <button class="botao botao--primario botao--pequeno" style="margin-top:10px">Transferir ingresso</button></form>
+              </div>
+            @endif
             @if ($ingresso->status === 'valido' && ($regra['pode'] ?? false))
               <div id="canc-{{ $ingresso->uuid }}" class="pub-cancelar" hidden>
                 <b>Cancelar o ingresso {{ $ingresso->numeroExibicao() }}</b>
