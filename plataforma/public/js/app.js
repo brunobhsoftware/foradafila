@@ -220,6 +220,26 @@
     }));
   });
 
+  // Cadastro/edição do evento: "O seu evento irá durar X horas" a partir do início e do término (decisão do Bruno, 18/11/2026)
+  const duracao = document.querySelector('[data-duracao-evento]');
+  if (duracao) {
+    const ini = document.querySelector('input[name=data_inicio]');
+    const fim = document.querySelector('input[name=data_fim]');
+    const mostrar = () => {
+      const a = Date.parse(ini.value), b = Date.parse(fim.value);
+      if (!ini.value || !fim.value || isNaN(a) || isNaN(b)) { duracao.hidden = true; return; }
+      const min = Math.round((b - a) / 60000);
+      duracao.hidden = false;
+      if (min <= 0) { duracao.className = 'col-12 duracao-evento duracao-evento--erro'; duracao.textContent = 'O término precisa ser depois do início.'; return; }
+      const d = Math.floor(min / 1440), h = Math.floor((min % 1440) / 60), m = min % 60;
+      const partes = [d && (d + (d === 1 ? ' dia' : ' dias')), h && (h + (h === 1 ? ' hora' : ' horas')), m && (m + ' min')].filter(Boolean);
+      duracao.className = 'col-12 duracao-evento';
+      duracao.textContent = 'O seu evento irá durar ' + (partes.length > 1 ? partes.slice(0, -1).join(', ') + ' e ' + partes[partes.length - 1] : partes[0]) + '.';
+    };
+    [ini, fim].forEach((el) => el && ['input', 'change'].forEach((ev) => el.addEventListener(ev, mostrar)));
+    mostrar();
+  }
+
   // Cadastro/edição do evento: cada bloco abre com "Editar" (e reabre sozinho se um campo obrigatório escondido for recusado)
   $$('[data-bloco]').forEach((bloco) => {
     const corpo = bloco.querySelector('.bloco-form__corpo');

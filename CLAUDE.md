@@ -30,6 +30,7 @@ Idioma do projeto, da documentação e das conversas: **português do Brasil**.
 | `banco/V017__marketing_smtp_listas.sql` | Opções de marketing: `smtp_conta` (até 5 SMTP da empresa, senha criptografada), `lista_email`/`lista_email_contato` e `email_descadastro`. Idempotente. Aplicado em produção em 09/11/2026 ("V017 ok"; sem ele, menu e telas ficam ocultos: `Esquema::temV017()`) |
 | `banco/V018__convite_email.sql` | Convite por e-mail: `campanha` ganha uuid/lista_id/smtp_conta_id/enviados/erros/iniciada_em/concluida_em; tabela `campanha_envio` (fila por e-mail); `lista_email_contato.consentimento_em/_por`. Idempotente. **Aguardando importação em produção** (`Esquema::temV018()`) |
 | `banco/V023__nomes_padronizados.sql` | Só dados: padroniza nomes de pessoas (usuario, comprador, participante, pessoa, convidado, lista_email_contato, organizador.representante_nome) com JSON_TABLE; idempotente. Aparece em Administração → Atualizações do banco (cópia em `plataforma/database/atualizacoes`) |
+| `banco/V024__sem_reentrada.sql` | Só dados: zera `evento.permite_reentrada` e `ingresso.dentro_do_evento` (reentrada saiu do sistema). Idempotente. Em Administração → Atualizações do banco |
 | `docs/apps-checkin.md` | **Apps de check-in**: instalar sem loja (PWA) e publicar no Google Play e na App Store (projeto `apps/checkin/`, Capacitor 6) |
 | `apps/checkin/` | Projeto Capacitor dos apps Android/iOS, **com os projetos nativos gerados** (`android/`, `ios/`: ícones, tela de abertura, nome "FF Check-in", permissão de câmera); abre `https://foradafila.com.br/app`. Compilado pelo GitHub em `.github/workflows/apps-checkin.yml` (APK de teste, AAB assinado com os segredos `ANDROID_*`, build iOS de simulador) |
 | `docs/integracao-pagamentos.md` | Estudo da integração (Mercado Pago 1º): fluxos, mapeamento de campos, homologação, `.env` `MP_*` |
@@ -525,6 +526,13 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   fora disso o botão fica desabilitado; `EventoController::vendasEncerradas`, `eventos.vendas-encerradas`, auditoria `evento.vendas_encerradas`/`_reabertas`). Encerrado,
   `loteAVenda` dá falso para todos os lotes (compra bloqueada) e a página pública mostra **"Vendas encerradas."**; "Ingressos esgotados." só quando todos os lotes públicos
   estão sem estoque. Teste `fluxo-vendas-encerradas.js` (7).
+- **Transferência de titularidade** (decisão do Bruno, 18/11/2026; `MeusIngressosController::regraTransferencia`/`transferirIngresso`, `comprador.ingresso.transferir`): em Meus ingressos,
+  botão **Transferir** em cada ingresso válido quando o evento permite e até `transferencia_ate_h` horas antes do início; pede nome completo e e-mail do novo titular + confirmação.
+  Troca o `codigo_qr` (o QR antigo deixa de valer), atualiza o participante (CPF/telefone apagados), grava `ingresso_transferencia` (origem = destino = o mesmo ingresso; **uma vez por
+  ingresso**), auditoria `ingresso.transferir` e e-mail `Notificacoes::ingressoTransferido` (fique@, tipo `transferencia`, link só desse ingresso + PDF). Teste `fluxo-transferencia.js` (8).
+- **Duração do evento** (18/11/2026): no bloco Data e horário, "O seu evento irá durar X dias, Y horas e Z min" calculado na hora pelo início/término (`[data-duracao-evento]`, `app.js`).
+- **Reentrada removida** (decisão do Bruno, 18/11/2026): saiu a opção "Permitir reentrada" do cadastro, o sentido "Saída"/"Dentro agora" do Check-in e do app; salvar o evento grava
+  `permite_reentrada = 0`; V024 zera os existentes.
 - **Nomes de pessoas padronizados** (decisão do Bruno, 16/11/2026): `App\Support\NomePessoa::padronizar()` (1ª letra maiúscula, resto minúsculo; de/da/do/das/dos/e/di/du
   minúsculos no meio; também após hífen/apóstrofo) aplicado sozinho pelos models `Usuario`, `Comprador`, `Participante` (trait `NomePadronizado`), `Organizador.representante_nome`,
   cadastro único, convidados e listas de e-mail. Regra `App\Rules\NomeCompleto` (nome e sobrenome) em cadastro do produtor, equipe/convite, comprador, compra

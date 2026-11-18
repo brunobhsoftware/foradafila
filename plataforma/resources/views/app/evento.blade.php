@@ -115,7 +115,7 @@
       <div class="ck-cartao__rodape" data-situacao>
         @if ($janela['aberta']) <b style="color:var(--verde)">Check-in aberto</b> até {{ $janela['fecha']->copy()->setTimezone('America/Sao_Paulo')->format('d/m \à\s H:i') }}
         @else {{ $janela['motivo'] }} @endif
-        @if ($numeros['dentro'] && $evento->permite_reentrada) · {{ $numeros['dentro'] }} dentro agora @endif
+        
       </div>
     </div>
     @if (! $janela['aberta'])

@@ -119,6 +119,65 @@ class MeusIngressosController extends Controller
             .' Enviamos a confirmação para o seu e-mail.');
     }
 
+    /**
+     * Transferência de titularidade (decisão do Bruno, 18/11/2026): o comprador passa UM ingresso para outra pessoa, se o evento permitir
+     * e até X horas antes do início (evento.transferencia_ate_h). O QR Code antigo deixa de valer (código novo) e o novo titular recebe o
+     * ingresso por e-mail. Cada ingresso pode ser transferido uma vez (ingresso_transferencia.uq_transf_origem).
+     *
+     * @return array{pode: bool, motivo: ?string, ate: ?\Illuminate\Support\Carbon}
+     */
+    public static function regraTransferencia(Ingresso $ingresso, Pedido $pedido): array
+    {
+        $evento = $pedido->evento;
+        $ate = $evento?->data_inicio?->copy()->subHours((int) $evento->transferencia_ate_h);
+        $motivo = match (true) {
+            ! $evento || ! $evento->permite_transferencia => 'Este evento não permite transferência.',
+            $ingresso->status !== 'valido' => 'Este ingresso não está mais válido.',
+            ! in_array($pedido->status, ['pago', 'reembolso_parcial'], true) => 'Este pedido não pode ser transferido.',
+            DB::table('ingresso_transferencia')->where('ingresso_origem_id', $ingresso->id)->exists() => 'Este ingresso já foi transferido uma vez.',
+            ! $ate || $ate->isPast() => 'O prazo para transferir terminou.',
+            default => null,
+        };
+
+        return ['pode' => $motivo === null, 'motivo' => $motivo, 'ate' => $ate];
+    }
+
+    public function transferirIngresso(Request $request, string $uuid, Tenant $tenant)
+    {
+        $ingresso = $this->ingressoDoComprador($request, $uuid);
+        $pedido = Pedido::withoutGlobalScopes()->with(['evento', 'organizadorPublico'])->findOrFail($ingresso->pedido_id);
+        $tenant->definir($pedido->organizadorPublico);
+        $ingresso->load(['participante', 'tipo', 'lote']);
+        $regra = self::regraTransferencia($ingresso, $pedido);
+        if (! $regra['pode']) {
+            throw ValidationException::withMessages(['transferir' => $regra['motivo']]);
+        }
+        $d = $request->validate([
+            'para_nome' => ['required', 'string', 'max:150', new \App\Rules\NomeCompleto],
+            'para_email' => ['required', 'email:filter', 'max:150'],
+            'confirmo' => ['accepted'],
+        ], ['confirmo.accepted' => 'Confirme que o ingresso deixará de valer para você.'], ['para_nome' => 'nome do novo titular', 'para_email' => 'e-mail do novo titular']);
+        $deNome = $ingresso->participante?->nome ?? $request->user('comprador')->nome;
+        $email = mb_strtolower($d['para_email']);
+
+        DB::transaction(function () use ($ingresso, $d, $email, $deNome, $request) {
+            $ingresso->forceFill(['codigo_qr' => Ingresso::novoCodigoQr()])->save(); // o QR antigo deixa de valer
+            if ($ingresso->participante) {
+                $ingresso->participante->forceFill(['nome' => $d['para_nome'], 'email' => $email, 'cpf' => null, 'telefone' => null, 'mesmo_que_comprador' => 0])->save();
+            }
+            DB::table('ingresso_transferencia')->insert([
+                'ingresso_origem_id' => $ingresso->id, 'ingresso_destino_id' => $ingresso->id, 'de_nome' => mb_substr($deNome, 0, 150),
+                'para_nome' => \App\Support\NomePessoa::padronizar($d['para_nome']), 'para_email' => $email, 'solicitado_por' => 'comprador', 'ip' => $request->ip(),
+            ]);
+        });
+        Auditoria::registrar('ingresso.transferir', $ingresso, null, ['de' => $deNome, 'para' => $d['para_nome'], 'para_email' => $email]);
+        $evento = \App\Models\Evento::withoutGlobalScopes()->with(['organizador', 'local'])->findOrFail($pedido->evento_id);
+        Notificacoes::ingressoTransferido($pedido, $evento, $evento->organizador, $ingresso->fresh(['participante', 'tipo', 'lote']), $deNome);
+
+        return redirect()->route('comprador.ingressos')->with('ok', 'Ingresso '.$ingresso->numeroExibicao().' transferido para '.$d['para_nome']
+            .'. Enviamos o ingresso para '.$email.'; o QR Code anterior não vale mais.');
+    }
+
     /** "Enviar para meu e-mail" de um ingresso. */
     public function enviarIngresso(Request $request, string $uuid, Tenant $tenant)
     {

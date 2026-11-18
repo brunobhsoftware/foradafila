@@ -85,6 +85,31 @@ class Notificacoes
         ]);
     }
 
+    /** fique@ — o novo titular recebe o ingresso transferido (só esse ingresso: link próprio e PDF). */
+    public static function ingressoTransferido(Pedido $pedido, Evento $evento, Organizador $org, \App\Models\Ingresso $ingresso, string $deNome): void
+    {
+        $para = $ingresso->participante;
+        if (! $para || ! $para->email) {
+            return;
+        }
+        $link = \App\Http\Controllers\Publico\PagamentoController::linkIngresso($ingresso);
+        $html = Email::layout('Você recebeu um ingresso',
+            '<p>Olá, '.self::e($para->nome).'!</p><p><b>'.self::e($deNome).'</b> transferiu para você o ingresso <b>'.self::e($ingresso->numeroExibicao()).'</b> ('
+            .self::e($ingresso->tipo?->nome).' — '.self::e($ingresso->lote?->nome).') de <b>'.self::e($evento->titulo).'</b>, em '
+            .self::e(data_local($evento->data_inicio, 'd/m/Y \à\s H:i')).'.</p>'
+            .'<p style="font-size:13px;color:#667085">O ingresso está em PDF neste e-mail. Na entrada, apresente o QR Code (impresso ou no celular). Não compartilhe o QR Code.</p>',
+            'Ver meu ingresso', $link, self::rodapeOrganizador($org));
+        $anexos = [];
+        try {
+            $anexos[] = ['nome' => 'ingresso-'.$ingresso->numero.'.pdf', 'mime' => 'application/pdf', 'conteudo' => IngressoPdf::gerar($pedido, $evento, collect([$ingresso]))];
+        } catch (\Throwable $e) {
+            report($e);
+        }
+        Email::operacao('transferencia', $para->email, self::assuntoEvento($evento->titulo, 'Você recebeu um ingresso'), $html,
+            "{$deNome} transferiu para você o ingresso {$ingresso->numeroExibicao()} de {$evento->titulo}. Ver: {$link}",
+            ['organizador_id' => $org->id, 'pedido_id' => $pedido->id, 'anexos' => $anexos]);
+    }
+
     /** noreply@ — aviso de que a inscrição gratuita foi cancelada pelo próprio comprador. */
     public static function inscricaoCancelada(Pedido $pedido, Comprador $comprador, Evento $evento, Organizador $org): void
     {
