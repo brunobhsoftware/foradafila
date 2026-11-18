@@ -28,7 +28,7 @@
 <section class="cartao" style="margin-top:18px;padding:20px 24px">
     <h2 style="margin-top:0">Padronizar nomes de pessoas</h2>
     <p class="suave">Corrige os nomes já gravados de usuários da equipe, compradores, participantes dos ingressos, cadastro único, convidados, listas de e-mail
-        e representantes legais: primeira letra de cada palavra maiúscula e o resto minúsculo, com “de, da, do, das, dos, e” minúsculos
+        , representantes legais e nomes das empresas (razão social e nome fantasia, com ME/EPP/EIRELI/S/A em maiúsculas): primeira letra de cada palavra maiúscula e o resto minúsculo, com “de, da, do, das, dos, e” minúsculos
         (ex.: “BRUNO DE MAGALHÃES” → “Bruno de Magalhães”). Só altera o que estiver diferente; pode rodar de novo.</p>
     <form method="post" action="{{ route('admin.banco.nomes') }}" data-confirmar="Padronizar os nomes de pessoas em todo o banco de produção?">@csrf
         <button class="botao botao--primario botao--pequeno">Padronizar nomes</button></form>

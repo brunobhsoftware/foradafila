@@ -16,11 +16,23 @@ class PadronizarNomes
         'convidado' => 'nome', 'lista_email_contato' => 'nome', 'organizador' => 'representante_nome',
     ];
 
+    /** Nomes de empresa (razão social e nome fantasia), com siglas ME/EPP/EIRELI/S/A em maiúsculas. */
+    public const COLUNAS_EMPRESA = ['organizador' => ['razao_social', 'nome_fantasia']];
+
     /** @return array<string, int> registros alterados por tabela */
     public static function executar(): array
     {
         $alterados = [];
-        foreach (self::COLUNAS as $tabela => $coluna) {
+        $pares = [];
+        foreach (self::COLUNAS as $t => $c) {
+            $pares[] = [$t, $c];
+        }
+        foreach (self::COLUNAS_EMPRESA as $t => $cs) {
+            foreach ($cs as $c) {
+                $pares[] = [$t, $c];
+            }
+        }
+        foreach ($pares as [$tabela, $coluna]) {
             if (! Schema::hasTable($tabela) || ! Schema::hasColumn($tabela, $coluna)) {
                 continue;
             }
@@ -28,14 +40,14 @@ class PadronizarNomes
             DB::table($tabela)->whereNotNull($coluna)->select(['id', $coluna])->orderBy('id')
                 ->chunkById(500, function ($linhas) use ($tabela, $coluna, &$n) {
                     foreach ($linhas as $l) {
-                        $novo = NomePessoa::padronizar($l->$coluna);
+                        $novo = in_array($coluna, ['razao_social', 'nome_fantasia'], true) ? NomePessoa::padronizarEmpresa($l->$coluna) : NomePessoa::padronizar($l->$coluna);
                         if ($novo !== '' && $novo !== $l->$coluna) {
                             DB::table($tabela)->where('id', $l->id)->update([$coluna => $novo]);
                             $n++;
                         }
                     }
                 });
-            $alterados[$tabela] = $n;
+            $alterados[$tabela.'.'.$coluna] = $n;
         }
 
         return $alterados;
