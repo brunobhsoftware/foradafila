@@ -50,7 +50,13 @@ class EventoPublicoController extends Controller
 
         $vendePago = (bool) \App\Support\Checkout::contaDoEvento($evento);
 
-        return view('publico.evento', compact('evento', 'lotes', 'aVenda', 'vendePago', 'proximaAbertura'));
+        // Sem nada à venda: "Vendas encerradas" (manual) ou "Ingressos esgotados" (todos os lotes públicos sem estoque).
+        $vendasEncerradas = \App\Support\VendasEncerradas::ativo($evento);
+        $publicos = $evento->tipos->flatMap->lotes->where('visibilidade', 'publico');
+        $esgotado = ! $vendasEncerradas && $lotes->isEmpty() && $publicos->isNotEmpty()
+            && $publicos->every(fn ($l) => $l->status === 'esgotado' || $l->quantidade - $l->vendido - $l->reservado <= 0);
+
+        return view('publico.evento', compact('evento', 'lotes', 'aVenda', 'vendePago', 'proximaAbertura', 'vendasEncerradas', 'esgotado'));
     }
 
     public function organizador(string $slug)
@@ -132,7 +138,7 @@ class EventoPublicoController extends Controller
 
     public static function loteAVenda(Evento $evento, $lote): bool
     {
-        if ($evento->status !== 'publicado' || $lote->visibilidade !== 'publico' 
+        if ($evento->status !== 'publicado' || $lote->visibilidade !== 'publico' || \App\Support\VendasEncerradas::ativo($evento) 
             || ! in_array($lote->status, ['ativo', 'agendado'], true)
             || ! $lote->venda_inicio->isPast() || ! $lote->venda_fim->isFuture()
             || ($evento->data_fim && $evento->data_fim->isPast())

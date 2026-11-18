@@ -30,6 +30,7 @@
                 <button class="botao botao--contorno">Duplicar</button></form>
         @endcan
         @include('painel.eventos._visibilidade')
+        @include('painel.eventos._vendas_encerradas')
         @foreach (['publicado' => $evento->status === 'pausado' ? 'Retomar vendas' : 'Publicar evento', 'pausado' => 'Pausar vendas', 'encerrado' => 'Encerrar'] as $novo => $rotulo)
             @if (isset($transicoes[$novo]) && auth()->user()->can($transicoes[$novo]) && ! ($novo === 'publicado' && $evento->status === 'rascunho' && $evento->publicado_em))
                 <form method="post" action="{{ route('eventos.status', $evento) }}" @if ($novo === 'encerrado') data-confirmar="Encerrar o evento? Depois disso ele não pode mais ser editado." @elseif ($novo === 'rascunho') data-confirmar="Ocultar o evento? Ele sai do site e para de vender; os ingressos já emitidos continuam valendo. Você pode publicar de novo depois." @endif>

@@ -11,7 +11,8 @@
     </div>
     @if ($editando)
         <div class="cabecalho__acoes"><a href="{{ route('eventos.show', $evento) }}#ingressos" class="botao botao--escuro"><x-icone nome="ingresso" /> Editar ingressos</a>
-            @include('painel.eventos._visibilidade')</div>
+            @include('painel.eventos._visibilidade')
+            @include('painel.eventos._vendas_encerradas')</div>
     @endif
 </div>
 

@@ -519,6 +519,12 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   Data e horário, Onde vai ser, Regras da venda e do ingresso, **Política de cancelamento** (bloco próprio). Na **edição** cada bloco mostra só um resumo e o botão **Editar**
   (abre/recolhe; abre sozinho se tiver erro de validação ou campo obrigatório recusado); no **cadastro** tudo vem aberto. A declaração de cancelamento (obrigatória a cada
   salvamento) fica sempre visível, junto do Salvar. **Saiu o campo "Conta que recebe as vendas"**: a conta vem só do Financeiro (`Recebimento::contaAtual` ao publicar).
+- **Vendas encerradas no dia do evento** (decisão do Bruno, 18/11/2026; `App\Support\VendasEncerradas`, `parametro_sistema` `vendas_encerradas_evento_<id>`): interruptor
+  **Vendas abertas / Vendas encerradas** no alto da página e da edição do evento (`painel/eventos/_vendas_encerradas`, `evento.publicar`) e botão **Encerrar vendas / Reabrir vendas**
+  no app (aba Vendas, abaixo de "Vender ingressos", que some com as vendas encerradas). **Só pode mudar no dia do evento** (do dia do início ao dia do término, Brasília;
+  fora disso o botão fica desabilitado; `EventoController::vendasEncerradas`, `eventos.vendas-encerradas`, auditoria `evento.vendas_encerradas`/`_reabertas`). Encerrado,
+  `loteAVenda` dá falso para todos os lotes (compra bloqueada) e a página pública mostra **"Vendas encerradas."**; "Ingressos esgotados." só quando todos os lotes públicos
+  estão sem estoque. Teste `fluxo-vendas-encerradas.js` (7).
 - **Nomes de pessoas padronizados** (decisão do Bruno, 16/11/2026): `App\Support\NomePessoa::padronizar()` (1ª letra maiúscula, resto minúsculo; de/da/do/das/dos/e/di/du
   minúsculos no meio; também após hífen/apóstrofo) aplicado sozinho pelos models `Usuario`, `Comprador`, `Participante` (trait `NomePadronizado`), `Organizador.representante_nome`,
   cadastro único, convidados e listas de e-mail. Regra `App\Rules\NomeCompleto` (nome e sobrenome) em cadastro do produtor, equipe/convite, comprador, compra

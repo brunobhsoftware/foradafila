@@ -113,8 +113,8 @@ class NumerosEvento
             'vendidos' => (int) $l->vendido, 'quantidade' => (int) $l->quantidade,
             'cancelados' => (int) ($r->cancelados_por_lote[$l->id] ?? 0),
             'uuid' => $l->uuid,
-            'situacao' => $l->vendido >= $l->quantidade ? 'Esgotado'
-                : (EventoPublicoController::loteAVenda($evento, $l) ? 'À venda' : ($l->status === 'pausado' ? 'Desativado' : ($l->venda_fim && $l->venda_fim < now() ? 'Encerrado' : 'Ainda não abriu'))),
+            'situacao' => VendasEncerradas::ativo($evento) ? 'Vendas encerradas' : ($l->vendido >= $l->quantidade ? 'Esgotado'
+                : (EventoPublicoController::loteAVenda($evento, $l) ? 'À venda' : ($l->status === 'pausado' ? 'Desativado' : ($l->venda_fim && $l->venda_fim < now() ? 'Encerrado' : 'Ainda não abriu')))),
         ]);
 
         return $r;

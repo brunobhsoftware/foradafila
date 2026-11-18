@@ -226,6 +226,7 @@ Route::middleware(['auth', 'organizador'])->prefix('painel')->group(function () 
     Route::post('/eventos', [EventoController::class, 'store'])->name('eventos.store');
     Route::get('/eventos/{evento}', [EventoController::class, 'show'])->name('eventos.show');
     Route::get('/eventos/{evento}/editar', [EventoController::class, 'edit'])->name('eventos.edit');
+    Route::post('/eventos/{evento}/vendas-encerradas', [EventoController::class, 'vendasEncerradas'])->name('eventos.vendas-encerradas');
     Route::post('/eventos/{evento}/duplicar', [EventoController::class, 'duplicar'])->name('eventos.duplicar')->middleware('throttle:20,10,duplicar-evento');
     Route::put('/eventos/{evento}', [EventoController::class, 'update'])->name('eventos.update');
     Route::post('/eventos/{evento}/status', [EventoController::class, 'status'])->name('eventos.status');

@@ -258,6 +258,22 @@ class EventoController extends Controller
             ->with('ok', "Evento duplicado como rascunho: “{$novo->titulo}”. Ajuste o nome e as datas e publique quando quiser.");
     }
 
+    /** Encerra ou reabre as vendas na hora — só no dia do evento (decisão do Bruno, 18/11/2026). Painel e app. */
+    public function vendasEncerradas(Request $request, Evento $evento)
+    {
+        Gate::authorize('evento.publicar');
+        $this->garantirAcesso($evento);
+        if (! \App\Support\VendasEncerradas::podeAlterar($evento)) {
+            return back()->withErrors(['vendas' => 'As vendas só podem ser encerradas ou reabertas por aqui no dia do evento.']);
+        }
+        $encerrar = $request->boolean('encerrar');
+        \App\Support\VendasEncerradas::definir($evento, $encerrar);
+        \App\Http\Controllers\Publico\EventoPublicoController::sincronizarExibicao($evento->load('tipos.lotes'));
+        Auditoria::registrar($encerrar ? 'evento.vendas_encerradas' : 'evento.vendas_reabertas', $evento);
+
+        return back()->with('ok', $encerrar ? 'Vendas encerradas: ninguém mais consegue comprar ingressos deste evento.' : 'Vendas reabertas.');
+    }
+
     private static function registrarDeclaracao(Evento $evento): void
     {
         \App\Models\Auditoria::create([
