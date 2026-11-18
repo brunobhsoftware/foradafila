@@ -71,7 +71,19 @@
       @endforelse
     </div>
     @if (in_array($evento->status, ['publicado', 'pausado']))
-      <a href="{{ $evento->linkPublico() }}" class="ck-botao-vender">🎟 Vender ingressos</a>
+      @php $encerradas = \App\Support\VendasEncerradas::ativo($evento); @endphp
+      @unless ($encerradas)<a href="{{ $evento->linkPublico() }}" class="ck-botao-vender">🎟 Vender ingressos</a>@endunless
+      {{-- Encerrar/reabrir as vendas na hora, só no dia do evento (decisão do Bruno, 18/11/2026) --}}
+      @can('evento.publicar')
+        @if (\App\Support\VendasEncerradas::podeAlterar($evento))
+          <form method="post" action="{{ route('eventos.vendas-encerradas', $evento) }}" onsubmit="return confirm(this.dataset.msg)" data-msg="{{ $encerradas ? 'Reabrir as vendas deste evento?' : 'Encerrar as vendas agora? Ninguém mais consegue comprar, mesmo com ingressos disponíveis.' }}">
+            @csrf <input type="hidden" name="encerrar" value="{{ $encerradas ? 0 : 1 }}">
+            <button class="ck-botao-vender ck-botao-encerrar {{ $encerradas ? 'ck-botao-encerrar--reabrir' : '' }}">{{ $encerradas ? '↺ Reabrir vendas' : '⛔ Encerrar vendas' }}</button>
+          </form>
+        @elseif ($encerradas)
+          <p class="ck-suave" style="text-align:center">Vendas encerradas.</p>
+        @endif
+      @endcan
     @endif
   @elseif ($aba === 'ferramentas')
     <div class="ck-cartao">

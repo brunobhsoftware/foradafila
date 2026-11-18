@@ -116,6 +116,7 @@ return array(
     'App\\Support\\SmtpEmpresa' => $baseDir . '/app/Support/SmtpEmpresa.php',
     'App\\Support\\TaxaServico' => $baseDir . '/app/Support/TaxaServico.php',
     'App\\Support\\Tenant' => $baseDir . '/app/Support/Tenant.php',
+    'App\\Support\\VendasEncerradas' => $baseDir . '/app/Support/VendasEncerradas.php',
     'Attribute' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
     'Brick\\Math\\BigDecimal' => $vendorDir . '/brick/math/src/BigDecimal.php',
     'Brick\\Math\\BigInteger' => $vendorDir . '/brick/math/src/BigInteger.php',

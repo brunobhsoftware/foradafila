@@ -87,7 +87,11 @@
       @endif
       <h2 id="titulo-ingressos" style="margin:0 0 6px">Ingressos</h2>
       @if ($lotes->isEmpty())
-        @if (! empty($proximaAbertura))
+        @if (! empty($vendasEncerradas))
+          <p><b>Vendas encerradas.</b></p>
+        @elseif (! empty($esgotado))
+          <p><b>Ingressos esgotados.</b></p>
+        @elseif (! empty($proximaAbertura))
           <p>As vendas abrem em {{ data_local($proximaAbertura) }}.</p>
         @else
           <p>Nenhum ingresso à venda no momento.</p>

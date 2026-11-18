@@ -596,6 +596,7 @@ class ComposerStaticInit19cf629833914b10fb54311306124002
         'App\\Support\\SmtpEmpresa' => __DIR__ . '/../..' . '/app/Support/SmtpEmpresa.php',
         'App\\Support\\TaxaServico' => __DIR__ . '/../..' . '/app/Support/TaxaServico.php',
         'App\\Support\\Tenant' => __DIR__ . '/../..' . '/app/Support/Tenant.php',
+        'App\\Support\\VendasEncerradas' => __DIR__ . '/../..' . '/app/Support/VendasEncerradas.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'Brick\\Math\\BigDecimal' => __DIR__ . '/..' . '/brick/math/src/BigDecimal.php',
         'Brick\\Math\\BigInteger' => __DIR__ . '/..' . '/brick/math/src/BigInteger.php',
