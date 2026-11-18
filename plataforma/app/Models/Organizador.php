@@ -10,6 +10,17 @@ use Illuminate\Support\Str;
 
 class Organizador extends Model
 {
+    // Razão social e nome fantasia padronizados (decisão do Bruno, 18/11/2026): produtor que cadastra tudo em maiúsculas é corrigido.
+    public function setRazaoSocialAttribute($v): void
+    {
+        $this->attributes['razao_social'] = $v === null ? null : \App\Support\NomePessoa::padronizarEmpresa((string) $v);
+    }
+
+    public function setNomeFantasiaAttribute($v): void
+    {
+        $this->attributes['nome_fantasia'] = $v === null || trim((string) $v) === '' ? null : \App\Support\NomePessoa::padronizarEmpresa((string) $v);
+    }
+
     public function setRepresentanteNomeAttribute($v): void
     {
         $this->attributes['representante_nome'] = $v === null ? null : \App\Support\NomePessoa::padronizar((string) $v);

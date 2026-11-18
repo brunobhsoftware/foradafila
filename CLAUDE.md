@@ -538,6 +538,8 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   cadastro único, convidados e listas de e-mail. Regra `App\Rules\NomeCompleto` (nome e sobrenome) em cadastro do produtor, equipe/convite, comprador, compra
   (comprador e participantes pelo formulário), convidados, representante legal e pagamentos de teste. Os já gravados: Administração → Atualizações do banco →
   **Padronizar nomes** (`App\Support\PadronizarNomes`, auditoria `plataforma.padronizar_nomes`; pode rodar de novo).
+  **Empresas** (decisão do Bruno, 18/11/2026): `organizador.razao_social` e `nome_fantasia` também são padronizados (mutators do model, `NomePessoa::padronizarEmpresa`: ME, EPP, MEI,
+  EIRELI e S/A em maiúsculas; palavras com números ficam como digitadas). O botão Padronizar nomes também corrige os já gravados.
 - **E-mail sem acento** (08/11/2026: o login da Estação Slod foi gravado como "estaçãoslod@gmail.com" e nenhum e-mail chegava):
   toda validação de e-mail usa `email:filter` (recusa acento, cedilha e espaço). Administração → Empresas → detalhe avisa e-mail
   inválido e tem "Corrigir e-mail de login" (sugere a versão sem acento; `admin.empresas.email`, auditoria `admin.email_login_corrigido`).
