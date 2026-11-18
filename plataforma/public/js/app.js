@@ -220,6 +220,17 @@
     }));
   });
 
+  // Cadastro/edição do evento: cada bloco abre com "Editar" (e reabre sozinho se um campo obrigatório escondido for recusado)
+  $$('[data-bloco]').forEach((bloco) => {
+    const corpo = bloco.querySelector('.bloco-form__corpo');
+    const botao = bloco.querySelector('[data-bloco-editar]');
+    if (!corpo) return;
+    const abrir = (sim) => { corpo.hidden = !sim; bloco.classList.toggle('bloco-form--aberto', sim); if (botao) botao.textContent = sim ? 'Recolher' : 'Editar'; };
+    if (!corpo.hidden && botao) abrir(true);
+    if (botao) botao.addEventListener('click', () => abrir(corpo.hidden));
+    bloco.addEventListener('invalid', () => { if (corpo.hidden) abrir(true); }, true);
+  });
+
   // Financeiro → Dados para o repasse: "Direto em minha conta" esconde Pix/banco e mostra o Mercado Pago da empresa
   $$('[data-forma-recebimento] input[name=recebimento_preferido]').forEach((r) => r.addEventListener('change', () => {
     const direto = r.value === 'mercadopago';

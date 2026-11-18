@@ -536,3 +536,14 @@ a.mp-ajuda__opcao:hover { border-color: #00B1EA; }
 button.mp-ajuda__opcao { font: inherit; text-align: left; background: #fff; width: 100%; }
 .mp-ajuda__opcao--ativa { border-color: #00B1EA !important; box-shadow: 0 0 0 2px rgba(0,177,234,.25); }
 @media (max-width: 900px) { #mp-escolha .grade-3 { grid-template-columns: 1fr; } }
+
+/* Cadastro/edição do evento em blocos separados (decisão do Bruno, 18/11/2026) */
+.form-blocos { display: grid; gap: 16px; }
+.bloco-form { padding: 20px 22px; }
+.bloco-form__topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.bloco-form__topo h2 { margin: 0 0 2px; }
+.bloco-form__topo p { color: var(--suave); font-size: .9rem; margin: 0; }
+.bloco-form__resumo { display: block; margin-top: 6px; color: var(--tinta); }
+.bloco-form__corpo { margin-top: 16px; }
+.bloco-form--aberto .bloco-form__resumo { display: none; }
+.form-blocos > .acoes-form { padding: 4px 0 0; }

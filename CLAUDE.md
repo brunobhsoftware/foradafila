@@ -515,6 +515,10 @@ https://claude.ai/artifact/SdhmCrhNMcPWmupBJZKv6b. `docs/regras-de-negocio.md` �
   `lote_anterior_id` remapeado; pausado continua pausado, os demais `ativo`); título + " (cópia)"; abre a edição. Auditoria `evento.duplicar`. Teste `fluxo-duplicar.js` (9).
 - **Primeiros passos do Dashboard** (decisão do Bruno, 17/11/2026): o último passo virou "Definir como receber as vendas (Mercado Pago ou Pix/conta)" (feito quando há
   `conta_pagamento` ativa em qualquer modo; link para o Financeiro); o cartão some quando todos os passos estão feitos (o grid deixa de ser `grade-lateral`).
+- **Cadastro/edição do evento em blocos** (decisão do Bruno, 18/11/2026; `painel/eventos/form`): cada parte é um cartão separado (`.bloco-form`, `[data-bloco]`) — Informações,
+  Data e horário, Onde vai ser, Regras da venda e do ingresso, **Política de cancelamento** (bloco próprio). Na **edição** cada bloco mostra só um resumo e o botão **Editar**
+  (abre/recolhe; abre sozinho se tiver erro de validação ou campo obrigatório recusado); no **cadastro** tudo vem aberto. A declaração de cancelamento (obrigatória a cada
+  salvamento) fica sempre visível, junto do Salvar. **Saiu o campo "Conta que recebe as vendas"**: a conta vem só do Financeiro (`Recebimento::contaAtual` ao publicar).
 - **Nomes de pessoas padronizados** (decisão do Bruno, 16/11/2026): `App\Support\NomePessoa::padronizar()` (1ª letra maiúscula, resto minúsculo; de/da/do/das/dos/e/di/du
   minúsculos no meio; também após hífen/apóstrofo) aplicado sozinho pelos models `Usuario`, `Comprador`, `Participante` (trait `NomePadronizado`), `Organizador.representante_nome`,
   cadastro único, convidados e listas de e-mail. Regra `App\Rules\NomeCompleto` (nome e sobrenome) em cadastro do produtor, equipe/convite, comprador, compra
