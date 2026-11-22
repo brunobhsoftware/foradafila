@@ -119,7 +119,7 @@
       </div>
     </div>
     @if (! $janela['aberta'])
-      <div class="ck-aviso">O check-in só funciona no dia do evento, a partir da abertura dos portões ({{ $janela['abre']->copy()->setTimezone('America/Sao_Paulo')->format('d/m \à\s H:i') }}) até o término.</div>
+      <div class="ck-aviso">O check-in abre a partir de {{ $janela['abre']->copy()->setTimezone('America/Sao_Paulo')->format('d/m \à\s H:i') }} e vai até o término do evento.</div>
     @endif
   @endif
 </main>
