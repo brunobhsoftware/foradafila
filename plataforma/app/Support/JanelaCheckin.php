@@ -21,13 +21,7 @@ class JanelaCheckin
         $agora ??= now();
         $inicio = Carbon::parse($evento->data_inicio);
         $limiteMinimo = $inicio->copy()->subHours(self::ANTECEDENCIA_HORAS);
-        $abre = Carbon::parse($evento->abertura_portoes ?? $inicio);
-        if ($abre->lt($limiteMinimo)) {
-            $abre = $limiteMinimo;
-        }
-        if ($abre->gt($inicio)) {
-            $abre = $inicio->copy();
-        }
+        $abre = $limiteMinimo;
         $fecha = Carbon::parse($evento->data_fim ?? $inicio->copy()->endOfDay());
         $motivo = match (true) {
             ! in_array($evento->status, ['publicado', 'encerrado'], true) => 'O evento não está publicado.',
