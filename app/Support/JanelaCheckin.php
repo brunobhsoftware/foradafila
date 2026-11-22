@@ -6,22 +6,24 @@ use App\Models\Evento;
 use Illuminate\Support\Carbon;
 
 /**
- * Quando o check-in de um evento está liberado (decisão do Bruno, 09/11/2026): só no DIA do evento, a partir da abertura dos
- * portões (o produtor pode abrir 1 ou 2 horas antes do início) — nunca antes da meia-noite do dia do início — até o término.
+ * Quando o check-in de um evento está liberado: a partir da abertura dos portões (ou até 5 horas antes do início,
+ * decisão do Bruno, 22/11/2026) até o término.
  */
 class JanelaCheckin
 {
     public const FUSO = 'America/Sao_Paulo';
+
+    public const ANTECEDENCIA_HORAS = 5;
 
     /** @return array{aberta: bool, abre: Carbon, fecha: Carbon, motivo: ?string} */
     public static function situacao(Evento $evento, ?Carbon $agora = null): array
     {
         $agora ??= now();
         $inicio = Carbon::parse($evento->data_inicio);
-        $diaDoEvento = $inicio->copy()->setTimezone(self::FUSO)->startOfDay()->utc();
+        $limiteMinimo = $inicio->copy()->subHours(self::ANTECEDENCIA_HORAS);
         $abre = Carbon::parse($evento->abertura_portoes ?? $inicio);
-        if ($abre->lt($diaDoEvento)) {
-            $abre = $diaDoEvento; // nunca antes do dia do evento
+        if ($abre->lt($limiteMinimo)) {
+            $abre = $limiteMinimo;
         }
         if ($abre->gt($inicio)) {
             $abre = $inicio->copy();
