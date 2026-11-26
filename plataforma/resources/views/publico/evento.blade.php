@@ -143,10 +143,10 @@
             @endphp
             @if ($lotesUltimos->isNotEmpty())
               @if ($pctGeral >= 70)
-                <div class="pub-ultimos-faixa">🔥 Corra! Últimos ingressos</div>
+                <div class="pub-ultimos-faixa">🔥 Corra! Últimos ingressos.</div>
               @else
                 @foreach ($lotesUltimos as $lu)
-                  <div class="pub-ultimos-faixa">🔥 Últimos ingressos — {{ $lu->nome }}</div>
+                  <div class="pub-ultimos-faixa">🔥 Corra! Últimos ingressos.<br><small>{{ $lu->nome }} 🔥</small></div>
                 @endforeach
               @endif
             @endif
