@@ -107,7 +107,6 @@
             <div class="pub-lote">
               <div>
                 <b>{{ $lote->tipo->nome }} · {{ $lote->nome }}</b>
-                @if ($disponivel && $lote->ultimosIngressos())<span class="pub-ultimos">🔥 Corra! Últimos ingressos</span>@endif
                 <small>{{ \App\Models\Lote::MODALIDADES[$lote->modalidade] }}
                   @if (! $disponivel)
                     · @if ($lote->status === 'esgotado' || $lote->quantidade - $lote->vendido - $lote->reservado <= 0) esgotado
@@ -136,6 +135,9 @@
           @endforeach
 
           @if ($compraveis->isNotEmpty())
+            @if ($aVenda->contains(fn ($l) => $l->ultimosIngressos()))
+              <div class="pub-ultimos-faixa">🔥 Corra! Últimos ingressos</div>
+            @endif
             <details class="pub-cupom" data-cupom-publico data-url="{{ route('compra.cupom', '__C__') }}?evento={{ $evento->codigoPublico() }}" @if (session('cupom_divulgacao')) open @endif>
               <summary>Tem um cupom de desconto?</summary>
               <div class="pub-cupom__linha">
