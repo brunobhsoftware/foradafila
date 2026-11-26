@@ -24,7 +24,7 @@
       <h1 style="font-size:1.7rem;margin-bottom:18px">{{ $pago ? 'Comprar ingresso' : 'Garantir ingresso' }}</h1>
 
       @if ($selecao->contains(fn ($s) => $s['lote']->ultimosIngressos()))
-        <p class="pub-ultimos" style="margin:0 0 14px">🔥 Corra! Últimos ingressos</p>
+        <div class="pub-ultimos-faixa">🔥 Corra! Últimos ingressos</div>
       @endif
       <h2 style="font-size:1.15rem">1. Seus dados</h2>
       @if ($comprador)
