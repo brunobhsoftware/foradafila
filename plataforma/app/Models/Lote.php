@@ -17,7 +17,7 @@ class Lote extends Model
     {
         $restam = $this->quantidade - $this->vendido - $this->reservado;
 
-        return $restam > 0 && $restam <= max(5, (int) ceil($this->quantidade * 0.15));
+        return $restam > 0 && $restam <= max(5, (int) ceil($this->quantidade * 0.50));
     }
 
     use PertenceAoOrganizador, TemUuid;
