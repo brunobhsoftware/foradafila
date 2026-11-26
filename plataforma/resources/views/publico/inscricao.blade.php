@@ -23,8 +23,20 @@
       <div class="pub-trilha" style="margin-bottom:4px"><a href="{{ $evento->linkPublico() }}" style="color:var(--laranja)">‹ Voltar ao evento</a></div>
       <h1 style="font-size:1.7rem;margin-bottom:18px">{{ $pago ? 'Comprar ingresso' : 'Garantir ingresso' }}</h1>
 
-      @if ($selecao->contains(fn ($s) => $s['lote']->ultimosIngressos()))
-        <div class="pub-ultimos-faixa">🔥 Corra! Últimos ingressos</div>
+      @php
+        $lotesUltimos = $selecao->filter(fn ($s) => $s['lote']->ultimosIngressos())->pluck('lote');
+        $totalQtd = $selecao->sum(fn ($s) => $s['lote']->quantidade);
+        $totalVendido = $selecao->sum(fn ($s) => $s['lote']->vendido + $s['lote']->reservado);
+        $pctGeral = $totalQtd > 0 ? $totalVendido / $totalQtd * 100 : 0;
+      @endphp
+      @if ($lotesUltimos->isNotEmpty())
+        @if ($pctGeral >= 70)
+          <div class="pub-ultimos-faixa">🔥 Corra! Últimos ingressos</div>
+        @else
+          @foreach ($lotesUltimos as $lu)
+            <div class="pub-ultimos-faixa">🔥 Últimos ingressos — {{ $lu->nome }}</div>
+          @endforeach
+        @endif
       @endif
       <h2 style="font-size:1.15rem">1. Seus dados</h2>
       @if ($comprador)

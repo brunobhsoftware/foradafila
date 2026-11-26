@@ -135,8 +135,20 @@
           @endforeach
 
           @if ($compraveis->isNotEmpty())
-            @if ($aVenda->contains(fn ($l) => $l->ultimosIngressos()))
-              <div class="pub-ultimos-faixa">🔥 Corra! Últimos ingressos</div>
+            @php
+              $lotesUltimos = $aVenda->filter(fn ($l) => $l->ultimosIngressos());
+              $totalQtd = $aVenda->sum('quantidade');
+              $totalVendido = $aVenda->sum('vendido') + $aVenda->sum('reservado');
+              $pctGeral = $totalQtd > 0 ? $totalVendido / $totalQtd * 100 : 0;
+            @endphp
+            @if ($lotesUltimos->isNotEmpty())
+              @if ($pctGeral >= 70)
+                <div class="pub-ultimos-faixa">🔥 Corra! Últimos ingressos</div>
+              @else
+                @foreach ($lotesUltimos as $lu)
+                  <div class="pub-ultimos-faixa">🔥 Últimos ingressos — {{ $lu->nome }}</div>
+                @endforeach
+              @endif
             @endif
             <details class="pub-cupom" data-cupom-publico data-url="{{ route('compra.cupom', '__C__') }}?evento={{ $evento->codigoPublico() }}" @if (session('cupom_divulgacao')) open @endif>
               <summary>Tem um cupom de desconto?</summary>
