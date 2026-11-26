@@ -281,4 +281,3 @@ button.botao { cursor: pointer; font-family: var(--fonte-texto); }
 /* "Corra! Últimos ingressos" (15/11/2026) */
 .pub-ultimos { display: inline-block; margin: 4px 0 2px; padding: 3px 10px; border-radius: 99px; background: #FFF1E8; color: #C4320A; font-size: .8rem; font-weight: 700; }
 .pub-ultimos-faixa { width: 100%; text-align: center; padding: 12px 16px; margin: 16px 0 4px; border-radius: 12px; background: #FFF1E8; color: #C4320A; font-size: 1rem; font-weight: 700; line-height: 1.6; }
-.pub-ultimos-faixa small { display: block; font-size: .9rem; font-weight: 600; }

@@ -146,7 +146,7 @@
                 <div class="pub-ultimos-faixa">🔥 Corra! Últimos ingressos.</div>
               @else
                 @foreach ($lotesUltimos as $lu)
-                  <div class="pub-ultimos-faixa">🔥 Corra! Últimos ingressos.<br><small>{{ $lu->nome }} 🔥</small></div>
+                  <div class="pub-ultimos-faixa">🔥 Corra! Últimos ingressos.<br>{{ $lu->nome }} 🔥</div>
                 @endforeach
               @endif
             @endif
